@@ -95,6 +95,10 @@ const baseChapters = {
     name: "Odin's Eye",
     tags: ['pertinent'],
   },
+  '35:41': {
+    name: 'Hard Stop',
+    tags: ['logistics'],
+  },
   '36:20': {
     name: 'BP Resolution',
     tags: ['BP'],
@@ -115,7 +119,7 @@ const baseChapters = {
     name: 'Kubernetes',
     tags: ['pertinent'],
   },
-  '39:17': {
+  '38:38': {
     name: 'BP Mindlessness',
     tags: ['BP'],
   },
@@ -135,6 +139,10 @@ const baseChapters = {
   '43:42': {
     name: 'Kinesthetic Reasoning',
     tags: ['pertinent'],
+  },
+  '44:19': {
+    name: 'T-minus 5 Minutes',
+    tags: ['logistics'],
   },
   '44:52': {
     name: '¿Will it happen?',
