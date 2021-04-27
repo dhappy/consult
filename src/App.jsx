@@ -1,6 +1,6 @@
 import {
-  Box, CheckboxGroup, Checkbox, Table, Thead, Tbody, Tr, Th, Td,
-  chakra, Flex, GridItem, Grid, Tag, Text, Wrap, Spinner,
+  CheckboxGroup, Checkbox, Table, Thead, Tbody, Tr, Th, Td,
+  Flex, GridItem, Grid, Tag, Wrap, Spinner, Stack, Heading,
 } from '@chakra-ui/react'
 import { useEffect, useRef, useState } from 'react'
 import { chapters } from './w/Raid Guild/on/0/♈/15/@/9/13/‒/9/52/js'
@@ -45,7 +45,8 @@ export const stringFor = (time) => (
 )
 
 export const Row = ({
-  title, index, tags = [], currentTime, end, head, ...props
+  title, index, tags = [], currentTime, end, head, paused,
+  ...props
 }) => (
   <Tr
     align="center"
@@ -63,37 +64,69 @@ export const Row = ({
       ))()}
     </Td>
     <Td>{title}</Td>
-    <Td><Flex>
+    <Td><Stack>
       {tags.map((t, i) => (
         <Tag
           key={i}
+          style={{ textAlign: 'center' }}
           border="2px solid #00000066"
           {...propsFor(t)}
+          display="block"
+          pt={0.5}
         >{t}</Tag>
       ))}
-    </Flex></Td>
+    </Stack></Td>
     <Td>{(currentTime < head && head < end) ? (
       <Spinner/>
     ) : (
-      '▸'
+      paused ? '▶️' : '⏸️'
     )}</Td>
   </Tr>
 )
 
 export default () => {
   const vid = useRef()
+  const current = useRef()
   const [active, setActive] = useState(
     Object.fromEntries(
       defaultTags.map(t => [t, true])
     )
   )
-  const [selected, setSelected] = useState()
   const [time, setTime] = useState(0)
+  const changed = (evt) => {
+    console.info('EVT', evt)
+  }
+  const clicked = (elem) => {
+    vid.current.currentTime = elem.start
+    if(vid.current.paused) {
+      vid.current.play()
+    } else {
+      vid.current.pause()
+    }
+  }
 
   useEffect(() => {
     const video = vid.current
     const update = (evt) => {
-      setTime(evt.target.currentTime)
+      const time = evt.target.currentTime
+      setTime(time)
+      let now = Object.values(chapters).find(
+        (info) => info.start < time && time <= info.end
+      )
+      if(!now.tags.some(t => active[t])) {
+        const next = Object.values(chapters).find(
+          (info) => (
+            info.tags.some(t => active[t])
+            && info.start >= time
+          )
+        )
+        console.info('NXT', { now, next })
+        if(next) {
+          clicked(next)
+          now = next
+        }
+      }
+      current.current = now
     }
     video.addEventListener('timeupdate', update)
     return () => {
@@ -108,49 +141,55 @@ export default () => {
   )
   tags = [...new Set(tags.flat())]
 
-  const changed = (evt) => {
-    console.info(evt)
-  }
-  const clicked = (elem) => {
-    setSelected(elem)
-    vid.current.currentTime = elem.start
-    vid.current.play()
-  }
-
   return (
     <Grid
       as="form"
       onChange={changed}
-      templateRows="1fr 0fr"
+      templateRows="0fr 1fr 0fr"
       templateColumns="1fr 0fr"
       maxH="95vh"
     >
+      <GridItem rowSpan={1} colSpan={2}>
+        <Heading textAlign="center" p={5}>
+          {current.current?.name}
+        </Heading>
+      </GridItem>
       <GridItem rowSpan={1} colSpan={1}>
         <CheckboxGroup
           colorScheme="green"
           defaultValue={defaultTags}
         >
-          <Wrap>
-            {/* ToDo: Add select all / none */}
-            {/*
-            <ListItem>
-              <Checkbox onChange((evt) => (evt.target.checked)/>
-            </ListItem>
-            */}
-            {tags.map((t, i) => {
-              const changed = (evt) => (
-                setActive((ts) => ({
-                  ...ts,
-                  [t]: evt.target.checked,
-                }))
-              )
-              return (
-                <Checkbox key={i} checked={active[t]} value={t} onChange={changed}>
-                  <Tag border="2px solid #00000066" {...propsFor(t)}>{t}</Tag>
-                </Checkbox>
-              )
-            })}
-          </Wrap>
+          <Flex>
+            <Checkbox
+              px={8}
+              onChange={(evt) => (
+                setActive((act) => (
+                  Object.fromEntries(
+                    Object.entries(act).map(
+                      ([key, _]) => (
+                        [key, evt.target.checked]
+                      )
+                    )
+                  )
+                ))
+              )}
+            />
+            <Wrap>
+              {tags.map((t, i) => {
+                const changed = (evt) => (
+                  setActive((ts) => ({
+                    ...ts,
+                    [t]: evt.target.checked,
+                  }))
+                )
+                return (
+                  <Checkbox key={i} checked={active[t]} value={t} onChange={changed}>
+                    <Tag border="2px solid #00000066" {...propsFor(t)}>{t}</Tag>
+                  </Checkbox>
+                )
+              })}
+            </Wrap>
+          </Flex>
         </CheckboxGroup>
       </GridItem>
       <GridItem rowSpan={2} colSpan={1}>
@@ -166,7 +205,7 @@ export default () => {
           </Thead>
           <Tbody>
             {Object.entries(chapters).map(([_, info], idx) => {
-              if (!info.tags.some(t => active[t])) {
+              if(!info.tags.some(t => active[t])) {
                 return null
               }
               const {
@@ -178,6 +217,7 @@ export default () => {
                   index={idx}
                   head={time}
                   {...{ src, title, tags, end, currentTime }}
+                  paused={!vid.current || vid.current.paused}
                   onClick={() => clicked(info)}
                 />
               )
@@ -190,7 +230,6 @@ export default () => {
           controls
           style={{ width: '100%' }}
           ref={vid}
-          onClick={selected}
         >
           <source {...{ src, type: 'video/mp4' }} />
         </video>
