@@ -140,7 +140,7 @@ const baseChapters = {
   },
   '43:42': {
     name: 'Kinesthetic Reasoning',
-    tags: ['pertinent'],
+    tags: ['psych'],
   },
   '44:19': {
     name: 'T-minus 5 Minutes',
