@@ -48,7 +48,7 @@ export const stringFor = (time) => (
 )
 
 export const Row = ({
-  title, index, tags = [], currentTime, end, head, paused,
+  title, index, tags = [], currentTime, end, head, paused = true,
   ...props
 }) => (
   <Tr
@@ -108,6 +108,16 @@ export default () => {
   }
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const chapter = params.get('chapter')
+    if(chapter) {
+      vid.current.currentTime = (
+        chapters[Object.keys(chapters)[parseInt(chapter)]].start
+      )
+    }
+  }, [])
+
+  useEffect(() => {
     const video = vid.current
     const update = (evt) => {
       const time = evt.target.currentTime
@@ -163,15 +173,13 @@ export default () => {
             <Checkbox
               px={8}
               onChange={(evt) => (
-                setActive((act) => (
+                setActive(
                   Object.fromEntries(
-                    Object.entries(act).map(
-                      ([key, _]) => (
-                        [key, evt.target.checked]
-                      )
-                    )
+                    tags.map((tag) => (
+                      [tag, evt.target.checked]
+                    ))
                   )
-                ))
+                )
               )}
             />
             <Wrap>
@@ -182,10 +190,13 @@ export default () => {
                     [t]: evt.target.checked,
                   }))
                 )
+                console.info({ ...active }, { t: active[t] })
                 return (
-                  <Checkbox key={i} checked={active[t]} value={t} onChange={changed}>
-                    <Tag border="2px solid #00000066" {...propsFor(t)}>{t}</Tag>
-                  </Checkbox>
+                  <Tag border="2px solid #00000066" {...propsFor(t)}>
+                    <Checkbox key={i} checked={active[t]} value={t} onChange={changed}>
+                      {t}
+                    </Checkbox>
+                  </Tag>
                 )
               })}
             </Wrap>
@@ -196,11 +207,11 @@ export default () => {
         <Table maxH="100vh" overflow="scroll">
           <Thead>
             <Tr>
-              <Th>Index</Th>
-              <Th>Time</Th>
-              <Th>Name</Th>
-              <Th>Tags</Th>
-              <Th>Active</Th>
+              <Th style={{ textAlign: 'center' }}>Index</Th>
+              <Th style={{ textAlign: 'center' }}>Time</Th>
+              <Th style={{ textAlign: 'center' }}>Name</Th>
+              <Th style={{ textAlign: 'center' }}>Tags</Th>
+              <Th style={{ textAlign: 'center' }}>Active</Th>
             </Tr>
           </Thead>
           <Tbody>
