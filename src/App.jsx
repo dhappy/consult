@@ -3,12 +3,15 @@ import {
   Flex, GridItem, Grid, Tag, Wrap, Spinner, Stack, Heading,
 } from '@chakra-ui/react'
 import { useEffect, useRef, useState } from 'react'
-import { chapters } from './w/Raid Guild/on/0/♈/15/@/9/13/‒/9/52/js'
+import {
+  chapters, title,
+} from './w/Raid Guild/on/0/♈/15/@/9/13/‒/9/52/js'
 
 const defaultTags = ['pitch', 'pertinent']
 
 const propsFor = (tag) => {
   switch (tag) {
+    case 'psych': return { bg: '#19FF20' }
     case 'personal': return { bg: 'red' }
     case 'skippable': return { bg: 'pink' }
     case 'BP': return { bg: 'blue', color: 'white' }
@@ -35,7 +38,7 @@ export const timeFor = (str) => (
 )
 
 export const stringFor = (time) => (
-  (time) ? (
+  (time !== undefined) ? (
     `${Math.floor(time / 60)
     }:${(time % 60).toString().padStart(2, '0')
     }`
@@ -76,7 +79,7 @@ export const Row = ({
         >{t}</Tag>
       ))}
     </Stack></Td>
-    <Td>{(currentTime < head && head < end) ? (
+    <Td>{(currentTime < head && head < end && !paused) ? (
       <Spinner/>
     ) : (
       paused ? '▶️' : '⏸️'
@@ -93,15 +96,14 @@ export default () => {
     )
   )
   const [time, setTime] = useState(0)
-  const changed = (evt) => {
-    console.info('EVT', evt)
-  }
-  const clicked = (elem) => {
-    vid.current.currentTime = elem.start
-    if(vid.current.paused) {
-      vid.current.play()
-    } else {
-      vid.current.pause()
+  const clicked = (elem, toggle = true) => {
+    vid.current.currentTime = elem.start + 0.01 // it misses
+    if(toggle) {
+      if(vid.current.paused) {
+        vid.current.play()
+      } else {
+        vid.current.pause()
+      }
     }
   }
 
@@ -114,16 +116,15 @@ export default () => {
         (info) => info.start < time && time <= info.end
       )
       if(!now.tags.some(t => active[t])) {
-        const next = Object.values(chapters).find(
+        const nxt = Object.values(chapters).find(
           (info) => (
             info.tags.some(t => active[t])
             && info.start >= time
           )
         )
-        console.info('NXT', { now, next })
-        if(next) {
-          clicked(next)
-          now = next
+        if(nxt) {
+          clicked(nxt, false)
+          now = nxt
         }
       }
       current.current = now
@@ -144,14 +145,13 @@ export default () => {
   return (
     <Grid
       as="form"
-      onChange={changed}
       templateRows="0fr 1fr 0fr"
       templateColumns="1fr 0fr"
       maxH="95vh"
     >
       <GridItem rowSpan={1} colSpan={2}>
         <Heading textAlign="center" p={5}>
-          {current.current?.name}
+          {current.current?.name ?? title}
         </Heading>
       </GridItem>
       <GridItem rowSpan={1} colSpan={1}>

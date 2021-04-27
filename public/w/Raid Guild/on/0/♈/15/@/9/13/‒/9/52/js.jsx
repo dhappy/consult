@@ -10,6 +10,8 @@ export const timeFor = (str) => (
   )
 )
 
+export const title = 'Raid Guild Initial Consultation Call w/ @joshsdoug'
+
 const baseChapters = {
   '00:00': {
     name: 'Musical Intro',
@@ -138,7 +140,7 @@ const baseChapters = {
   },
   '43:42': {
     name: 'Kinesthetic Reasoning',
-    tags: ['pertinent'],
+    tags: ['psych'],
   },
   '44:19': {
     name: 'T-minus 5 Minutes',
@@ -160,9 +162,13 @@ const baseChapters = {
     name: '1968',
     tags: ['pertinent'],
   },
-  '50:36': {
+  '50:35': {
     name: 'Dissatisfied',
     tags: ['logistics'],
+  },
+  '52:48': {
+    name: '¿Make Sense?',
+    tags: ['pertinent'],
   },
   '53:26': {
     name: "Inch'allah",
