@@ -4,7 +4,7 @@ import {
 } from '@chakra-ui/react'
 import { useEffect, useRef, useState } from 'react'
 import {
-  chapters, title,
+  chapters, title, url as src,
 } from './w/Raid Guild/on/0/♈/15/@/9/13/‒/9/52/js'
 
 const defaultTags = ['pitch', 'pertinent']
@@ -24,9 +24,6 @@ const propsFor = (tag) => {
     default: return { bg: 'yellow' }
   }
 }
-
-//const src = 'w/Raid%20Guild/on/0/%E2%99%88/15/@/9/13/%E2%80%92/9/52/mp4'
-const src = 'https://ipfs.io/ipfs/QmUx8DdzEh5qxiYJ89a6ZoqD37N3keiTpuYuCDAMfDpjiy/mp4'
 
 export const timeFor = (str) => (
   (str) ? ((() => {
@@ -125,7 +122,7 @@ export default () => {
       let now = Object.values(chapters).find(
         (info) => info.start < time && time <= info.end
       )
-      if(!now.tags.some(t => active[t])) {
+      if(now && !now.tags.some(t => active[t])) {
         const nxt = Object.values(chapters).find(
           (info) => (
             info.tags.some(t => active[t])

@@ -1,4 +1,5 @@
 import { Link } from '@chakra-ui/react'
+import CID from './cid'
 
 // ToDo: load from App.jsx
 export const timeFor = (str) => (
@@ -10,6 +11,7 @@ export const timeFor = (str) => (
   )
 )
 
+export const url = `https://ipfs.io/ipfs/${CID['/']}`
 export const title = 'Raid Guild Initial Consultation Call w/ @joshsdoug'
 
 const baseChapters = {
@@ -131,6 +133,7 @@ const baseChapters = {
   },
   '41:25': {
     name: 'Donnie Darko',
+    // ToDo: Fix loader issues that prevent this from working
     // name: (
     //   <Link
     //     href="https://ipfs.io/ipfs/QmTAdBoj7guxtLroQrdFTHrA1M2vSa37VQZoh4D77rdANc/Donnie.Darko.2001.mp4"
