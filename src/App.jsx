@@ -46,7 +46,7 @@ export const stringFor = (time) => (
 
 export const Row = ({
   title, index, tags = [], currentTime, end, head, paused = true,
-  ...props
+  percent = null, ...props
 }) => (
   <Tr
     align="center"
@@ -54,7 +54,17 @@ export const Row = ({
     {...props}
   >
     <Td>{index}</Td>
-    <Td>
+    <Td
+      bg={percent ? (
+        `linear-gradient(
+          to right,
+          transparent,
+          transparent ${percent - 1}%,
+          red ${percent}%,
+          transparent ${percent + 1}%
+        )`
+      ) : ('transparent')}
+    >
       {(() => (
         `${
           stringFor(currentTime)
@@ -93,13 +103,16 @@ export default () => {
     )
   )
   const [time, setTime] = useState(0)
-  const clicked = (elem, toggle = true) => {
-    vid.current.currentTime = elem.start + 0.01 // it misses
-    if(toggle) {
+  const clicked = (elem) => {
+    const currentClicked = current.current === elem
+    if(currentClicked && !vid.current.paused) {
+      vid.current.pause()
+    } else if(currentClicked && vid.current.paused) {
+      vid.current.play()
+    } else if(!currentClicked) {
+      vid.current.currentTime = elem.start + 0.01 // it misses
       if(vid.current.paused) {
         vid.current.play()
-      } else {
-        vid.current.pause()
       }
     }
   }
@@ -130,7 +143,7 @@ export default () => {
           )
         )
         if(nxt) {
-          clicked(nxt, false)
+          clicked(nxt)
           now = nxt
         }
       }
@@ -140,7 +153,7 @@ export default () => {
     return () => {
       video.removeEventListener('timeupdate', update)
     }
-  }, [])
+  }, [active])
 
   let tags = (
     Object.values(chapters).map((info) => (
@@ -164,7 +177,6 @@ export default () => {
       <GridItem rowSpan={1} colSpan={1}>
         <CheckboxGroup
           colorScheme="green"
-          defaultValue={defaultTags}
         >
           <Flex>
             <Checkbox
@@ -187,10 +199,9 @@ export default () => {
                     [t]: evt.target.checked,
                   }))
                 )
-                console.info({ ...active }, { t: active[t] })
                 return (
-                  <Tag border="2px solid #00000066" {...propsFor(t)}>
-                    <Checkbox key={i} checked={active[t]} value={t} onChange={changed}>
+                  <Tag key={i} border="2px solid #00000066" {...propsFor(t)}>
+                    <Checkbox key={i} isChecked={active[t]} onChange={changed}>
                       {t}
                     </Checkbox>
                   </Tag>
@@ -219,12 +230,16 @@ export default () => {
               const {
                 name: title, tags, end, start: currentTime
               } = info
+              let percent = null
+              if(current.current === info) {
+                percent = 100 * ((time - currentTime) / (end - currentTime)) 
+              }
               return (
                 <Row
                   key={idx}
                   index={idx}
                   head={time}
-                  {...{ src, title, tags, end, currentTime }}
+                  {...{ src, title, tags, end, currentTime, percent }}
                   paused={!vid.current || vid.current.paused}
                   onClick={() => clicked(info)}
                 />
