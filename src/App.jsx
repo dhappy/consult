@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react'
 import {
   chapters, title, url as src,
 } from './w/Raid Guild/on/0/♈/15/@/9/13/‒/9/52/js'
+import VTT from './w/Raid Guild/on/0/♈/15/@/9/13/‒/9/52/vtt.vtt'
 
 const defaultTags = ['pitch', 'pertinent']
 
@@ -58,8 +59,7 @@ export const Row = ({
       bg={percent ? (
         `linear-gradient(
           to right,
-          transparent,
-          transparent ${percent - 1}%,
+          red,
           red ${percent}%,
           transparent ${percent + 1}%
         )`
@@ -212,14 +212,17 @@ export default () => {
         </CheckboxGroup>
       </GridItem>
       <GridItem rowSpan={2} colSpan={1}>
-        <Table maxH="100vh" overflow="scroll">
+        <Table
+          maxH="100vh" overflow="scroll"
+          sx={{ th: { textAlign: 'center' }}}
+        >
           <Thead>
             <Tr>
-              <Th style={{ textAlign: 'center' }}>Index</Th>
-              <Th style={{ textAlign: 'center' }}>Time</Th>
-              <Th style={{ textAlign: 'center' }}>Name</Th>
-              <Th style={{ textAlign: 'center' }}>Tags</Th>
-              <Th style={{ textAlign: 'center' }}>Active</Th>
+              <Th>Index</Th>
+              <Th>Time</Th>
+              <Th>Name</Th>
+              <Th>Tags</Th>
+              <Th>Active</Th>
             </Tr>
           </Thead>
           <Tbody>
@@ -254,7 +257,8 @@ export default () => {
           style={{ width: '100%' }}
           ref={vid}
         >
-          <source {...{ src, type: 'video/mp4' }} />
+          <source {...{ src, type: 'video/mp4' }}/>
+          <track default src={VTT}/>
         </video>
       </GridItem>
     </Grid>

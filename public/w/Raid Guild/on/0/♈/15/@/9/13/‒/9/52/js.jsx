@@ -11,6 +11,7 @@ export const timeFor = (str) => (
   )
 )
 
+export const startTime = new Date('2021-04-25T21:55:37-0400')
 export const url = `https://ipfs.io/ipfs/${CID['/']}`
 export const title = 'Raid Guild Initial Consultation Call w/ @joshsdoug'
 
@@ -197,28 +198,3 @@ for(let [time, info] of Object.entries(baseChapters)) {
 }
 
 export const chapters = baseChapters
-
-// https://github.com/umdjs/umd
-// (function (root, factory) {
-//   if(typeof define === 'function' && define.amd) {
-//     // AMD. Register as an anonymous module.
-//     define(['exports', 'b'], factory)
-//   } else if(
-//     typeof exports === 'object'
-//     && typeof exports.nodeName !== 'string'
-//   ) {
-//     // CommonJS
-//     factory(exports, require('b'))
-//   } else {
-//     // Browser globals
-//     factory((root.commonJsStrict = {}), root.b)
-//   }
-// }(this, function (exports, b) {
-//   //use b in some fashion.
-//   b.chapters = chapters
-
-//   // attach properties to the exports object to define
-//   // the exported module properties.
-//   exports.action = function () {}
-// }))
-
