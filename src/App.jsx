@@ -5,7 +5,7 @@ import {
 import { useEffect, useRef, useState } from 'react'
 import {
   chapters, title, url as src,
-} from './w/Raid Guild/on/0/♈/15/@/9/13/‒/9/52/js'
+} from "./w/MetaGame’s Builders/on/-3/♋/7/@/1/26/‒/1/78/js.jsx"
 import VTT from './w/Raid Guild/on/0/♈/15/@/9/13/‒/9/52/vtt.vtt'
 
 const defaultTags = ['pitch', 'pertinent']
