@@ -133,13 +133,11 @@ const baseChapters = {
     tags: ['algorithm'],
   },
   '41:25': {
-    name: 'Donnie Darko',
-    // ToDo: Fix loader issues that prevent this from working
-    // name: (
-    //   <Link
-    //     href="https://ipfs.io/ipfs/QmTAdBoj7guxtLroQrdFTHrA1M2vSa37VQZoh4D77rdANc/Donnie.Darko.2001.mp4"
-    //   >Donnie Darko</Link>
-    // ),
+    name: (
+      <Link
+        href="https://ipfs.io/ipfs/QmTAdBoj7guxtLroQrdFTHrA1M2vSa37VQZoh4D77rdANc/Donnie.Darko.2001.mp4"
+      >Donnie Darko</Link>
+    ),
     tags: ['recommendation'],
   },
   '43:42': {
