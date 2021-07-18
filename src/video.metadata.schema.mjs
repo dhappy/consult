@@ -6,10 +6,10 @@ export default {
   properties: {
     id: { type: 'string' },
     title: { type: 'string' },
-    url: { type: 'uri' },
-    startTime: { type: 'date-time' },
+    url: { type: 'string' },
+    startTime: { type: 'string' },
     events: {
-      type: 'uri',
+      type: 'string',
       pattern: '^ipfs://.+',
       maxLength: 500
     },

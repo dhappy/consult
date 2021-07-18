@@ -2,7 +2,9 @@
 
 const { writeFile } = require('fs').promises
 const Ceramic = require('@ceramicnetwork/http-client').default
-const { createDefinition, publishSchema } = require('@ceramicstudio/idx-tools')
+const { createDefinition, publishSchema } = (
+  require('@ceramicstudio/idx-tools')
+)
 const { Ed25519Provider } = require('key-did-provider-ed25519')
 const fromString = require('uint8arrays/from-string')
 const KeyResolver = require('key-did-resolver').default
@@ -15,9 +17,15 @@ const CERAMIC_URL = (
 
 async function run() {
   const Schemas = {
-    //ConsultVideoMetadata: await import('../src/video.metadata.schema.mjs'),
-    ConsultVideoEvents: await import('../src/video.events.schema.mjs'),
+    ConsultVideoMetadata: (
+      (await import('../src/video.metadata.schema.mjs')).default
+    ),
+    ConsultVideoEvents: (
+      (await import('../src/video.events.schema.mjs')).default
+    ),
   }
+
+  console.info({ Schemas })
 
   if(!process.env.SEED) {
     throw new Error("Environment Variable $SEED Required\nexport SEED=$(node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\")")
@@ -34,7 +42,6 @@ async function run() {
   })
 
   await did.authenticate()
-  //ceramic.setDID(did)
   ceramic.did = did
 
   const published = Object.fromEntries(
@@ -45,8 +52,6 @@ async function run() {
       ])
     ))
   )
-
-  console.info({ published })
 
   const definitions = Object.fromEntries(
     await Promise.all(Object.entries(published).map(

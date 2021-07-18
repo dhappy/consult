@@ -1,0 +1,10 @@
+{
+  "definitions": {
+    "ConsultVideoMetadata": "ceramic://kjzl6cwe1jw149ndyjcddnkox1sj3omepet59vyaxtr7mns5743kwdkwl72rosi",
+    "ConsultVideoEvents": "ceramic://kjzl6cwe1jw1497k64zmwz7d67sbdt41w97o62q8ww314y3enrjm3mivldot63c"
+  },
+  "schemas": {
+    "ConsultVideoMetadata": "ceramic://k3y52l7qbv1fryhp7jgse2liafk31w9lsyodwj84evpqreq8ye8cxv1piaelg0em8",
+    "ConsultVideoEvents": "ceramic://k3y52l7qbv1frxjgzx51khtfpc0645y0p1pscmtfrz065ltfz1zc2zfpcrm3z1pfk"
+  }
+}
