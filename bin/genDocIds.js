@@ -7,14 +7,18 @@ const { Ed25519Provider } = require('key-did-provider-ed25519')
 const fromString = require('uint8arrays/from-string')
 const KeyResolver = require('key-did-resolver').default
 const { DID } = require('dids')
-const ConsultSchema = require('../src/org.dhappy.consult.schema.json')
 
-const out = 'src/docIDs.json'
+const out = 'src/ceramicIds.json'
 const CERAMIC_URL = (
   process.env.CERAMIC_URL || 'https://d12-a-ceramic.3boxlabs.com'
 )
 
 async function run() {
+  const Schemas = {
+    //ConsultVideoMetadata: await import('../src/video.metadata.schema.mjs'),
+    ConsultVideoEvents: await import('../src/video.events.schema.mjs'),
+  }
+
   if(!process.env.SEED) {
     throw new Error("Environment Variable $SEED Required\nexport SEED=$(node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\")")
   }
@@ -33,26 +37,45 @@ async function run() {
   //ceramic.setDID(did)
   ceramic.did = did
 
-  // Publish the two schemas
-  const consultSchema = await (
-    publishSchema(ceramic, { content: ConsultSchema })
+  const published = Object.fromEntries(
+    await Promise.all(Object.entries(Schemas).map(
+      async ([name, schema]) => ([
+        name,
+        await publishSchema(ceramic, { content: schema })
+      ])
+    ))
   )
 
-  // Create the definition using the created schema ID
-  const consultDefinition = await createDefinition(ceramic, {
-    name: 'VideoEvents',
-    description: 'List of events correlating to the progress of a video.', // optional
-    schema: consultSchema.commitId.toUrl(),
-  })
+  console.info({ published })
 
-  // Write config to JSON file
+  const definitions = Object.fromEntries(
+    await Promise.all(Object.entries(published).map(
+      async ([name, schema]) => ([
+        name,
+        await createDefinition(ceramic, {
+          name,
+          description: Schemas[name].description ?? null,
+          schema: schema.commitId.toUrl(),
+        })
+      ])
+    ))
+  )
+
   const config = {
-    definitions: {
-      consult: consultDefinition.id.toUrl(),
-    },
-    schemas: {
-      consult: consultSchema.commitId.toUrl(),
-    },
+    definitions: Object.fromEntries(
+      await Promise.all(Object.entries(definitions).map(
+        async ([name, definition]) => ([
+          name, definition.id.toUrl(),
+        ])
+      ))
+    ),
+    schemas: Object.fromEntries(
+      await Promise.all(Object.entries(published).map(
+        async ([name, schema]) => ([
+          name, schema.commitId.toUrl(),
+        ])
+      ))
+    ),
   }
   await writeFile(`./${out}`, JSON.stringify(config, null, 2))
 
