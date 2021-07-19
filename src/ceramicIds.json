@@ -1,10 +1,10 @@
 {
   "definitions": {
-    "ConsultVideoMetadata": "ceramic://kjzl6cwe1jw149ndyjcddnkox1sj3omepet59vyaxtr7mns5743kwdkwl72rosi",
-    "ConsultVideoEvents": "ceramic://kjzl6cwe1jw1497k64zmwz7d67sbdt41w97o62q8ww314y3enrjm3mivldot63c"
+    "ConsultVideoMetadata": "ceramic://kjzl6cwe1jw149iz5d5lt3xzmmehagltbrki9n0rpgsggc8xsrfcq5fc7jq0i2w",
+    "ConsultVideoIndex": "ceramic://kjzl6cwe1jw145iicq385z7200d2q3g2mtyb9eu9s38le6ztflrhzhsgla1z8u8"
   },
   "schemas": {
-    "ConsultVideoMetadata": "ceramic://k3y52l7qbv1fryhp7jgse2liafk31w9lsyodwj84evpqreq8ye8cxv1piaelg0em8",
-    "ConsultVideoEvents": "ceramic://k3y52l7qbv1frxjgzx51khtfpc0645y0p1pscmtfrz065ltfz1zc2zfpcrm3z1pfk"
+    "ConsultVideoMetadata": "ceramic://k3y52l7qbv1frxhxdj4zsa3famo23wwni4swqt8phartpso2yl379pwuctgevurcw",
+    "ConsultVideoIndex": "ceramic://k3y52l7qbv1fry7kracca6ykggtrhjjlxqe1yyx5awnai5crsrrknpf3w2s0jrhts"
   }
 }

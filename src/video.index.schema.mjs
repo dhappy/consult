@@ -1,15 +1,15 @@
 export default {
   $schema: 'http://json-schema.org/draft-07/schema#',
   type: 'object',
-  title: 'Consult Video Events',
-  description: 'The IPFS link to the JSON description of a series of event descriptions that correspond to a video.',
+  title: 'Consult Video Index',
+  description: 'Ceramic links to evented video metadata.',
   properties: {
     events: {
       type: 'object',
       properties: {
-        '^tip:.*$': {
+        '^.+$': {
           type: 'string',
-          pattern: '^ipfs://.+$',
+          pattern: '^ceramic://.+$',
           maxLength: 500,
         },
       },

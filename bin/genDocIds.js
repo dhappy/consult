@@ -20,8 +20,8 @@ async function run() {
     ConsultVideoMetadata: (
       (await import('../src/video.metadata.schema.mjs')).default
     ),
-    ConsultVideoEvents: (
-      (await import('../src/video.events.schema.mjs')).default
+    ConsultVideoIndex: (
+      (await import('../src/video.index.schema.mjs')).default
     ),
   }
 
