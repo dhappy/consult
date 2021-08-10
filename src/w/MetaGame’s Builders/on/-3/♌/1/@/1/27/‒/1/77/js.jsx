@@ -1,15 +1,5 @@
 import CID from './cid'
 
-// ToDo: load from App.jsx
-export const timeFor = (str) => (
-  (str) ? ((() => {
-    const [start, ...end] = str.split(':')
-    return parseInt(start) * 60 + parseInt(end)
-  })()) : (
-    undefined
-  )
-)
-
 // Should be ذو الحجة, but the bidi isn't cooperating in VS Code
 export const id = 'tip:w/MetaGame’s Builders/on/1442/Dhuʻl-Hijjah/25/@/1/26/‒/1/77/'
 export const startTime = new Date('2021-08-04T10:00:30-0400')
@@ -101,7 +91,7 @@ export const chapters = {
   },
   '42:38': {
     name: 'pΞTH Presents',
-    speakers: ['@pΞTH'],
+    speakers: ["@peth don't need your eth"],
   },
   '51:16': {
     name: "SoureCred's Meeting Channels",
@@ -109,6 +99,10 @@ export const chapters = {
   },
   '53:55': {
     name: 'Curious & Engaged Work',
-    speakers: ['@pΞTH', '@Michiel', '@dysbulic', '@TomBalls'],
+    speakers: ["@peth don't need your eth", '@Michiel', '@dysbulic', '@TomBalls'],
   },
+  '01:00:05': {
+    name: 'stepan Presents',
+    speakers: ['@stepan'],
+  }
 }

@@ -1,9 +1,10 @@
 import {
   CheckboxGroup, Checkbox, Table, Thead, Tbody, Tr, Th, Td,
   Flex, GridItem, Grid, Tag, Wrap, Spinner, Stack, Heading,
+  chakra,
 } from '@chakra-ui/react'
 import { useEffect, useRef, useState } from 'react'
-import VTT from './w/Raid Guild/on/0/♈/15/@/9/13/‒/9/52/vtt.vtt'
+// import VTT from './w/Raid Guild/on/0/♈/15/@/9/13/‒/9/52/vtt.vtt'
 
 const defaultTags = ['pitch', 'pertinent']
 
@@ -24,14 +25,27 @@ const propsFor = (tag) => {
   return { bg: 'yellow' }
 }
 
-export const timeFor = (str) => (
+const Video = chakra('video')
+
+export const timeFor = (str) => {
+  console.info(str)
+  return (
   (str) ? ((() => {
-    const [start, ...end] = str.split(':')
-    return parseInt(start) * 60 + parseInt(end)
+    const [secondsStr, minutesStr, ...hoursStrs] = str.split(':').reverse()
+    console.info(secondsStr, minutesStr, hoursStrs)
+    let [seconds, minutes, hours] = (
+      [parseFloat(secondsStr), parseFloat(minutesStr ?? 0), parseFloat(hoursStrs[0] ?? 0)]
+    )
+    if(hoursStrs.length > 1) {
+      console.warn(`Got ${hoursStrs} for hours parsing ${str}.`)
+    }
+    minutes += hours * 60
+    return seconds + minutes * 60
   })()) : (
     undefined
   )
-)
+  )
+}
 
 export const stringFor = (time) => (
   (time !== undefined) ? (
@@ -47,54 +61,65 @@ export const stringFor = (time) => (
 
 export const Row = ({
   title, index, tags = [], currentTime, end, head, paused = true,
-  percent = null, ...props
-}) => (
-  <Tr
-    align="center"
-    {...propsFor(tags[0])}
-    {...props}
-  >
-    <Td>{index}</Td>
-    <Td
-      bg={percent ? (
-        `linear-gradient(
-          to right,
-          red,
-          red ${percent}%,
-          transparent ${percent + 1}%
-        )`
-      ) : ('transparent')}
-    >
-      {(() => (
-        `${
-          stringFor(currentTime)
-        }${
-          end ? `+${stringFor(end - currentTime)}` : '‒'
-        }`
-      ))()}
-    </Td>
-    <Td>{title}</Td>
-    <Td><Stack>
-      {tags.map((t, i) => (
-        <Tag
-          key={i}
-          style={{ textAlign: 'center' }}
-          border="2px solid #00000066"
-          {...propsFor(t)}
-          display="block"
-          pt={0.5}
-        >{t}</Tag>
-      ))}
-    </Stack></Td>
-    <Td>{(currentTime < head && head < end && !paused) ? (
-      <Spinner/>
-    ) : (
-      paused ? '▶️' : '⏸️'
-    )}</Td>
-  </Tr>
-)
+  percent = null, seekTo, ...props
+}) => {
+  const cell = useRef(null)
+  const seekListener = (evt) => {
+    if(cell.current) {
+      console.info(cell)
+    }
+  }
 
-export default ({ chapters, title, src }) => {
+  return (
+    <Tr
+      align="center"
+      {...propsFor(tags[0])}
+      {...props}
+    >
+      <Td>{index}</Td>
+      <Td
+        ref={cell}
+        bg={percent ? (
+          `linear-gradient(
+            to right,
+            red,
+            red ${percent}%,
+            transparent ${percent + 1}%
+          )`
+        ) : ('transparent')}
+        onClick={seekListener}
+      >
+        {(() => (
+          `${
+            stringFor(currentTime)
+          }${
+            end ? `+${stringFor(end - currentTime)}` : '‒'
+          }`
+        ))()}
+      </Td>
+      <Td>{title}</Td>
+      <Td><Stack>
+        {tags.map((t, i) => (
+          <Tag
+            key={i}
+            style={{ textAlign: 'center' }}
+            border="2px solid #00000066"
+            {...propsFor(t)}
+            display="block"
+            pt={0.5}
+          >{t}</Tag>
+        ))}
+      </Stack></Td>
+      <Td>{(currentTime < head && head < end && !paused) ? (
+        <Spinner/>
+      ) : (
+        paused ? '▶️' : '⏸️'
+      )}</Td>
+    </Tr>
+  )
+}
+
+export default ({ chapters = {}, title, src }) => {
   const vid = useRef()
   const current = useRef()
   const [active, setActive] = useState(
@@ -103,6 +128,7 @@ export default ({ chapters, title, src }) => {
     )
   )
   const [time, setTime] = useState(0)
+
   const clicked = (elem) => {
     const currentClicked = current.current === elem
     if(currentClicked && !vid.current.paused) {
@@ -116,6 +142,17 @@ export default ({ chapters, title, src }) => {
       }
     }
   }
+
+  useEffect(() => {
+    let prev
+    for(let [time, info] of Object.entries(chapters)) {
+      info.start = timeFor(time)
+      if(prev) {
+        prev.end = timeFor(time)
+      }
+      prev = info
+    }
+  }, [chapters])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -135,10 +172,10 @@ export default ({ chapters, title, src }) => {
       let now = Object.values(chapters).find(
         (info) => info.start < time && time <= info.end
       )
-      if(now && !now.tags.some(t => active[t])) {
+      if(now && !now.tags?.some(t => active[t])) {
         const nxt = Object.values(chapters).find(
           (info) => (
-            info.tags.some(t => active[t])
+            info.tags?.some(t => active[t])
             && info.start >= time
           )
         )
@@ -155,18 +192,18 @@ export default ({ chapters, title, src }) => {
     }
   }, [active, chapters])
 
-  let tags = (
+  let allTags = (
     Object.values(chapters).map((info) => (
-      info.tags
+      info.tags ?? []
     ))
   )
-  tags = [...new Set(tags.flat())]
+  allTags = [...new Set(allTags.flat())]
 
   return (
     <Grid
       as="form"
       templateRows="0fr 1fr 0fr"
-      templateColumns="1fr 0fr"
+      templateColumns={['1fr', '1fr 0fr']}
       maxH="95vh"
     >
       <GridItem rowSpan={1} colSpan={2}>
@@ -175,41 +212,43 @@ export default ({ chapters, title, src }) => {
         </Heading>
       </GridItem>
       <GridItem rowSpan={1} colSpan={1}>
-        <CheckboxGroup
-          colorScheme="green"
-        >
-          <Flex>
-            <Checkbox
-              px={8}
-              onChange={(evt) => (
-                setActive(
-                  Object.fromEntries(
-                    tags.map((tag) => (
-                      [tag, evt.target.checked]
-                    ))
+        {allTags.length > 0 && (
+          <CheckboxGroup
+            colorScheme="green"
+          >
+            <Flex>
+              <Checkbox
+                px={8}
+                onChange={(evt) => (
+                  setActive(
+                    Object.fromEntries(
+                      allTags.map((tag) => (
+                        [tag, evt.target.checked]
+                      ))
+                    )
                   )
-                )
-              )}
-            />
-            <Wrap>
-              {tags.map((t, i) => {
-                const changed = (evt) => (
-                  setActive((ts) => ({
-                    ...ts,
-                    [t]: evt.target.checked,
-                  }))
-                )
-                return (
-                  <Tag key={i} border="2px solid #00000066" {...propsFor(t)}>
-                    <Checkbox key={i} isChecked={active[t]} onChange={changed}>
-                      {t}
-                    </Checkbox>
-                  </Tag>
-                )
-              })}
-            </Wrap>
-          </Flex>
-        </CheckboxGroup>
+                )}
+              />
+              <Wrap>
+                {allTags.map((t, i) => {
+                  const changed = (evt) => (
+                    setActive((ts) => ({
+                      ...ts,
+                      [t]: evt.target.checked,
+                    }))
+                  )
+                  return (
+                    <Tag key={i} border="2px solid #00000066" {...propsFor(t)}>
+                      <Checkbox key={i} isChecked={active[t]} onChange={changed}>
+                        {t}
+                      </Checkbox>
+                    </Tag>
+                  )
+                })}
+              </Wrap>
+            </Flex>
+          </CheckboxGroup>
+        )}
       </GridItem>
       <GridItem rowSpan={2} colSpan={1}>
         <Table
@@ -227,7 +266,10 @@ export default ({ chapters, title, src }) => {
           </Thead>
           <Tbody>
             {Object.entries(chapters).map(([_, info], idx) => {
-              if(!info.tags.some(t => active[t])) {
+              if(
+                allTags.length > 0
+                && !info.tags?.some(t => active[t])
+              ) {
                 return null
               }
               const {
@@ -252,14 +294,14 @@ export default ({ chapters, title, src }) => {
         </Table>
       </GridItem>
       <GridItem rowSpan={1} colSpan={1}>
-        <video
+        <Video
           controls
-          style={{ width: '100%' }}
           ref={vid}
+          w="100%" minW={64}
         >
           <source {...{ src, type: 'video/mp4' }}/>
-          <track default src={VTT}/>
-        </video>
+          {/* {VTT && <track default src={VTT}/>} */}
+        </Video>
       </GridItem>
     </Grid>
   )
