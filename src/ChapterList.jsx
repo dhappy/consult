@@ -3,6 +3,8 @@ import {
 } from '@chakra-ui/react'
 import { useRef, useState } from 'react'
 import { propsFor, stringFor } from 'utils'
+import PauseIcon from 'pause.png'
+import PlayIcon from 'play.png'
 
 export const Row = ({
   chapter, active = false, head, paused = true, seekTo,
@@ -42,7 +44,6 @@ export const Row = ({
   }
   const seekHover = (evt) => {
     const bBox = evt.target.getBoundingClientRect()
-    // console.info((evt.clientX - bBox.left) / bBox.width)
     setHighlight(
       100 * Math.max(0, (evt.clientX - bBox.left) / bBox.width)
     )
@@ -61,22 +62,23 @@ export const Row = ({
     )
   }
   if(highlight) {
-    gradient = gradient ? `${gradient}, ` : ''
-    gradient += (
+    gradient = (
       `linear-gradient(
-        to right, orange, orange ${highlight}%,
+        to right, #ff9b37BB, #ff9b37BB ${highlight}%,
         transparent ${highlight + 1}%
-      )`
+      )
+      ${gradient ? `, ${gradient}` : ''}`
     )
   }
 
-  // console.info({ gradient })
+  const cursor = !active || video?.paused ? PlayIcon : PauseIcon
 
   return (
     <Tr
       align="center"
-      {...propsFor(tags[0])}
+      {...propsFor(chapter)}
       {...props}
+      sx={{ cursor: `url(${cursor}), auto`}}
     >
       <Td onClick={() => clicked(chapter)}>{index}</Td>
       <Td
@@ -85,6 +87,7 @@ export const Row = ({
         onClick={seekListener}
         onMouseMove={seekHover}
         onMouseOut={() => setHighlight(null)}
+        cursor="col-resize"
       >
         {`${
           stringFor(currentTime)
@@ -99,7 +102,7 @@ export const Row = ({
             key={i}
             style={{ textAlign: 'center' }}
             border="2px solid #00000066"
-            {...propsFor(t)}
+            {...propsFor(chapter)}
             display="block"
             pt={0.5}
           >{t}</Tag>

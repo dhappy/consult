@@ -1,18 +1,29 @@
-export const propsFor = (tag) => {
-  const props = {
-    psych: { bg: '#19FF20' },
-    personal: { bg: 'red' },
-    skippable: { bg: 'pink' },
-    BP: { bg: 'blue', color: 'white' },
-    logistics: { bg: 'orange' },
-    pertinent: { bg: 'green', color: 'white' },
-    pitch: { bg: 'teal', color: 'white' },
-    recommendation: { bg: 'purple', color: 'white' },
-    chatter: { bg: 'darkgray', color: 'white' },
-    tangential: { bg: 'cyan' },
+const props = [
+  { bg: '#19FF20' },
+  { bg: 'red' },
+  { bg: 'pink' },
+  { bg: 'blue', color: 'white' },
+  { bg: 'orange' },
+  { bg: 'green', color: 'white' },
+  { bg: 'teal', color: 'white' },
+  { bg: 'purple', color: 'white' },
+  { bg: 'darkgray', color: 'white' },
+  { bg: 'cyan' },
+]
+const proppedTags = []
+export const propsFor = (info) => {
+  const search = info.tags?.[0] ?? info.speakers?.[0]
+  if(!search) return { bg: 'orange' }
+
+  let idx = proppedTags.indexOf(search)
+  if(idx < 0) {
+    idx = proppedTags.length
+    proppedTags.push(search)
   }
-  if(props[tag]) return props[tag]
-  return { bg: 'yellow' }
+  if(idx >= proppedTags.length) {
+    return { bg: 'black', color: 'red' }
+  }
+  return proppedTags[idx]
 }
 
 export const timeFor = (str) => (

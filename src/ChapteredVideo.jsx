@@ -5,7 +5,7 @@ import {
 import ChapterList from 'ChapterList'
 import { useEffect, useRef, useState } from 'react'
 import Tags from 'Tags'
-import { propsFor, timeFor } from 'utils'
+import { timeFor } from 'utils'
 
 const defaultTags = ['pitch', 'pertinent']
 
