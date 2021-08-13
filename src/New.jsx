@@ -14,7 +14,6 @@ import Markdown from 'react-markdown'
 import { useEffect, useState, useMemo } from 'react'
 import { TileDocument } from '@ceramicnetwork/stream-tile'
 import { create as ipfsHTTPClient } from 'ipfs-http-client'
-import ChapteredVideo from 'ChapteredVideo'
 
 const CERAMIC_URL = (
   process.env.CERAMIC_URL
@@ -146,7 +145,6 @@ export default () => {
   const [videos, setVideos] = useState([])
   const { isOpen, onOpen, onClose } = useDisclosure()
   
-
   useEffect(() => {
     (async () => {
       const threeIdConnect = new ThreeIdConnect()

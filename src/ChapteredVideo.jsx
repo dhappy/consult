@@ -1,136 +1,34 @@
 import {
-  CheckboxGroup, Checkbox, Table, Thead, Tbody, Tr, Th, Td,
-  Flex, GridItem, Grid, Tag, Wrap, Spinner, Stack, Heading,
-  chakra,
+  CheckboxGroup, Checkbox, Flex, GridItem, Grid, Tag,
+  Wrap, Heading, chakra,
 } from '@chakra-ui/react'
+import ChapterList from 'ChapterList'
 import { useEffect, useRef, useState } from 'react'
-// import VTT from './w/Raid Guild/on/0/♈/15/@/9/13/‒/9/52/vtt.vtt'
+import Tags from 'Tags'
+import { propsFor, timeFor } from 'utils'
 
 const defaultTags = ['pitch', 'pertinent']
 
-const propsFor = (tag) => {
-  const props = {
-    psych: { bg: '#19FF20' },
-    personal: { bg: 'red' },
-    skippable: { bg: 'pink' },
-    BP: { bg: 'blue', color: 'white' },
-    logistics: { bg: 'orange' },
-    pertinent: { bg: 'green', color: 'white' },
-    pitch: { bg: 'teal', color: 'white' },
-    recommendation: { bg: 'purple', color: 'white' },
-    chatter: { bg: 'darkgray', color: 'white' },
-    tangential: { bg: 'cyan' },
-  }
-  if(props[tag]) return props[tag]
-  return { bg: 'yellow' }
-}
-
 const Video = chakra('video')
 
-export const timeFor = (str) => {
-  console.info(str)
-  return (
-  (str) ? ((() => {
-    const [secondsStr, minutesStr, ...hoursStrs] = str.split(':').reverse()
-    console.info(secondsStr, minutesStr, hoursStrs)
-    let [seconds, minutes, hours] = (
-      [parseFloat(secondsStr), parseFloat(minutesStr ?? 0), parseFloat(hoursStrs[0] ?? 0)]
-    )
-    if(hoursStrs.length > 1) {
-      console.warn(`Got ${hoursStrs} for hours parsing ${str}.`)
-    }
-    minutes += hours * 60
-    return seconds + minutes * 60
-  })()) : (
-    undefined
-  )
-  )
-}
-
-export const stringFor = (time) => (
-  (time !== undefined) ? (
-    `${
-      Math.floor(time / 60)
-    }:${
-      (time % 60).toString().padStart(2, '0')
-    }`
-  ) : (
-    undefined
-  )
-)
-
-export const Row = ({
-  title, index, tags = [], currentTime, end, head, paused = true,
-  percent = null, seekTo, ...props
-}) => {
-  const cell = useRef(null)
-  const seekListener = (evt) => {
-    if(cell.current) {
-      console.info(cell)
-    }
-  }
-
-  return (
-    <Tr
-      align="center"
-      {...propsFor(tags[0])}
-      {...props}
-    >
-      <Td>{index}</Td>
-      <Td
-        ref={cell}
-        bg={percent ? (
-          `linear-gradient(
-            to right,
-            red,
-            red ${percent}%,
-            transparent ${percent + 1}%
-          )`
-        ) : ('transparent')}
-        onClick={seekListener}
-      >
-        {(() => (
-          `${
-            stringFor(currentTime)
-          }${
-            end ? `+${stringFor(end - currentTime)}` : '‒'
-          }`
-        ))()}
-      </Td>
-      <Td>{title}</Td>
-      <Td><Stack>
-        {tags.map((t, i) => (
-          <Tag
-            key={i}
-            style={{ textAlign: 'center' }}
-            border="2px solid #00000066"
-            {...propsFor(t)}
-            display="block"
-            pt={0.5}
-          >{t}</Tag>
-        ))}
-      </Stack></Td>
-      <Td>{(currentTime < head && head < end && !paused) ? (
-        <Spinner/>
-      ) : (
-        paused ? '▶️' : '⏸️'
-      )}</Td>
-    </Tr>
-  )
-}
-
-export default ({ chapters = {}, title, src }) => {
+export default ({ stops = {}, title, src }) => {
   const vid = useRef()
-  const current = useRef()
-  const [active, setActive] = useState(
+  const info = useRef()
+  const [activeTags, setActiveTags] = useState(
     Object.fromEntries(
       defaultTags.map(t => [t, true])
     )
   )
   const [time, setTime] = useState(0)
+  const [chapters, setChapters] = (
+    useState(Object.values(stops))
+  )
 
+  const seekTo = (time) => {
+    vid.current.currentTime = time
+  }
   const clicked = (elem) => {
-    const currentClicked = current.current === elem
+    const currentClicked = info.current === elem
     if(currentClicked && !vid.current.paused) {
       vid.current.pause()
     } else if(currentClicked && vid.current.paused) {
@@ -145,21 +43,23 @@ export default ({ chapters = {}, title, src }) => {
 
   useEffect(() => {
     let prev
-    for(let [time, info] of Object.entries(chapters)) {
-      info.start = timeFor(time)
-      if(prev) {
-        prev.end = timeFor(time)
-      }
-      prev = info
-    }
-  }, [chapters])
+    setChapters(
+      Object.entries(stops).map(([time, chapter]) => {
+        chapter.start = timeFor(time)
+        if(prev) {
+          prev.end = chapter.start
+        }
+        return prev = chapter
+      })
+    )
+  }, [stops])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    const chapter = params.get('chapter')
-    if(chapter) {
-      vid.current.currentTime = (
-        chapters[Object.keys(chapters)[parseInt(chapter)]].start
+    const chapterIdx = params.get('chapter')
+    if(chapterIdx) {
+      seekTo(
+        chapters[parseInt(chapterIdx)].start
       )
     }
   }, [chapters])
@@ -169,13 +69,13 @@ export default ({ chapters = {}, title, src }) => {
     const update = (evt) => {
       const time = evt.target.currentTime
       setTime(time)
-      let now = Object.values(chapters).find(
+      let now = chapters.find(
         (info) => info.start < time && time <= info.end
       )
-      if(now && !now.tags?.some(t => active[t])) {
-        const nxt = Object.values(chapters).find(
+      if(now && !now.tags?.some(t => activeTags[t])) {
+        const nxt = chapters.find(
           (info) => (
-            info.tags?.some(t => active[t])
+            info.tags?.some(t => activeTags[t])
             && info.start >= time
           )
         )
@@ -184,20 +84,19 @@ export default ({ chapters = {}, title, src }) => {
           now = nxt
         }
       }
-      current.current = now
+      info.current = now
     }
     video.addEventListener('timeupdate', update)
     return () => {
       video.removeEventListener('timeupdate', update)
     }
-  }, [active, chapters])
+  }, [activeTags, chapters])
 
-  let allTags = (
-    Object.values(chapters).map((info) => (
-      info.tags ?? []
-    ))
-  )
-  allTags = [...new Set(allTags.flat())]
+  const allTags = [...new Set(
+    chapters
+    .map(info => info.tags ?? [])
+    .flat()
+  )]
 
   return (
     <Grid
@@ -208,100 +107,28 @@ export default ({ chapters = {}, title, src }) => {
     >
       <GridItem rowSpan={1} colSpan={2}>
         <Heading textAlign="center" p={5}>
-          {current.current?.name ?? title}
+          {info.current?.name ?? title}
         </Heading>
       </GridItem>
-      <GridItem rowSpan={1} colSpan={1}>
-        {allTags.length > 0 && (
-          <CheckboxGroup
-            colorScheme="green"
-          >
-            <Flex>
-              <Checkbox
-                px={8}
-                onChange={(evt) => (
-                  setActive(
-                    Object.fromEntries(
-                      allTags.map((tag) => (
-                        [tag, evt.target.checked]
-                      ))
-                    )
-                  )
-                )}
-              />
-              <Wrap>
-                {allTags.map((t, i) => {
-                  const changed = (evt) => (
-                    setActive((ts) => ({
-                      ...ts,
-                      [t]: evt.target.checked,
-                    }))
-                  )
-                  return (
-                    <Tag key={i} border="2px solid #00000066" {...propsFor(t)}>
-                      <Checkbox key={i} isChecked={active[t]} onChange={changed}>
-                        {t}
-                      </Checkbox>
-                    </Tag>
-                  )
-                })}
-              </Wrap>
-            </Flex>
-          </CheckboxGroup>
-        )}
-      </GridItem>
-      <GridItem rowSpan={2} colSpan={1}>
-        <Table
-          maxH="100vh" overflow="scroll"
-          sx={{ th: { textAlign: 'center' }}}
-        >
-          <Thead>
-            <Tr>
-              <Th>Index</Th>
-              <Th>Time</Th>
-              <Th>Name</Th>
-              <Th>Tags</Th>
-              <Th>Active</Th>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {Object.entries(chapters).map(([_, info], idx) => {
-              if(
-                allTags.length > 0
-                && !info.tags?.some(t => active[t])
-              ) {
-                return null
-              }
-              const {
-                name: title, tags, end, start: currentTime
-              } = info
-              let percent = null
-              if(current.current === info) {
-                percent = 100 * ((time - currentTime) / (end - currentTime)) 
-              }
-              return (
-                <Row
-                  key={idx}
-                  index={idx}
-                  head={time}
-                  {...{ src, title, tags, end, currentTime, percent }}
-                  paused={!vid.current || vid.current.paused}
-                  onClick={() => clicked(info)}
-                />
-              )
-            })}
-          </Tbody>
-        </Table>
-      </GridItem>
-      <GridItem rowSpan={1} colSpan={1}>
+      <GridItem rowSpan={1} colSpan={2}>
         <Video
           controls
           ref={vid}
-          w="100%" minW={64}
+          w="100%" minW={64} maxH="95vh"
         >
           <source {...{ src, type: 'video/mp4' }}/>
           {/* {VTT && <track default src={VTT}/>} */}
         </Video>
+      </GridItem>
+      <GridItem rowSpan={1} colSpan={1}>
+        <Tags {...{ allTags, activeTags, setActiveTags }}/>
+      </GridItem>
+      <GridItem rowSpan={2} colSpan={1}>
+        <ChapterList
+          {...{ chapters, time, seekTo }}
+          activeChapter={info.current}
+          video={vid.current}
+        />
       </GridItem>
     </Grid>
   )

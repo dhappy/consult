@@ -1,12 +1,16 @@
-import ChapteredVideo from 'ChapteredVideo'
-import * as video from './w/MetaGame’s Builders/on/1442/12/25/@/1/27/‒/1/77/js'
+import View from 'View'
+import New from 'New'
+import ListAvailable from 'ListAvailable'
+import {
+  HashRouter as Router, Switch, Route,
+} from 'react-router-dom'
 
-console.info(video)
-
-export default () => {
-  const { chapters, title, url: src } = video
-
-  return (
-    <ChapteredVideo {...{ chapters, title, src }}/>
-  )
-}
+export default () => (
+  <Router>
+    <Switch>
+      <Route exact path="/new" component={New}/>
+      <Route exact path="/" component={ListAvailable}/>
+      <Route path="/" component={View}/>
+    </Switch>
+  </Router>
+)

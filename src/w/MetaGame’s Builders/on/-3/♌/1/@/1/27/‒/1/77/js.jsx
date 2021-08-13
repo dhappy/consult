@@ -13,7 +13,7 @@ export const title = (
   </>
 )
 
-export const chapters = {
+export const stops = {
   '01:01': {
     name: 'Docker Swarm',
     speakers: ['@dysbulic, @Michiel'],
