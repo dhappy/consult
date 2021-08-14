@@ -12,7 +12,9 @@ const { DID } = require('dids')
 
 const out = 'src/ceramicIds.json'
 const CERAMIC_URL = (
-  process.env.CERAMIC_URL || 'https://d12-a-ceramic.3boxlabs.com'
+  process.env.CERAMIC_URL
+  || 'https://ceramic-clay.3boxlabs.com'
+  || 'https://d12-a-ceramic.3boxlabs.com'
 )
 
 async function run() {
