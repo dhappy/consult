@@ -1,21 +1,11 @@
 import { Link } from '@chakra-ui/react'
 import CID from './cid'
 
-// ToDo: load from App.jsx
-export const timeFor = (str) => (
-  (str) ? ((() => {
-    const [start, ...end] = str.split(':')
-    return parseInt(start) * 60 + parseInt(end)
-  })()) : (
-    undefined
-  )
-)
-
 export const startTime = new Date('2021-04-25T21:55:37-0400')
 export const url = `https://ipfs.io/ipfs/${CID['/']}`
 export const title = 'Raid Guild Initial Consultation Call w/ @joshsdoug'
 
-const baseChapters = {
+const stops = {
   '00:00': {
     name: 'Musical Intro',
     tags: ['skippable']
@@ -185,14 +175,3 @@ const baseChapters = {
     tags: ['skippable'],
   },
 }
-
-let prev
-for(let [time, info] of Object.entries(baseChapters)) {
-  info.start = timeFor(time)
-  if(prev) {
-    prev.end = timeFor(time)
-  }
-  prev = info
-}
-
-export const chapters = baseChapters

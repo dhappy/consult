@@ -1,4 +1,7 @@
+const ethers = require("ethers");
 const { expect } = require("chai");
+
+console.info(ethers)
 
 describe("Greeter", function () {
   it("Should return the new greeting once it's changed", async function () {

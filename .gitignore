@@ -1,11 +1,11 @@
-node_modules
+node_modules/
 build/
 .eslintcache
 ipfs/
 .vscode/
 
-node_modules
-
-#Hardhat files
-cache
-artifacts
+# Hardhat files
+cache/
+artifacts/
+private.key
+public/page_meta.png

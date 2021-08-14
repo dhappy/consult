@@ -1,12 +1,12 @@
 {
   "name": "consult",
-  "description": "tools for breakdown of a video topically",
-  "main": "src/index.jsx",
+  "description": "Tools for breakdown of a video topically.",
+  "module": "src/index.jsx",
   "repository": "https://github.com/dysbulic/consult",
   "homepage": "https://dysbulic.github.io/consult/",
-  "author": "Will “Δυς” Holcomb <dys@dhappy.org>",
+  "author": "W.J. “δυς” H. <dys@dhappy.org>",
   "license": "MIT",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "dependencies": {
     "@3id/connect": "^0.1.6",
@@ -40,7 +40,9 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "deploy": "gh-pages -d build/"
+    "deploy": "gh-pages -d build/",
+    "contract:compile": "npx hardhat compile",
+    "contract:deploy": "npx hardhat run scripts/deploy.js"
   },
   "eslintConfig": {
     "extends": [
@@ -70,6 +72,8 @@
     "ethereum-waffle": "^3.0.0",
     "ethers": "^5.0.0",
     "gh-pages": "^3.2.3",
-    "hardhat": "^2.6.0"
+    "hardhat": "^2.6.0",
+    "hardhat-abi-exporter": "^2.2.1",
+    "mocha": "^9.0.3"
   }
 }
