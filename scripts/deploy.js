@@ -25,15 +25,15 @@ async function main() {
   await publisher.deployed()
 
   const address = { address: publisher.address }
-  fs.writeFile(
-    OUT,
-    JSON.stringify(address, null, 2),
-    (err) => {
-      if(err) {
-        console.error(err)
-      }
-    },
-  )
+  try {
+    console.info({address, str: JSON.stringify(address, null, 2)})
+    fs.writeFileSync(
+      OUT,
+      JSON.stringify(address, null, 2),
+    )
+  } catch(err) {
+    console.error(err)
+  }
   console.log(`Saved contract address ${publisher.address} to ${OUT}`)
 }
 
