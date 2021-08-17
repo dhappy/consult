@@ -1,11 +1,11 @@
-import { Link } from '@chakra-ui/react'
 import CID from './cid'
+import { toISOString } from 'utils'
 
 export const startTime = new Date('2021-04-25T21:55:37-0400')
 export const url = `https://ipfs.io/ipfs/${CID['/']}`
 export const title = 'Raid Guild Initial Consultation Call w/ @joshsdoug'
 
-const stops = {
+export const stops = {
   '00:00': {
     name: 'Musical Intro',
     tags: ['skippable']
@@ -66,7 +66,7 @@ const stops = {
     name: 'Stretch Goals',
     tags: ['skippable'],
   },
-  '26:45': {
+  '25:45': {
     name: 'Anarchism',
     tags: ['pertinent'],
   },
@@ -124,9 +124,7 @@ const stops = {
   },
   '41:25': {
     name: (
-      <Link
-        href="https://ipfs.io/ipfs/QmTAdBoj7guxtLroQrdFTHrA1M2vSa37VQZoh4D77rdANc/Donnie.Darko.2001.mp4"
-      >Donnie Darko</Link>
+      '[Donnie Darko](https://ipfs.io/ipfs/QmTAdBoj7guxtLroQrdFTHrA1M2vSa37VQZoh4D77rdANc/Donnie.Darko.2001.mp4)'
     ),
     tags: ['recommendation'],
   },
@@ -174,4 +172,11 @@ const stops = {
     name: 'Dead Air',
     tags: ['skippable'],
   },
+}
+
+export default {
+  title,
+  startTime: toISOString(startTime),
+  source: url,
+  stops,
 }

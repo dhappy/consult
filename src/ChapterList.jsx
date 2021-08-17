@@ -1,7 +1,8 @@
 import {
-  Spinner, Stack, Table, Tag, Tbody, Td, Th, Thead, Tr,
+  Spinner, Stack, Table, Tag, Tbody, Td, textDecoration, Th, Thead, Tr,
 } from '@chakra-ui/react'
 import { useRef, useState } from 'react'
+import Markdown from 'react-markdown'
 import { propsFor, stringFor } from 'utils'
 import PauseIcon from 'pause.png'
 import PlayIcon from 'play.png'
@@ -78,7 +79,10 @@ export const Row = ({
       align="center"
       {...propsFor(chapter)}
       {...props}
-      sx={{ cursor: `url(${cursor}), auto`}}
+      sx={{
+        cursor: `url(${cursor}), auto`,
+        a: { textDecoration: 'underline' },
+      }}
     >
       <Td onClick={() => clicked(chapter)}>{index}</Td>
       <Td
@@ -95,7 +99,9 @@ export const Row = ({
           end ? `+${stringFor(end - currentTime)}` : '‒'
         }`}
       </Td>
-      <Td onClick={() => clicked(chapter)}>{title}</Td>
+      <Td onClick={() => clicked(chapter)}>
+        <Markdown>{title}</Markdown>
+      </Td>
       <Td onClick={() => clicked(chapter)}><Stack>
         {tags.map((t, i) => (
           <Tag
@@ -123,8 +129,6 @@ export default ({
   chapters = [], allTags = [], activeTags, time, activeChapter,
   video, seekTo,
 }) => {
-  console.info({ chapters })
-
   return (
     <Table
       maxH="100vh" overflow="scroll"

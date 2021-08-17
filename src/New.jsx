@@ -5,7 +5,6 @@ import { DID } from 'dids'
 import {
   ThreeIdConnect, EthereumAuthProvider,
 } from '@3id/connect'
-import ids from 'ceramicIds.json'
 import {
   Box, Button, Flex, FormControl, FormLabel, IconButton, Input, ListItem, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, Spinner, Stack, Tab, TabList, TabPanel, TabPanels, Tabs, UnorderedList, useDisclosure,
 } from '@chakra-ui/react'
@@ -15,8 +14,13 @@ import { useEffect, useState, useMemo } from 'react'
 import { TileDocument } from '@ceramicnetwork/stream-tile'
 import { create as ipfsHTTPClient } from 'ipfs-http-client'
 
+import ids from 'ceramicIds.json'
+import V1 from 'w/MetaGame’s Builders/on/-3/♌/1/@/1/27/‒/1/77/js'
+import V2 from 'w/Raid Guild/on/0/♈/15/@/9/13/‒/9/52/js'
+
 const CERAMIC_URL = (
   process.env.CERAMIC_URL
+  || 'https://clay-ceramic.3boxlabs.com'
   || 'http://localhost:7007'
   || 'https://d12-a-ceramic.3boxlabs.com'
 )
@@ -28,7 +32,6 @@ const DEF = ids.definitions.ConsultVideoIndex
 
 const NewVideoModal = ({
   isOpen, onClose, setVideos, ceramic, idx, ipfs,
-
 }) => {
   const [startTime, setStartTime] = (
     useState((new Date()).toISOString())
@@ -145,33 +148,33 @@ export default () => {
   const [videos, setVideos] = useState([])
   const { isOpen, onOpen, onClose } = useDisclosure()
   
-  useEffect(() => {
-    (async () => {
-      const threeIdConnect = new ThreeIdConnect()
-      const addresses = await window.ethereum.enable()
-      const authProvider = new EthereumAuthProvider(
-        window.ethereum, addresses[0]
-      )
-      await threeIdConnect.connect(authProvider)
-      const did = new DID({
-        provider: threeIdConnect.getDidProvider(),
-        resolver: ThreeIdResolver.getResolver(ceramic)
-      })
-      await did.authenticate()
-      ceramic.did = did
-      console.info('DID', did.id)
-    })()
-  }, [])
+  // useEffect(() => {
+  //   (async () => {
+  //     const threeIdConnect = new ThreeIdConnect()
+  //     const addresses = await window.ethereum.enable()
+  //     const authProvider = new EthereumAuthProvider(
+  //       window.ethereum, addresses[0]
+  //     )
+  //     await threeIdConnect.connect(authProvider)
+  //     const did = new DID({
+  //       provider: threeIdConnect.getDidProvider(),
+  //       resolver: ThreeIdResolver.getResolver(ceramic)
+  //     })
+  //     await did.authenticate()
+  //     ceramic.did = did
+  //     console.info('DID', did.id)
+  //   })()
+  // }, [])
 
-  useEffect(() => {
-    if(ceramic && idx) {
-      (async () => {
-        const videos = await idx.get(DEF)
-        console.info('SET VIDS', videos)
-        setVideos(Object.keys(videos))
-      })()
-    }
-  }, [ceramic, idx, DEF])
+  // useEffect(() => {
+  //   if(ceramic && idx) {
+  //     (async () => {
+  //       const videos = await idx.get(DEF)
+  //       console.info('SET VIDS', videos)
+  //       setVideos(Object.keys(videos))
+  //     })()
+  //   }
+  // }, [ceramic, idx, DEF])
 
   const remove = async (id) => {
     const videos = (await idx.get(DEF)) ?? {}
@@ -185,14 +188,64 @@ export default () => {
     setVideos([])
   }
 
-  console.info({ videos })
+  const loadVideos = async () => {
+    const CERAMIC_URL = (
+      process.env.CERAMIC_URL
+      || 'http://localhost:7007'
+      || 'https://ceramic-clay.3boxlabs.com'
+    )
+    const ceramic = new Ceramic(CERAMIC_URL)
+    const idx = new IDX({ ceramic, autopin: true })
+    const threeIdConnect = new ThreeIdConnect()
+    const addresses = await window.ethereum.enable()
+    console.info('adrs', addresses)
+    const authProvider = new EthereumAuthProvider(
+      window.ethereum, addresses[0]
+    )
+    await threeIdConnect.connect(authProvider)
+    const did = new DID({
+      provider: threeIdConnect.getDidProvider(),
+      resolver: ThreeIdResolver.getResolver(ceramic),
+    })
+    await did.authenticate()
+    ceramic.did = did
+    console.info(ceramic.did.id)
+
+    const metas = Object.fromEntries(
+      await Promise.all(
+        [V1, V2].map(async (video) => {
+          const anchorless = video.title.replace(
+            /\[([^\]]+)\]\([^)]+\)/g, (_str, $1) => $1
+          )
+          const id = `${video.startTime}: ${anchorless}`
+          const tile = (await TileDocument.create(
+            ceramic,
+            video,
+            {
+              schema: ids.schemas.ConsultVideoMetadata,
+              family: 'Consult Video',
+              controllers: [ceramic.did.id],
+            },
+          ))
+          return [id, tile.id.toUrl()]
+        })
+      )
+    )
+    idx.set(
+      ids.definitions.ConsultVideoIndex,
+      metas,
+    )
+    console.info(metas)
+  }
 
   return (
     <Box align="center" mt={10}>
       <Stack maxW="50rem" align="center">
         <Button
-          w={72} onClick={onOpen}
-          disabled={!ceramic || !idx}
+          w={72}
+          // onClick={onOpen}
+          onClick={loadVideos}
+          //disabled={!ceramic || !idx}
         >
           New Video
         </Button>

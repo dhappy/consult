@@ -1,6 +1,6 @@
 const props = [
   { bg: '#19FF20' },
-  { bg: 'red' },
+  { bg: '#FF0000BB' },
   { bg: 'pink' },
   { bg: 'blue', color: 'white' },
   { bg: 'orange' },
@@ -9,6 +9,7 @@ const props = [
   { bg: 'purple', color: 'white' },
   { bg: 'darkgray', color: 'white' },
   { bg: 'cyan' },
+  { bg: 'black', color: 'red' },
 ]
 const proppedTags = []
 export const propsFor = (info) => {
@@ -20,10 +21,8 @@ export const propsFor = (info) => {
     idx = proppedTags.length
     proppedTags.push(search)
   }
-  if(idx >= proppedTags.length) {
-    return { bg: 'black', color: 'red' }
-  }
-  return proppedTags[idx]
+  idx = idx % props.length
+  return props[idx]
 }
 
 export const timeFor = (str) => (
@@ -59,5 +58,25 @@ export const stringFor = (time) => {
     }:${
       seconds.toString().padStart(2, '0')
     }`
+  )
+}
+
+export const toISOString = (date) => {
+  const tzo = -date.getTimezoneOffset()
+  const dif = tzo >= 0 ? '+' : '-'
+  const pad = (num) => {
+    const norm = Math.floor(Math.abs(num));
+    return (norm < 10 ? '0' : '') + norm;
+  }
+
+  return (
+    date.getFullYear()
+    + '-' + pad(date.getMonth() + 1)
+    + '-' + pad(date.getDate())
+    + 'T' + pad(date.getHours())
+    + ':' + pad(date.getMinutes())
+    + ':' + pad(date.getSeconds())
+    + dif + pad(tzo / 60)
+    + ':' + pad(tzo % 60)
   )
 }

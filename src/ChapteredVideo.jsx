@@ -1,9 +1,9 @@
 import {
-  CheckboxGroup, Checkbox, Flex, GridItem, Grid, Tag,
-  Wrap, Heading, chakra,
+  GridItem, Grid, Heading, chakra,
 } from '@chakra-ui/react'
 import ChapterList from 'ChapterList'
 import { useEffect, useRef, useState } from 'react'
+import Markdown from 'react-markdown'
 import Tags from 'Tags'
 import { timeFor } from 'utils'
 
@@ -101,31 +101,43 @@ export default ({ stops = {}, title, src }) => {
   return (
     <Grid
       as="form"
-      templateRows="0fr 1fr 0fr"
+      templateRows="0fr 0fr 0fr"
       templateColumns={['1fr', '1fr 0fr']}
       maxH="95vh"
     >
-      <GridItem rowSpan={1} colSpan={2}>
+      <GridItem id="title" rowSpan={1} colSpan={2}>
         <Heading textAlign="center" p={5}>
-          {info.current?.name ?? title}
+          <Markdown>
+            {info.current?.name ?? title}
+          </Markdown>
         </Heading>
       </GridItem>
-      <GridItem rowSpan={1} colSpan={2}>
+      <GridItem
+        id="video"
+        rowSpan={1} colSpan={2}
+        maxH="50vh"
+      >
         <Video
           controls
           ref={vid}
-          w="100%" minW={64} maxH="95vh"
+          w="100%" maxH="100%"
         >
           <source {...{ src, type: 'video/mp4' }}/>
           {/* {VTT && <track default src={VTT}/>} */}
         </Video>
       </GridItem>
-      <GridItem rowSpan={1} colSpan={1}>
+      <GridItem id="tags" rowSpan={1} colSpan={1}>
         <Tags {...{ allTags, activeTags, setActiveTags }}/>
       </GridItem>
-      <GridItem rowSpan={2} colSpan={1}>
+      <GridItem id="chapters" rowSpan={2} colSpan={1}>
         <ChapterList
-          {...{ chapters, time, seekTo }}
+          {...{
+            chapters,
+            time,
+            seekTo,
+            allTags,
+            activeTags,
+          }}
           activeChapter={info.current}
           video={vid.current}
         />

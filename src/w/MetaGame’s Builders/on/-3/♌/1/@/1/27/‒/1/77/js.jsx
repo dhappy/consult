@@ -1,46 +1,38 @@
 import CID from './cid'
+import { toISOString } from 'utils'
 
 // Should be ذو الحجة, but the bidi isn't cooperating in VS Code
 export const id = 'tip:w/MetaGame’s Builders/on/1442/Dhuʻl-Hijjah/25/@/1/26/‒/1/77/'
 export const startTime = new Date('2021-08-04T10:00:30-0400')
 export const url = `https://ipfs.io/ipfs/${CID['/']}`
 export const title = (
-  <>
-    {"Builders' Align for the Week of "}
-    <a href='//z13cdn.web.app'>-1442/12/22</a>
-    {" ‒ "}
-    <a href='//z13cdn.web.app'>28</a>
-  </>
+  "Builders' Align for the Week of 1442/12/22 ‒ 28"
 )
 
 export const stops = {
   '01:01': {
     name: 'Docker Swarm',
-    speakers: ['@dysbulic, @Michiel'],
+    speakers: ['@dysbulic', '@Michiel'],
   },
   '02:16': {
     name: 'Vercel',
-    speakers: ['@dysbulic, @Michiel'],
+    speakers: ['@dysbulic', '@Michiel'],
   },
   '03:24': {
     name: 'Service User',
-    speakers: ['@dysbulic, @Michiel'],
-  },
-  '04:19': {
-    name: 'Rook Enters',
-    speakers: ['@Rook, @Michiel'],
+    speakers: ['@dysbulic', '@Michiel'],
   },
   '04:23': {
     name: "Rook's Intro",
-    speakers: ['@Rook, @Michiel'],
+    speakers: ['@Rook', '@Michiel'],
   },
   '10:24': {
     name: 'TomBalls Enters',
-    speakers: ['@dysbulic, @Michiel'],
+    speakers: ['@dysbulic', '@Michiel'],
   },
   '11:55': {
     name: 'dan13ram Enters',
-    speakers: ['@dan13ram, @Michiel'],
+    speakers: ['@dan13ram', '@Michiel'],
   },
   '12:19': {
     name: 'Call Starts',
@@ -105,4 +97,11 @@ export const stops = {
     name: 'stepan Presents',
     speakers: ['@stepan'],
   }
+}
+
+export default {
+  title,
+  startTime: toISOString(startTime),
+  source: url,
+  stops,
 }
