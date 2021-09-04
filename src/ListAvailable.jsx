@@ -35,12 +35,14 @@ export default () => {
   )
 
   const events = useCallback(async () => {
+    const [address] = await window.ethereum.enable()
     const filter = contract.filters.CAIP_10()
-    const events = await contract.queryFilter(filter, -30000)
+    const events = await contract.queryFilter(filter, -90000)
     const addrs = [...new Set(
-      events.map(
+      ...events.map(
         ({ args: { caip10: addr } }) => addr
-      )
+      ),
+      [`eip155:1:${address}`],
     )]
 
     const CERAMIC_URL = (
@@ -51,7 +53,6 @@ export default () => {
     const ceramic = new Ceramic(CERAMIC_URL)
     const idx = new IDX({ ceramic, autopin: true })
     const threeIdConnect = new ThreeIdConnect()
-    const [address, ..._rest] = await window.ethereum.enable()
     const authProvider = new EthereumAuthProvider(
       window.ethereum, address
     )
@@ -63,26 +64,28 @@ export default () => {
     await did.authenticate()
     ceramic.did = did
 
-    console.info({ addrs })
+    console.info({ addrs, address })
 
     const docs = await Promise.all(
       addrs.map(async (caip10) => {
-        let id = caip10
-        const match = caip10.match(
+        let id = caip10.toLowerCase()
+        const match = id.match(
           /^(eip155):(\d+):(.+)$/
         )
         if(match) {
           id = `${match[3]}@${match[1]}:${match[2]}`
         }
-        console.info({ id })
         const caip = await (
           Caip10Link.fromAccount(ceramic, id)
         )
+        console.info({ id, caip })
         const did = caip.did
+        console.info({ did })
         const index = await idx.get(
           ceramicIds.definitions.ConsultVideoIndex,
           did,
         )
+        console.info({ did, index })
         const eth = id.replace(/@.*/, '')
         const ens = await ensProvider.lookupAddress(eth)
         return (

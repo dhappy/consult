@@ -23,6 +23,7 @@ export default () => {
         const tile = await (
           TileDocument.load(ceramic, source)
         )
+        console.info({ source, tile: tile.content })
         setInfo(tile.content)
       } else {
         setInfo(await import(`./${source}/js`))
@@ -40,6 +41,8 @@ export default () => {
   }
 
   console.info({ info })
-  const { title, stops, source: src } = info
-  return <ChapteredVideo {...{ title, stops, src }}/>
+  const { title, stops, source: src, startTime } = info
+  return <ChapteredVideo {...{
+    title, stops, src, startTime,
+  }}/>
 }

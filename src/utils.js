@@ -61,22 +61,29 @@ export const stringFor = (time) => {
   )
 }
 
-export const toISOString = (date) => {
+export const toISOString = (date, opts = {}) => {
   const tzo = -date.getTimezoneOffset()
   const dif = tzo >= 0 ? '+' : '-'
   const pad = (num) => {
     const norm = Math.floor(Math.abs(num));
     return (norm < 10 ? '0' : '') + norm;
   }
+  const dateSeparator = opts.dateSeparator ?? '-'
 
-  return (
+  let ret = (
     date.getFullYear()
-    + '-' + pad(date.getMonth() + 1)
-    + '-' + pad(date.getDate())
+    + dateSeparator + pad(date.getMonth() + 1)
+    + dateSeparator + pad(date.getDate())
     + 'T' + pad(date.getHours())
     + ':' + pad(date.getMinutes())
-    + ':' + pad(date.getSeconds())
-    + dif + pad(tzo / 60)
-    + ':' + pad(tzo % 60)
   )
+  if(opts.seconds ?? true) {
+    ret += ':' + pad(date.getSeconds())
+  }
+  ret += `(ᴜᴛᴄ${dif}${Math.abs(tzo / 60)}`
+  if((opts.tzMinutes ?? true) || tzo % 60 !== 0) {
+    ret += ':' + pad(tzo % 60)
+  }
+  ret += ')'
+  return ret
 }

@@ -2,16 +2,18 @@ import {
   GridItem, Grid, Heading, chakra,
 } from '@chakra-ui/react'
 import ChapterList from 'ChapterList'
+import { useMemo } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import Markdown from 'react-markdown'
 import Tags from 'Tags'
+import Tracker from 'Tracker'
 import { timeFor } from 'utils'
 
 const defaultTags = ['pitch', 'pertinent']
 
 const Video = chakra('video')
 
-export default ({ stops = {}, title, src }) => {
+export default ({ stops = {}, title, src, startTime }) => {
   const vid = useRef()
   const info = useRef()
   const [activeTags, setActiveTags] = useState(
@@ -20,13 +22,26 @@ export default ({ stops = {}, title, src }) => {
     )
   )
   const [time, setTime] = useState(0)
-  const [chapters, setChapters] = (
-    useState(Object.values(stops))
+  const chapters = useMemo(
+    () => {
+      let prev
+      return (
+        Object.entries(stops).map(([time, chapter]) => {
+          chapter.start = timeFor(time)
+          if(prev) {
+            prev.end = chapter.start
+          }
+          return prev = chapter
+        })
+      )
+    },
+    [stops]
   )
 
   const seekTo = (time) => {
     vid.current.currentTime = time
   }
+
   const clicked = (elem) => {
     const currentClicked = info.current === elem
     if(currentClicked && !vid.current.paused) {
@@ -42,19 +57,6 @@ export default ({ stops = {}, title, src }) => {
   }
 
   useEffect(() => {
-    let prev
-    setChapters(
-      Object.entries(stops).map(([time, chapter]) => {
-        chapter.start = timeFor(time)
-        if(prev) {
-          prev.end = chapter.start
-        }
-        return prev = chapter
-      })
-    )
-  }, [stops])
-
-  useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const chapterIdx = params.get('chapter')
     if(chapterIdx) {
@@ -62,7 +64,7 @@ export default ({ stops = {}, title, src }) => {
         chapters[parseInt(chapterIdx)].start
       )
     }
-  }, [chapters])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const video = vid.current
@@ -111,6 +113,12 @@ export default ({ stops = {}, title, src }) => {
             {info.current?.name ?? title}
           </Markdown>
         </Heading>
+      </GridItem>
+      <GridItem id="tracker" rowSpan={1} colSpan={2}>
+        <Tracker
+          {...{ chapters, startTime }}
+          length={vid.current?.duration}
+        />
       </GridItem>
       <GridItem
         id="video"
