@@ -3,17 +3,17 @@ import Ceramic from '@ceramicnetwork/http-client'
 import { TileDocument } from '@ceramicnetwork/stream-tile'
 import { Heading, Spinner, Stack } from '@chakra-ui/react'
 import { useLocation } from 'react-router'
-import ChapteredVideo from 'ChapteredVideo'
+import MarkedVideo from 'MarkedVideo'
 import { useEffect } from 'react'
 
 export default () => {
   const { pathname: path } = useLocation()
-  const source = path.replace(/^\/?(.+?)\/?$/, '$1')
+  const metadata = path.replace(/^\/?(.+?)\/?$/, '$1')
   const [info, setInfo] = useState(null)
 
   useEffect(() => {
     (async () => {
-      if(source.startsWith('ceramic://')) {
+      if(metadata.startsWith('ceramic://')) {
         const CERAMIC_URL = (
           process.env.CERAMIC_URL
           || 'http://localhost:7007'
@@ -21,28 +21,37 @@ export default () => {
         )
         const ceramic = new Ceramic(CERAMIC_URL)
         const tile = await (
-          TileDocument.load(ceramic, source)
+          TileDocument.load(ceramic, metadata)
         )
-        console.info({ source, tile: tile.content })
+        console.info({ metadata, tile: tile.content })
         setInfo(tile.content)
+      } else if(metadata.startsWith('ipfs://')) {
+        setInfo({
+          startsAt: new Date(),
+          stops: [{
+            type: 'title',
+          }],
+          source: metadata,
+        })
       } else {
-        setInfo(await import(`./${source}/js`))
+        const ret = await import(`./${metadata}/js`)
+        setInfo(ret)
       }
     })()
-  }, [source])
+  }, [metadata])
 
   if(!info) {
     return (
       <Stack align="center" mt={10}>
-        <Heading size="sm">{source}</Heading>
+        <Heading size="sm">{metadata}</Heading>
         <Spinner/>
       </Stack>
     )
   }
 
   console.info({ info })
-  const { title, stops, source: src, startTime } = info
-  return <ChapteredVideo {...{
-    title, stops, src, startTime,
+  const { title, stops, source, startsAt } = info
+  return <MarkedVideo {...{
+    title, stops, source, startsAt,
   }}/>
 }

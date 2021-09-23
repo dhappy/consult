@@ -78,14 +78,17 @@ export default () => {
         const caip = await (
           Caip10Link.fromAccount(ceramic, id)
         )
-        console.info({ id, caip })
         const did = caip.did
-        console.info({ did })
+        if(did === null) {
+          throw new Error(`No DID Found for ${id}.`)
+        }
         const index = await idx.get(
           ceramicIds.definitions.ConsultVideoIndex,
           did,
         )
-        console.info({ did, index })
+        if(index === null) {
+          throw new Error(`No Index of Videos Found for ${did}.`)
+        }
         const eth = id.replace(/@.*/, '')
         const ens = await ensProvider.lookupAddress(eth)
         return (

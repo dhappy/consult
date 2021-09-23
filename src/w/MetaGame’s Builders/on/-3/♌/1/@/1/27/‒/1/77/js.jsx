@@ -1,5 +1,5 @@
 import CID from './cid'
-import { toISOString } from 'utils'
+import { isoStringFor } from 'utils'
 
 // Should be ذو الحجة, but the bidi isn't cooperating in VS Code
 export const id = 'tip:w/MetaGame’s Builders/on/1442/Dhuʻl-Hijjah/25/@/1/26/‒/1/77/'
@@ -101,7 +101,7 @@ export const stops = {
 
 export default {
   title,
-  startTime: toISOString(startTime),
+  startTime: isoStringFor(startTime),
   source: url,
   stops,
 }

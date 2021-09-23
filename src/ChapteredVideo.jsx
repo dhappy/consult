@@ -22,6 +22,7 @@ export default ({ stops = {}, title, src, startTime }) => {
     )
   )
   const [time, setTime] = useState(0)
+  const [duration, setDuration] = useState(null)
   const chapters = useMemo(
     () => {
       let prev
@@ -94,6 +95,15 @@ export default ({ stops = {}, title, src, startTime }) => {
     }
   }, [activeTags, chapters])
 
+  useEffect(() => {
+    const video = vid.current
+    const set = () => setDuration(video.duration)
+    video.addEventListener('loadedmetadata', set)
+    return () => {
+      video.removeEventListener('loadedmetadata', set)
+    }
+  }, [])
+
   const allTags = [...new Set(
     chapters
     .map(info => info.tags ?? [])
@@ -117,7 +127,7 @@ export default ({ stops = {}, title, src, startTime }) => {
       <GridItem id="tracker" rowSpan={1} colSpan={2}>
         <Tracker
           {...{ chapters, startTime }}
-          length={vid.current?.duration}
+          length={duration}
         />
       </GridItem>
       <GridItem

@@ -1,5 +1,5 @@
 import CID from './cid'
-import { toISOString } from 'utils'
+import { isoStringFor } from 'utils'
 
 export const startTime = new Date('2021-04-25T21:55:37-0400')
 export const url = `https://ipfs.io/ipfs/${CID['/']}`
@@ -176,7 +176,7 @@ export const stops = {
 
 export default {
   title,
-  startTime: toISOString(startTime),
+  startTime: isoStringFor(startTime),
   source: url,
   stops,
 }

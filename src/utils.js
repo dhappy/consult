@@ -25,6 +25,17 @@ export const propsFor = (info) => {
   return props[idx]
 }
 
+export const durationFor = (str) => {
+  if(typeof str !== 'string') {
+    throw new Error(`Bad Argument: expected string, got ${typeof str}`)
+  }
+  const [from, to = from] = str.split('‒').map(timeFor)
+  return {
+    startsOffset: from,
+    duration: to - from,
+  }
+}
+
 export const timeFor = (str) => (
   (str) ? ((() => {
     const [secondsStr, minutesStr, ...hoursStrs] = str.split(':').reverse()
@@ -61,7 +72,7 @@ export const stringFor = (time) => {
   )
 }
 
-export const toISOString = (date, opts = {}) => {
+export const isoStringFor = (date, opts = {}) => {
   const tzo = -date.getTimezoneOffset()
   const dif = tzo >= 0 ? '+' : '-'
   const pad = (num) => {
@@ -80,7 +91,7 @@ export const toISOString = (date, opts = {}) => {
   if(opts.seconds ?? true) {
     ret += ':' + pad(date.getSeconds())
   }
-  ret += `(ᴜᴛᴄ${dif}${Math.abs(tzo / 60)}`
+  ret += `​(ᴜᴛᴄ${dif}${Math.abs(tzo / 60)}`
   if((opts.tzMinutes ?? true) || tzo % 60 !== 0) {
     ret += ':' + pad(tzo % 60)
   }
