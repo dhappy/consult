@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Button, Flex, Heading, ListItem, Spinner, Stack, UnorderedList } from "@chakra-ui/react";
+import { Heading, ListItem, Spinner, Stack, UnorderedList } from "@chakra-ui/react";
 import { ethers } from 'ethers'
 import Ceramic from '@ceramicnetwork/http-client'
 import { IDX } from '@ceramicstudio/idx'
@@ -105,12 +105,14 @@ export default () => {
 
   useEffect(() => events(), [events])
 
+  /*
   const pub = () => {
     const caip10 = 'eip155:1:0x615b044b6ccb048532bcf99aadf619d7fdd2aa01'
     const plusSigner = contract.connect(provider.getSigner())
     plusSigner.publish(caip10)
   }
-
+  */
+ 
   return (
     !docs ? (
       <Stack align="center" mt={12}>

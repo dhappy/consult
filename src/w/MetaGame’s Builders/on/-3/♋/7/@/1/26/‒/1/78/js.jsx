@@ -1,28 +1,4 @@
 import CID from './cid'
-// import ThreeIdResolver from '@ceramicnetwork/3id-did-resolver'
-// import Ceramic from '@ceramicnetwork/http-client'
-// import { IDX } from '@ceramicstudio/idx'
-// import { DID } from 'dids'
-// import {
-//   ThreeIdConnect, EthereumAuthProvider,
-// } from '@3id/connect'
-// import ids from 'docIds.json'
-
-const CERAMIC_URL = (
-  process.env.CERAMIC_URL
-  || 'http://localhost:7007'
-  || 'https://d12-a-ceramic.3boxlabs.com'
-)
-
-// ToDo: load from App.jsx
-export const timeFor = (str) => (
-  (str) ? ((() => {
-    const [start, ...end] = str.split(':')
-    return parseInt(start) * 60 + parseInt(end)
-  })()) : (
-    undefined
-  )
-)
 
 export const id = 'tip:w/MetaGame’s Builders/on/-3/♋/7/@/1/26/‒/1/78/'
 export const startTime = new Date('2021-07-14T10:00:30-0400')

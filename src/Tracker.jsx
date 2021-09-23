@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { isoStringFor } from 'utils'
 
 const line = chakra(SVGLineElement)
-const polyline = chakra(SVGPolylineElement)
+// const polyline = chakra(SVGPolylineElement)
 
 export default ({ chapters, length, startTime }) => {
   const start = new Date(startTime)

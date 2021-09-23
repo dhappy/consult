@@ -1,5 +1,5 @@
 import {
-  Spinner, Stack, Table, Tag, Tbody, Td, textDecoration, Th, Thead, Tr,
+  Spinner, Stack, Table, Tag, Tbody, Td, Th, Thead, Tr,
 } from '@chakra-ui/react'
 import { useRef, useState } from 'react'
 import Markdown from 'react-markdown'

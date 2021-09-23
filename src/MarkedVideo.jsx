@@ -1,6 +1,6 @@
 import {
   Box, Button, ButtonGroup, Flex, GridItem, Grid, Heading,
-  Stack, Spacer, Spinner, Text, chakra,
+  Stack, Spacer, Spinner, chakra,
 } from '@chakra-ui/react'
 import { useEffect, useRef, useState, useMemo } from 'react'
 // import Markdown from 'react-markdown'
@@ -20,10 +20,6 @@ const newNode = (obj = {}) => (
   Object.assign(
     { id: uuid(), children: [] }, obj
   )
-)
-
-const getNode = (node) => (
-  node.id ? node : newNode(node)
 )
 
 const visit = (node, method) => {
@@ -125,7 +121,7 @@ const Spans = ({ node, duration, count = 1 }) => {
   if (!node) return null
 
   const {
-    id = null, children, startOffset,
+    id, children, startOffset,
     duration: dur, ...rest
   } = node
 
@@ -228,7 +224,8 @@ const Events = ({
   }
 
   const {
-    id = null, children, startOffset, duration: dur, ...rest
+    id, children, startOffset,
+    duration: dur, ...rest
   } = node
 
   if (Object.keys(rest).length === 0) {
@@ -300,24 +297,24 @@ export default ({
   }, [source])
   const [duration, setDuration] = useState(null)
   const vid = useRef()
-  const info = useRef()
-  const [time, setTime] = useState(0)
+  const [/*time*/, setTime] = useState(0)
   const endsAt = useMemo(() => (
     new Date(startsAt.getTime() + duration)
   ), [startsAt, duration])
 
-  const [allStops, setAllStops] = useState()
+  const [/*allStops*/, setAllStops] = useState()
   const [stops, baseSetStops] = useState()
   const setStops = (rootOrFunc) => {
     let root = rootOrFunc
     if (root instanceof Function) {
-      baseSetStops((stops) => (
-        root = root(stops)
-      ))
-    } else {
-      baseSetStops(root)
+      root = root(stops)
+      // baseSetStops((stops) => (
+      //   root = root(stops)
+      // ))
     }
+    baseSetStops(root)
 
+    console.info({ root })
     const children = ({ node }) => (
       node.children.map((child) => (
         [child, children({ node: child })]
@@ -349,6 +346,7 @@ export default ({
     vid.current.currentTime = time
   }
 
+  /*
   const clicked = (elem) => {
     const currentClicked = info.current === elem
     if (currentClicked && !vid.current.paused) {
@@ -362,6 +360,7 @@ export default ({
       }
     }
   }
+  */
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)

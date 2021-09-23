@@ -6,7 +6,11 @@ import {
   ThreeIdConnect, EthereumAuthProvider,
 } from '@3id/connect'
 import {
-  Box, Button, Flex, FormControl, FormLabel, IconButton, Input, ListItem, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, Spinner, Stack, Tab, TabList, TabPanel, TabPanels, Tabs, UnorderedList, useDisclosure,
+  Box, Button, Flex, FormControl, FormLabel, IconButton,
+  Input, ListItem, Modal, ModalBody, ModalCloseButton,
+  ModalContent, ModalFooter, ModalHeader, ModalOverlay,
+  Stack, Tab, TabList, TabPanel, TabPanels, Tabs,
+  UnorderedList, useDisclosure,
 } from '@chakra-ui/react'
 import { DeleteIcon } from '@chakra-ui/icons'
 import Markdown from 'react-markdown'
@@ -33,12 +37,12 @@ const DEF = ids.definitions.ConsultVideoIndex
 const NewVideoModal = ({
   isOpen, onClose, setVideos, ceramic, idx, ipfs,
 }) => {
-  const [startTime, setStartTime] = (
+  const [startTime/*, setStartTime*/] = (
     useState((new Date()).toISOString())
   )
-  const [title, setTitle] = useState('')
-  const [url, setURL] = useState('')
-  const [tabIndex, setTabIndex] = useState(0)
+  const [title/*, setTitle*/] = useState('')
+  const [url/*, setURL*/] = useState('')
+  const [tabIndex/*, setTabIndex*/] = useState(0)
   const [creating, setCreating] = useState(null)
 
   const video = async () => {
@@ -146,7 +150,7 @@ export default () => {
     () => new ipfsHTTPClient(IPFS_URL), []
   )
   const [videos, setVideos] = useState([])
-  const { isOpen, onOpen, onClose } = useDisclosure()
+  const { isOpen, /*onOpen,*/ onClose } = useDisclosure()
   
   // useEffect(() => {
   //   (async () => {
