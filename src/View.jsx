@@ -49,7 +49,6 @@ export default () => {
     )
   }
 
-  console.info({ info })
   const { title, stops, source, startsAt } = info
   return <MarkedVideo {...{
     title, stops, source, startsAt,
