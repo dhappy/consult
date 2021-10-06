@@ -3,7 +3,7 @@ import {
   Stack, Spacer, Spinner, chakra, useDisclosure, Input,
   ModalOverlay, ModalContent, ModalHeader, ModalFooter,
   ModalCloseButton, ModalBody, FormControl, FormLabel,
-  Modal, Text, Textarea, Divider,
+  Modal, Text, Textarea, Divider, Image,
   Tabs, TabList, TabPanels, Tab, TabPanel,
 } from '@chakra-ui/react'
 import {
@@ -15,6 +15,7 @@ import { HashLink as Link } from 'react-router-hash-link'
 import {
   durationFor, isoStringFor, stringFor, timeFor, isSet, ifSet,
 } from 'utils'
+import CeramicLogo from './ceramic.svg'
 
 const DEFAULT_DURATION = Math.pow(60, 3)
 const DEFAULT_VID_HEIGHT = 85
@@ -22,8 +23,8 @@ const DEFAULT_VID_HEIGHT = 85
 const Video = chakra('video')
 
 const colors = [
-  'red', 'green', 'purple', 'yellow',
-  'silver', 'blue', 'cyan', 'orange', 'brown',
+  'orange', 'red', 'green', 'purple', 'yellow',
+  'silver', 'blue', 'cyan', 'brown',
   'black', 'white', 'coral', 'gray', 'pink',
   'olive', 'orangered', 'teal', 'gold',
 ]
@@ -431,21 +432,27 @@ const NodeSettings = ({
   const replacement = useMemo(() => {
     const fields = {
       title, body, duration, startOffset,
-      partition, children,
+      partition, children, id: node.id,
     }
-    const node = newNode()
+    const gen = newNode()
     Object.entries(fields).forEach(
       ([key, value]) => {
         if(isSet(value)) {
-          node[key] = value
+          gen[key] = value
         }
       }
     )
-    return node
+    return gen
   }, [
     body, children, duration,
     partition, startOffset, title,
+    node.id,
   ])
+  const save = (evt) => {
+    evt.preventDefault()
+    replaceNode({ node, replacement })
+    closeNodeSettings()
+  }
 
   return (
     <Modal
@@ -453,7 +460,7 @@ const NodeSettings = ({
       {...{ isOpen: open, onClose: closeNodeSettings }}
     >
       <ModalOverlay/>
-      <ModalContent>
+      <ModalContent as="form" onSubmit={save}>
         <ModalHeader
           textOverflow="ellipsis"
           overflow="hidden"
@@ -461,7 +468,6 @@ const NodeSettings = ({
         >Node: <q>{title}</q></ModalHeader>
         <ModalCloseButton/>
         <ModalBody pb={6}>
-
           <Tabs isFitted variant="enclosed">
             <TabList mb="1em">
               <Tab>Text</Tab>
@@ -603,18 +609,17 @@ const NodeSettings = ({
             </TabPanels>
           </Tabs>
         </ModalBody>
-
         <ModalFooter>
           <Button
-            colorScheme="blue" mr={3}
-            onClick={() => {
-              replaceNode({ node, replacement })
-              closeNodeSettings()
-            }}
-          >Save</Button>
-          <Button onClick={closeNodeSettings}>
+            colorScheme="red"
+            onClick={closeNodeSettings}
+          >
             Cancel
           </Button>
+          <Button
+            type="submit"
+            colorScheme="blue" ml={3}
+          >Save</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
@@ -720,7 +725,7 @@ const Events = ({
   const Option = ({ children, ...props }) => (
     <Button
       {...props}
-      fontWeight="normal" variant="outline" mt={1.5}
+      fontWeight="normal" variant="outline" mt={1.25}
       fontSize={15} p={1} _hover={{ bg: '#00000077' }}
     >{children}</Button>
   )
@@ -755,7 +760,7 @@ const Events = ({
         {node.title && (
           <Flex>
             <Heading
-              fontSize={32} color="white" pt={3}
+              fontSize={32} color="white" pt={1.5}
             >
               {node.title}
             </Heading>
@@ -834,13 +839,21 @@ const FileSettings = ({
     isoStringFor(info.startsAt, { tz: false })
   )
 
+  const save = (evt) => {
+    evt.preventDefault()
+    setInfo((info) => ({
+      ...info, startsAt: new Date(startsAt),
+    }))
+    closeFileSettings()
+  }
+
   return (
     <Modal
       size="xl"
       {...{ isOpen: open, onClose: closeFileSettings }}
     >
       <ModalOverlay/>
-      <ModalContent>
+      <ModalContent as="form" onSubmit={save}>
         <ModalHeader
           textOverflow="ellipsis"
           overflow="hidden"
@@ -861,24 +874,27 @@ const FileSettings = ({
         </ModalBody>
         <ModalFooter>
           <Button
-            colorScheme="blue" mr={3}
-            onClick={() => {
-              setInfo((info) => (
-                {
-                  ...info,
-                  startsAt: new Date(startsAt),
-                }
-              ))
-              closeFileSettings()
-            }}
+            colorScheme="red"
+            onClick={closeFileSettings}
+          >Cancel</Button>
+          <Button
+            type="submit"
+            colorScheme="blue" ml={3}
           >Save</Button>
-          <Button onClick={closeFileSettings}>
-            Cancel
-          </Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
   )
+}
+
+const DateTime = ({ startsAt, time }) => {
+  const current = (
+    new Date(startsAt.getTime() + time * 1000)
+  )
+  const opts = { date: false, tz: false }
+  return <Box alignSelf="center">
+    {isoStringFor(current, opts)}
+  </Box>
 }
 
 export default ({
@@ -888,7 +904,7 @@ export default ({
     useState(DEFAULT_DURATION)
   )
   const vid = useRef()
-  const [/*time*/, setTime] = useState(0)
+  const [time, setTime] = useState(0)
   const [raw, setRaw] = useState(
     connect({ stops: rootStops })
   )
@@ -897,6 +913,7 @@ export default ({
   const [info, setInfo] = useState({
     startsAt: new Date()
   })
+  const { startsAt } = info
   const [vidHeight, setVidHeight] = (
     useState(DEFAULT_VID_HEIGHT)
   )
@@ -976,7 +993,6 @@ export default ({
       if(!replacement) {
         children.splice(index, 1)
       } else {
-        replacement.id = node.id
         replacement.parent = parent
         parent.children = [
           ...children.slice(0, index),
@@ -1021,6 +1037,9 @@ export default ({
     )
     const url = window.URL.createObjectURL(blob)
     window.open(url, '_blank').focus()
+  }
+
+  const upload = () => {
   }
 
   /*
@@ -1088,9 +1107,9 @@ export default ({
           <>
             <GridItem id="spans" rowSpan={1} colSpan={1}>
               <Times
-                startsAt={info.startsAt}
                 {...{
-                  duration, hovered, setHovered,
+                  startsAt, duration,
+                  hovered, setHovered,
                 }}
                 node={stops}
                 h={`calc(100vh - ${vidHeight}px)`}
@@ -1117,22 +1136,38 @@ export default ({
           maxH={vidHeight} maxW="100vw"
         >
           <Flex maxH="100%" maxW="100vw">
+            <DateTime {...{ startsAt, time }}/>
             <Video
               flexGrow={1} controls
-              maxH="100%" maxW="calc(100vw - 5.5em)"
+              maxH="100%" maxW="calc(100vw - 10em)"
               ref={vid}
             >
               <source {...{ src, type: 'video/mp4' }} />
               {/* {VTT && <track default src={VTT}/>} */}
             </Video>
-            <Button
-              title="Download the current configuration"
-              onClick={serialize}
-            >⭳</Button>
-            <Button
-              title="Edit the file information"
-              onClick={openFileSettings}
-            >⚙</Button>
+            <Flex align="center">
+              <Stack>
+                <Button
+                  title="Edit the file information"
+                  onClick={openFileSettings}
+                  h="auto"
+                >⚙</Button>
+                <Button
+                  title="Download the current configuration"
+                  onClick={serialize}
+                  h="auto"
+                >⭳</Button>
+              </Stack>
+              <Button
+                title="Upload to Ceramic"
+                onClick={openFileSettings}
+              >
+                <Image
+                  minH={25} minW={25}
+                  src={CeramicLogo}
+                />
+              </Button>
+            </Flex>
           </Flex>
         </GridItem>
       </Grid>
