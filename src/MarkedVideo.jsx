@@ -59,7 +59,7 @@ const siblingsOf = (node) => {
   return !node.parent ? [node] : siblings
 }
 
-const connectTree = ({ stops }) => {
+const connect = ({ stops }) => {
   const parent = ({ children = [], parent: rent, visit }) => {
     children = children.map((child) => {
       child = visit({ node: newNode(child), method: parent })
@@ -75,12 +75,13 @@ const connectTree = ({ stops }) => {
   return visit({ node: newNode(root), method: parent })
 }
 
-const clone = (stops) => connectTree({ stops })
+const clone = (stops) => connect({ stops })
 
 const generate = ({ root, duration, raw }) => {
   const fix = ({ parent, children, visit }) => (
     children.map((child) => {
       child.raw = findById(raw, child.id)
+      child.root = raw
 
       if (typeof child.duration === 'string') {
         child.durationStr = child.duration
@@ -353,15 +354,18 @@ const onlyTime = ({ setter }) => (
   }
 )
 
-const NodeSettings = ({ isOpen, onClose, node }) => {
+const NodeSettings = ({
+  open, closeNodeSettings, node, replaceNode,
+}) => {
+  const { partition, children, raw } = node
   const initialRef = useRef()
   const [title, setTitle] = useState(node.title)
   const [body, setBody] = useState(node.body)
   const [startOffset, baseStartOffset] = (
-    useState(node.raw.startOffset ?? '')
+    useState(raw.startOffset ?? '')
   )
   const [duration, baseDuration] = (
-    useState(node.raw.duration ?? '')
+    useState(raw.duration ?? '')
   )
   const defaultEnd = (
     timeFor(ifSet(startOffset) ?? node.startOffset)
@@ -423,11 +427,29 @@ const NodeSettings = ({ isOpen, onClose, node }) => {
       )
     }
   }
+  const replacement = useMemo(() => {
+    const fields = {
+      title, body, duration, startOffset,
+      partition, children,
+    }
+    const node = newNode()
+    Object.entries(fields).forEach(
+      ([key, value]) => {
+        if(isSet(value)) {
+          node[key] = value
+        }
+      }
+    )
+    return node
+  }, [
+    body, children, duration,
+    partition, startOffset, title,
+  ])
 
   return (
     <Modal
       size="xl" initialFocusRef={initialRef}
-      {...{ isOpen, onClose }}
+      {...{ isOpen: open, onClose: closeNodeSettings }}
     >
       <ModalOverlay/>
       <ModalContent>
@@ -582,10 +604,16 @@ const NodeSettings = ({ isOpen, onClose, node }) => {
         </ModalBody>
 
         <ModalFooter>
-          <Button colorScheme="blue" mr={3}>
-            Save
+          <Button
+            colorScheme="blue" mr={3}
+            onClick={() => {
+              replaceNode({ node, replacement })
+              closeNodeSettings()
+            }}
+          >Save</Button>
+          <Button onClick={closeNodeSettings}>
+            Cancel
           </Button>
-          <Button onClick={onClose}>Cancel</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
@@ -597,7 +625,9 @@ const Events = ({
   duration, count = 1, hovered, setHovered, ...props
 }) => {
   const {
-    isOpen, onOpen: openSettings, onClose
+    isOpen: open,
+    onOpen: openNodeSettings,
+    onClose: closeNodeSettings,
   } = useDisclosure()
 
   if (!node) return null
@@ -652,7 +682,7 @@ const Events = ({
   }
 
   const edit = (node) => {
-    openSettings()
+    openNodeSettings()
   }
 
   const {
@@ -696,7 +726,12 @@ const Events = ({
 
   return (
     <>
-      <NodeSettings {...{ onClose, isOpen, node }}/>
+      <NodeSettings
+        {...{
+          closeNodeSettings, open,
+          node, replaceNode,
+        }}
+      />
       <Stack
         id={node.id}
         top={`${timePercent}%`}
@@ -717,39 +752,47 @@ const Events = ({
         {...props} {...{ className }}
       >
         {node.title && (
-          <>
-            <Flex>
-              <Heading
-                fontSize={32} color="white" pt={3}
-              >
-                {node.title}
-              </Heading>
-              <Spacer />
-              <ButtonGroup>
+          <Flex>
+            <Heading
+              fontSize={32} color="white" pt={3}
+            >
+              {node.title}
+            </Heading>
+            <Spacer />
+            <ButtonGroup>
+            <Option
+                title="Edit This Node"
+                onClick={() => edit(node)}
+              >✏️</Option>
               <Option
-                  title="Edit This Node"
-                  onClick={() => edit(node)}
-                >✏️</Option>
-                <Option
-                  title="Create A Child"
-                  onClick={() => addChild(node)}
-                >█ → 🬠</Option>
-                <Option
-                  title="Create A Partition Sibling"
-                  onClick={() => addPartition(node)}
-                >█ → 🮒</Option>
-                <Option
-                  title="Create A Parallel Sibling"
-                  onClick={() => addParallel(node)}
-                >█ → 🮔</Option>
-                <Option
-                  title="Remove Node"
-                  onClick={() => removeNode(node)}
-                >➖</Option>
-              </ButtonGroup>
-            </Flex>
+                title="Create A Child"
+                onClick={() => addChild(node)}
+              >█ → 🬠</Option>
+              <Option
+                title="Create A Partition Sibling"
+                onClick={() => addPartition(node)}
+              >█ → 🮒</Option>
+              <Option
+                title="Create A Parallel Sibling"
+                onClick={() => addParallel(node)}
+              >█ → 🮔</Option>
+              <Option
+                title="Remove Node"
+                onClick={() => removeNode(node)}
+              >➖</Option>
+            </ButtonGroup>
+          </Flex>
+        )}
+        {isSet(node.body) && (
+          <Box
+            sx={{
+               a: { borderBottom: 'dashed' },
+               'a:hover': { borderBottom: 'solid' },
+            }}
+          >
             <chakra.hr color="white" />
-          </>
+            <Markdown>{node.body}</Markdown>
+          </Box>
         )}
         {node.children?.map((child, idx) => (
           <Events
@@ -780,17 +823,69 @@ const findById = (root, id) => {
   }
 }
 
+const FileSettings = ({ open, closeFileSettings }) => {
+  const [startsAt, setStartsAt] = useState(
+    (new Date()).toISOString().replace(/\.\d{3}Z/, '')
+  )
+
+  return (
+    <Modal
+      size="xl"
+      {...{ isOpen: open, onClose: closeFileSettings }}
+    >
+      <ModalOverlay/>
+      <ModalContent>
+        <ModalHeader
+          textOverflow="ellipsis"
+          overflow="hidden"
+          whiteSpace="nowrap"
+        >File Settings</ModalHeader>
+        <ModalCloseButton/>
+        <ModalBody pb={6}>
+          <FormControl mt={4}>
+            <FormLabel>Start Time</FormLabel>
+            <Input
+              type="datetime-local"
+              value={startsAt} autoFocus
+              onChange={({ target: { value }}) => {
+                setStartsAt(value)
+              }}
+            />
+          </FormControl>
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            colorScheme="blue" mr={3}
+            onClick={() => {
+            }}
+          >Save</Button>
+          <Button onClick={closeFileSettings}>
+            Cancel
+          </Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+  )
+}
+
 export default ({
   stops: rootStops = [], source, startsAt = new Date()
 }) => {
-  const [duration, setDuration] = useState(null)
+  const [duration, setDuration] = (
+    useState(DEFAULT_DURATION)
+  )
   const vid = useRef()
   const [/*time*/, setTime] = useState(0)
   const [raw, setRaw] = useState(
-    connectTree({ stops: rootStops })
+    connect({ stops: rootStops })
   )
   const [stops, setStops] = useState()
   const [hovered, setHovered] = useState([])
+  const {
+    isOpen: open,
+    onOpen: openFileSettings,
+    onClose: closeFileSettings,
+  } = useDisclosure()
   const src = useMemo(() => {
     const regex = /^ipfs:(\/\/)?(.+)$/i
     const match = source.match(regex)
@@ -807,8 +902,7 @@ export default ({
   }, [raw, duration])
 
   const insertChild = ({ parent, insert, anchor }) => {
-    const rawParent = findById(raw, parent.id)
-    const self = { ...rawParent }
+    const self = { ...parent.raw }
     insert = newNode(insert)
     insert.parent = self
     const { children } = parent
@@ -842,8 +936,9 @@ export default ({
   }
 
   const replaceNode = ({ node, replacement = null }) => {
+    let outer = null
     setRaw((raw) => {
-      const dup = clone(raw)
+      const dup = outer = clone(raw)
       const rawNode = findById(dup, node.id)
 
       if(!rawNode) {
@@ -858,6 +953,7 @@ export default ({
       if(!replacement) {
         children.splice(index, 1)
       } else {
+        replacement.id = node.id
         replacement.parent = parent
         parent.children = [
           ...children.slice(0, index),
@@ -867,6 +963,7 @@ export default ({
       }
       return dup
     })
+    return outer
   }
 
   const seekTo = (time) => {
@@ -874,21 +971,23 @@ export default ({
   }
 
   const serialize = () => {
-    const rmParents = (
+    const strip = (
       ({ parent, children, visit }) => {
         delete parent.id
         delete parent.parent
         if(!parent.partition) {
           delete parent.partition
         }
+
         return children.map((child) => (
-          visit({ node: child, method: rmParents })
+          visit({ node: child, method: strip })
         ))
       }
     )
     const stripped = (
-      visit({ node: clone(raw), method: rmParents })
+      visit({ node: clone(raw), method: strip })
     )
+    console.info({ stripped })
     const blob = new Blob(
       [JSON.stringify(stripped, null, 2)],
       { type: "text/json" },
@@ -944,63 +1043,70 @@ export default ({
   }, [])
 
   return (
-    <Grid
-      as="form"
-      templateRows="1fr 0fr"
-      templateColumns="0fr 1fr"
-      maxH="100vh"
-    >
-      {!stops ? (
-        <GridItem id="spinner" rowSpan={1} colSpan={2}>
-          <Spinner />
-        </GridItem>
-      ) : (
-        <>
-          <GridItem id="spans" rowSpan={1} colSpan={1}>
-            <Times
-              {...{
-                startsAt, duration,
-                hovered, setHovered,
-              }}
-              node={stops}
-              h="calc(100vh - max(10vh, 3.5em))"
-            />
-          </GridItem>
-          <GridItem
-            id="events" rowSpan={1} colSpan={1}
-            overflowY="scroll"
-          >
-            <Events
-              {...{
-                insertChild, insertParent,
-                duration, replaceNode,
-                hovered, setHovered,
-              }}
-              node={stops}
-            />
-          </GridItem>
-        </>
-      )}
-      <GridItem
-        id="video"
-        rowSpan={1} colSpan={2}
-        maxH="max(10vh, 3.5em)" maxW="100vw"
+    <>
+      <FileSettings {...{ open, closeFileSettings }}/>
+      <Grid
+        as="form"
+        templateRows="1fr 0fr"
+        templateColumns="0fr 1fr"
+        maxH="100vh"
       >
-        <Flex maxH="100%" maxW="100vw">
-          <Video
-            flexGrow={1} controls
-            maxH="100%" maxW="calc(100vw - 3em)"
-            ref={vid}
-          >
-            <source {...{ src, type: 'video/mp4' }} />
-            {/* {VTT && <track default src={VTT}/>} */}
-          </Video>
-          <Button
-            title="Download the current configuration"
-            onClick={serialize}
-          >⭳</Button>
-        </Flex>
-      </GridItem>
-    </Grid>
+        {!stops ? (
+          <GridItem id="spinner" rowSpan={1} colSpan={2}>
+            <Spinner />
+          </GridItem>
+        ) : (
+          <>
+            <GridItem id="spans" rowSpan={1} colSpan={1}>
+              <Times
+                {...{
+                  startsAt, duration,
+                  hovered, setHovered,
+                }}
+                node={stops}
+                h="calc(100vh - max(10vh, 3.5em))"
+              />
+            </GridItem>
+            <GridItem
+              id="events" rowSpan={1} colSpan={1}
+              overflowY="scroll"
+            >
+              <Events
+                {...{
+                  insertChild, insertParent,
+                  duration, replaceNode,
+                  hovered, setHovered,
+                }}
+                node={stops}
+              />
+            </GridItem>
+          </>
+        )}
+        <GridItem
+          id="video"
+          rowSpan={1} colSpan={2}
+          maxH="max(10vh, 3.5em)" maxW="100vw"
+        >
+          <Flex maxH="100%" maxW="100vw">
+            <Video
+              flexGrow={1} controls
+              maxH="100%" maxW="calc(100vw - 5.5em)"
+              ref={vid}
+            >
+              <source {...{ src, type: 'video/mp4' }} />
+              {/* {VTT && <track default src={VTT}/>} */}
+            </Video>
+            <Button
+              title="Download the current configuration"
+              onClick={serialize}
+            >⭳</Button>
+            <Button
+              title="Edit the file information"
+              onClick={openFileSettings}
+            >⚙</Button>
+          </Flex>
+        </GridItem>
+      </Grid>
+    </>
   )
 }
