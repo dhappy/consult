@@ -114,22 +114,24 @@ export const isoStringFor = (date, opts = {}) => {
     const norm = Math.floor(Math.abs(num));
     return (norm < 10 ? '0' : '') + norm;
   }
-  const dateSeparator = opts.dateSeparator ?? '-'
+  const { dateSeparator: sep = '-' } = opts
 
   let ret = (
     date.getFullYear()
-    + dateSeparator + pad(date.getMonth() + 1)
-    + dateSeparator + pad(date.getDate())
+    + sep + pad(date.getMonth() + 1)
+    + sep + pad(date.getDate())
     + 'T' + pad(date.getHours())
     + ':' + pad(date.getMinutes())
   )
   if(opts.seconds ?? true) {
     ret += ':' + pad(date.getSeconds())
   }
-  ret += `​(ᴜᴛᴄ${dif}${Math.abs(tzo / 60)}`
-  if((opts.tzMinutes ?? true) || tzo % 60 !== 0) {
-    ret += ':' + pad(tzo % 60)
+  if(opts.tz !== false) {
+    ret += `​(ᴜᴛᴄ${dif}${Math.abs(tzo / 60)}`
+    if((opts.tzMinutes ?? true) || tzo % 60 !== 0) {
+      ret += ':' + pad(tzo % 60)
+    }
+    ret += ')'
   }
-  ret += ')'
   return ret
 }

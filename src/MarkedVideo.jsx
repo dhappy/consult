@@ -3,7 +3,7 @@ import {
   Stack, Spacer, Spinner, chakra, useDisclosure, Input,
   ModalOverlay, ModalContent, ModalHeader, ModalFooter,
   ModalCloseButton, ModalBody, FormControl, FormLabel,
-  Modal, Text, Textarea,
+  Modal, Text, Textarea, Divider,
   Tabs, TabList, TabPanels, Tab, TabPanel,
 } from '@chakra-ui/react'
 import {
@@ -17,6 +17,7 @@ import {
 } from 'utils'
 
 const DEFAULT_DURATION = Math.pow(60, 3)
+const DEFAULT_VID_HEIGHT = 85
 
 const Video = chakra('video')
 
@@ -305,7 +306,7 @@ const Times = ({
   node, startsAt, duration, hovered, setHovered, ...props
 }) => {
   const endsAt = useMemo(() => (
-    new Date(startsAt.getTime() + duration)
+    new Date(startsAt.getTime() + duration * 1000)
   ), [startsAt, duration])
 
   if (!(endsAt instanceof Date) || isNaN(endsAt) || !node) {
@@ -790,7 +791,7 @@ const Events = ({
                'a:hover': { borderBottom: 'solid' },
             }}
           >
-            <chakra.hr color="white" />
+            <Divider color="white"/>
             <Markdown>{node.body}</Markdown>
           </Box>
         )}
@@ -823,9 +824,14 @@ const findById = (root, id) => {
   }
 }
 
-const FileSettings = ({ open, closeFileSettings }) => {
+const FileSettings = ({
+  open, closeFileSettings, info, setInfo,
+}) => {
+  if(!isSet(info.startsAt)) {
+    info.startsAt = new Date()
+  }
   const [startsAt, setStartsAt] = useState(
-    (new Date()).toISOString().replace(/\.\d{3}Z/, '')
+    isoStringFor(info.startsAt, { tz: false })
   )
 
   return (
@@ -857,6 +863,13 @@ const FileSettings = ({ open, closeFileSettings }) => {
           <Button
             colorScheme="blue" mr={3}
             onClick={() => {
+              setInfo((info) => (
+                {
+                  ...info,
+                  startsAt: new Date(startsAt),
+                }
+              ))
+              closeFileSettings()
             }}
           >Save</Button>
           <Button onClick={closeFileSettings}>
@@ -869,7 +882,7 @@ const FileSettings = ({ open, closeFileSettings }) => {
 }
 
 export default ({
-  stops: rootStops = [], source, startsAt = new Date()
+  stops: rootStops = [], source,
 }) => {
   const [duration, setDuration] = (
     useState(DEFAULT_DURATION)
@@ -881,6 +894,12 @@ export default ({
   )
   const [stops, setStops] = useState()
   const [hovered, setHovered] = useState([])
+  const [info, setInfo] = useState({
+    startsAt: new Date()
+  })
+  const [vidHeight, setVidHeight] = (
+    useState(DEFAULT_VID_HEIGHT)
+  )
   const {
     isOpen: open,
     onOpen: openFileSettings,
@@ -890,6 +909,10 @@ export default ({
     const regex = /^ipfs:(\/\/)?(.+)$/i
     const match = source.match(regex)
     if (match) {
+      if(match[2].includes('Qmeiz7YmwtVYMRSUG3VdKTxU634JTPaB5j2xLj5RREqAkG')) {
+        return 'http://bafybeihtoo2yau6rnzlfad3jh62u3wccm4bs7j7wh5wb76estw77codume.ipfs.localhost:8888/2021%E2%81%8410%E2%81%8406@09:56:54.MetaGame%E2%80%99s%20Builders%E2%80%99%20Align.x264.mp4'
+      }
+
       return `//ipfs.io/ipfs/${match[2]}`
     }
     return source
@@ -987,9 +1010,13 @@ export default ({
     const stripped = (
       visit({ node: clone(raw), method: strip })
     )
-    console.info({ stripped })
+    const metadata = {
+      file: info,
+      stops: stripped,
+    }
+    console.info({ metadata })
     const blob = new Blob(
-      [JSON.stringify(stripped, null, 2)],
+      [JSON.stringify(metadata, null, 2)],
       { type: "text/json" },
     )
     const url = window.URL.createObjectURL(blob)
@@ -1044,7 +1071,9 @@ export default ({
 
   return (
     <>
-      <FileSettings {...{ open, closeFileSettings }}/>
+      <FileSettings {...{
+        open, closeFileSettings, info, setInfo,
+      }}/>
       <Grid
         as="form"
         templateRows="1fr 0fr"
@@ -1059,12 +1088,12 @@ export default ({
           <>
             <GridItem id="spans" rowSpan={1} colSpan={1}>
               <Times
+                startsAt={info.startsAt}
                 {...{
-                  startsAt, duration,
-                  hovered, setHovered,
+                  duration, hovered, setHovered,
                 }}
                 node={stops}
-                h="calc(100vh - max(10vh, 3.5em))"
+                h={`calc(100vh - ${vidHeight}px)`}
               />
             </GridItem>
             <GridItem
@@ -1085,7 +1114,7 @@ export default ({
         <GridItem
           id="video"
           rowSpan={1} colSpan={2}
-          maxH="max(10vh, 3.5em)" maxW="100vw"
+          maxH={vidHeight} maxW="100vw"
         >
           <Flex maxH="100%" maxW="100vw">
             <Video
@@ -1107,6 +1136,24 @@ export default ({
           </Flex>
         </GridItem>
       </Grid>
+      <Button
+        position="absolute"
+        left="50%" bottom={vidHeight}
+        transform="translate(-50%, 50%)"
+        draggable={true} variant="outline"
+        onDrag={({ clientY: y, target, type }) => {
+          const { height } = (
+            target.getBoundingClientRect()
+          )
+          if(y > 0) { // an event w/ y = 0 fires at the end
+            // ToDo: keep the button on the screen
+            setVidHeight(Math.max(
+              window.innerHeight - y,
+              height,
+            ))
+          }
+        }}
+      >⇅</Button>
     </>
   )
 }
