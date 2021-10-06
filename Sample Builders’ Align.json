@@ -1,0 +1,63 @@
+{
+  "video": {
+    "startsAt": "2021-10-06T21:32:34.088Z",
+    "source": "ipfs://Qmeiz7YmwtVYMRSUG3VdKTxU634JTPaB5j2xLj5RREqAkG/2021%25E2%2581%258410%25E2%2581%258406@09:56:54.MetaGame%25E2%2580%2599s%2520Builders%25E2%2580%2599%2520Align.x264.mp4"
+  },
+  "stops": {
+    "children": [
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "title": "ETHOnline Project Discussion",
+                "body": "@Michiel is working on a system to make DAO-based token-backed fundraising easier, & @dysbulic is working on a program for collecting metadata about recordings."
+              },
+              {
+                "title": "Welcome @!Udit-takkar, @Polimyl, & @vid",
+                "startOffset": "3:14"
+              },
+              {
+                "title": "Review of @vid’s Pull Request",
+                "startOffset": "3:31"
+              },
+              {
+                "title": "Expectations for @dysbulic’s ETHOnline Submission",
+                "startOffset": "7:45"
+              },
+              {
+                "title": "new"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "title": "Issue: Ceramic’s IDX Is Being Deprecated",
+                        "body": "[Glaze](https://developers.ceramic.network/tools/glaze/overview/) is the now the accepted method for managing user document collections.",
+                        "startOffset": "14:02"
+                      },
+                      {
+                        "title": "Issue: Glaze Requires Webpack 5",
+                        "startOffset": "14:25"
+                      }
+                    ],
+                    "partition": true
+                  }
+                ],
+                "title": "Presenter: @dysbulic",
+                "startOffset": "14:00"
+              },
+              {
+                "title": "Presenter: @johnathanp",
+                "startOffset": "25:28"
+              }
+            ],
+            "partition": true
+          }
+        ],
+        "title": "MetaGame’s Builders’s Align for 1443/2/28‒3/6"
+      }
+    ]
+  }
+}
