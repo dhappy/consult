@@ -7,6 +7,7 @@ import {
 } from 'react'
 // import Markdown from 'react-markdown'
 import { v4 as uuid } from 'uuid'
+import { HashLink as Link } from 'react-router-hash-link'
 import { durationFor, isoStringFor } from 'utils'
 
 const Video = chakra('video')
@@ -196,8 +197,24 @@ const fixTimes = ({ root, duration }) => {
   return root
 }
 
-const Spans = ({ node, count = 1 }) => {
+const Spans = ({ node, count = 1, hovered, setHovered }) => {
   if (!node) return null
+
+  const mouseOver = (node) => {
+    const ids = []
+    while(node) {
+      ids.push(node.id)
+      node = node.parent
+    }
+    setHovered(ids)
+  }
+  const mouseOut = (node) => {
+    setHovered((ids) => {
+      const dup = [...ids]
+      dup.splice(ids.indexOf(node.id), 1)
+      return dup
+    })
+  }
 
   const {
     id, children = [], startOffset,
@@ -208,7 +225,7 @@ const Spans = ({ node, count = 1 }) => {
     return (
       children.map((child, idx) => (
         <Spans
-          {...{ duration }}
+          {...{ duration, hovered, setHovered }}
           key={idx}
           node={child}
           count={count + idx + 1}
@@ -219,6 +236,10 @@ const Spans = ({ node, count = 1 }) => {
 
   const timePercent = 0 //100 * startOffset / duration
   const heightPercent = 100 * duration / node.parent.duration
+  let className = 'span'
+  if(hovered.includes(node.id)) {
+    className += ' hovered'
+  }
 
   return (
     <Flex
@@ -231,17 +252,23 @@ const Spans = ({ node, count = 1 }) => {
         top: 0, left: 0, bottom: 0, right: 0,
         bg: colorFor(node.id),
       }}
-      pl={3} pr={1} w="full"
-      sx={{ '&:hover::before': { opacity: 1 }}}
+      pl={3} pr={1} w="full" {...{ className }}
+      sx={{
+        '&.hovered::before': { opacity: 1 }
+      }}
       direction={node.partition ? 'column' : 'row'}
+      onMouseEnter={() => mouseOver(node)}
+      onMouseLeave={() => mouseOut(node)}
     >
       {node.children.map((child, idx) => (
-        <Spans
-          {...{ duration }}
-          key={idx}
-          node={child}
-          count={count + idx + 1}
-        />
+        <Link to={`#${child.id}`} style={{ display: 'contents' }}>
+          <Spans
+            {...{ duration, hovered, setHovered }}
+            key={idx}
+            node={child}
+            count={count + idx + 1}
+          />
+        </Link>
       ))}
     </Flex>
   )
@@ -257,7 +284,9 @@ const TimeBox = (({ children, ...props }) => (
   </Box>
 ))
 
-const Times = ({ node, startsAt, duration, ...props }) => {
+const Times = ({
+  node, startsAt, duration, hovered, setHovered, ...props
+}) => {
   const endsAt = useMemo(() => (
     new Date(startsAt.getTime() + duration)
   ), [startsAt, duration])
@@ -290,7 +319,7 @@ const Times = ({ node, startsAt, duration, ...props }) => {
           </TimeBox>
         </Stack>
         <Flex>
-          <Spans {...{ node }} />
+          <Spans {...{ node, hovered, setHovered }} />
         </Flex>
       </Flex>
     )
@@ -298,8 +327,8 @@ const Times = ({ node, startsAt, duration, ...props }) => {
 }
 
 const Events = ({
-  node = {}, insertChild, replaceNode, insertParent, duration, count = 1,
-  ...props
+  node = {}, insertChild, replaceNode, insertParent,
+  duration, count = 1, hovered, setHovered, ...props
 }) => {
   if (!node) return null
 
@@ -335,6 +364,22 @@ const Events = ({
     replaceNode({ node })
   }
 
+  const mouseOver = (node) => {
+    const ids = []
+    while(node) {
+      ids.push(node.id)
+      node = node.parent
+    } 
+    setHovered(ids)
+  }
+  const mouseOut = (node) => {
+    setHovered((ids) => {
+      const dup = [...ids]
+      dup.splice(ids.indexOf(node.id), 1)
+      return dup
+    })
+  }
+
   const {
     id, children = [], startOffset,
     duration: dur, partition, ...rest
@@ -348,6 +393,7 @@ const Events = ({
           {...{
             duration, insertChild,
             insertParent, replaceNode,
+            hovered, setHovered,
           }}
           key={idx}
           node={child}
@@ -360,9 +406,14 @@ const Events = ({
 
   const timePercent = 100 * startOffset / duration
   const heightPercent = 100 * dur / duration
+  let className = 'event'
+  if(hovered.includes(node.id)) {
+    className += ' hovered'
+  }
 
   return (
     <Stack
+      id={node.id}
       top={`${timePercent}%`}
       minH={`${heightPercent}%`}
       position="relative"
@@ -373,9 +424,12 @@ const Events = ({
         bg: colorFor(node.id),
       }}
       px={3} w="full"
-      sx={{ '&:hover::before': { opacity: 1 }}}
-      {...props}
-      className="events"
+      sx={{
+        '&.hovered::before': { opacity: 1 }
+      }}
+      onMouseEnter={() => mouseOver(node)}
+      onMouseLeave={() => mouseOut(node)}
+      {...props} {...{ className }}
     >
       {node.type && (
         <>
@@ -416,7 +470,8 @@ const Events = ({
         <Events
           {...{
             duration, insertChild,
-            insertParent, replaceNode
+            insertParent, replaceNode,
+            hovered, setHovered,
           }}
           key={idx}
           node={child}
@@ -457,6 +512,7 @@ export default ({
     connectTree({ stops: rootStops })
   )
   const [stops, setStops] = useState()
+  const [hovered, setHovered] = useState([])
 
   useEffect(() => {
     setStops(
@@ -554,8 +610,7 @@ export default ({
 
   useEffect(() => {
     const video = vid.current
-    const update = (evt) => {
-      const time = evt.target.currentTime
+    const update = ({ target: { currentTime: time }}) => {
       setTime(time)
     }
     video.addEventListener('timeupdate', update)
@@ -588,7 +643,10 @@ export default ({
         <>
           <GridItem id="spans" rowSpan={1} colSpan={1}>
             <Times
-              {...{ startsAt, duration }}
+              {...{
+                startsAt, duration,
+                hovered, setHovered,
+              }}
               node={stops}
               h="calc(100vh - max(10vh, 3.5em))"
             />
@@ -601,6 +659,7 @@ export default ({
               {...{
                 insertChild, insertParent,
                 duration, replaceNode,
+                hovered, setHovered,
               }}
               node={stops}
             />
