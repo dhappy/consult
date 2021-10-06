@@ -29,7 +29,7 @@ export default () => {
         setInfo({
           startsAt: new Date(),
           stops: [{
-            type: 'title',
+            title: 'Title',
           }],
           source: metadata,
         })

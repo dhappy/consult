@@ -53,11 +53,14 @@ export const timeFor = (str) => (
 )
 
 export const stringFor = (time) => {
-  if(Number(time) !== time) return undefined
-
   const hours = Math.floor(time / (60 * 60))
   const minutes = Math.floor((time % (60 * 60)) / 60)
-  const seconds = time % 60
+  const seconds = Math.floor(time % 60)
+  const milliseconds = time - Math.floor(time)
+  let [msStr] = (
+    milliseconds.toFixed(4).split('.').slice(-1)
+  )
+  msStr = msStr.replace(/0+$/, '')
 
   return (
     `${
@@ -68,6 +71,8 @@ export const stringFor = (time) => {
       )
     }:${
       seconds.toString().padStart(2, '0')
+    }${
+      msStr === '' ? '' : `.${msStr}`
     }`
   )
 }

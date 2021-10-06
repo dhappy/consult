@@ -1,14 +1,20 @@
 import {
   Box, Button, ButtonGroup, Flex, GridItem, Grid, Heading,
-  Stack, Spacer, Spinner, chakra,
+  Stack, Spacer, Spinner, chakra, useDisclosure, Input,
+  ModalOverlay, ModalContent, ModalHeader, ModalFooter,
+  ModalCloseButton, ModalBody, FormControl, FormLabel,
+  Modal, Text, Textarea,
+  Tabs, TabList, TabPanels, Tab, TabPanel,
 } from '@chakra-ui/react'
 import {
   useEffect, useRef, useState, useMemo,
 } from 'react'
-// import Markdown from 'react-markdown'
+import Markdown from 'react-markdown'
 import { v4 as uuid } from 'uuid'
 import { HashLink as Link } from 'react-router-hash-link'
-import { durationFor, isoStringFor } from 'utils'
+import {
+  durationFor, isoStringFor, stringFor,
+} from 'utils'
 
 const Video = chakra('video')
 
@@ -69,9 +75,11 @@ const connectTree = ({ stops }) => {
 
 const clone = (stops) => connectTree({ stops })
 
-const fixTimes = ({ root, duration }) => {
+const generate = ({ root, duration, raw }) => {
   const fix = ({ parent, children, visit }) => (
     children.map((child) => {
+      child.raw = findById(raw, child.id)
+
       if (typeof child.duration === 'string') {
         child.durationStr = child.duration
         const dur = durationFor(child.duration)
@@ -334,15 +342,178 @@ const Times = ({
   }
 }
 
+const onlyTime = ({ setter }) => (
+  (str) => setter.call(this, str.replace(/[^0-9:.]/g, ''))
+)
+
+const NodeSettings = ({ isOpen, onClose, node }) => {
+  const initialRef = useRef()
+  const [title, setTitle] = useState(node.title)
+  const [body, setBody] = useState(node.body)
+  const [startOffset, baseStartOffset] = (
+    useState(node.raw.startOffset ?? '')
+  )
+  const setStartOffset = (
+    onlyTime({ setter: baseStartOffset })
+  )
+  const [duration, baseDuration] = (
+    useState(node.raw.duration ?? '')
+  )
+  const setDuration = (
+    onlyTime({ setter: baseDuration })
+  )
+
+  return (
+    <Modal
+      size="xl" initialFocusRef={initialRef}
+      {...{ isOpen, onClose }}
+    >
+      <ModalOverlay/>
+      <ModalContent>
+        <ModalHeader>Node: {title}</ModalHeader>
+        <ModalCloseButton/>
+        <ModalBody pb={6}>
+
+          <Tabs isFitted variant="enclosed">
+            <TabList mb="1em">
+              <Tab>Text</Tab>
+              <Tab>Timing</Tab>
+            </TabList>
+            <TabPanels>
+              <TabPanel>
+                <FormControl mt={4}>
+                  <FormLabel>Title</FormLabel>
+                  <Input
+                    ref={initialRef} value={title} autoFocus
+                    onChange={({ target: { value }}) => {
+                      setTitle(value)
+                    }}
+                  />
+                </FormControl>
+
+                <FormControl mt={4}>
+                  <Tabs isFitted variant="enclosed">
+                    <TabList mb="1em">
+                      <Tab>Body</Tab>
+                      <Tab>Preview</Tab>
+                    </TabList>
+                    <TabPanels>
+                      <TabPanel>
+                        <Textarea
+                          value={body} minH="5em"
+                          placeholder="Markdown"
+                          onChange={({ target: { value }}) => {
+                            setBody(value)
+                          }}
+                        />
+                      </TabPanel>
+                      <TabPanel>
+                        <Markdown>{body}</Markdown>
+                      </TabPanel>
+                    </TabPanels>
+                  </Tabs>
+                </FormControl>
+              </TabPanel>
+              <TabPanel>
+                <FormControl>
+                  <FormLabel>Start Offset</FormLabel>
+                  <Flex>
+                    <Input
+                      ref={initialRef} value={startOffset}
+                      placeholder={
+                        'automatic or HH:mm:ss.msms or mm:ss or ssss'
+                      }
+                      onChange={({ target: { value }}) => (
+                        setStartOffset(value)
+                      )}
+                    />
+                    {
+                      startOffset === '' && node.startOffset >= 0
+                      && ((() => {
+                        const time = stringFor(node.startOffset)
+                        return (
+                          <Button
+                            variant="outline"
+                            p={2} ml={2} fontWeight="bold"
+                            onClick={() => {
+                              setStartOffset(time)
+                            }}
+                            title={
+                              `Autocomplete with ${time}`
+                            }
+                          >←</Button>
+                        )
+                      })())
+                    }
+                  </Flex>
+                </FormControl>
+
+                <Flex>
+                  <FormControl mt={4}>
+                    <FormLabel>End Offset</FormLabel>
+                    <Input placeholder="automatic" />
+                  </FormControl>
+                  <Text alignSelf="end" mb={2} mx={2}>or</Text>
+                  <FormControl mt={4}>
+                    <FormLabel>Duration</FormLabel>
+                    <Flex>
+                      <Input
+                        placeholder="automatic"
+                        value={duration}
+                        onChange={({ target: { value }}) => (
+                          setDuration(value)
+                        )}
+                      />
+                      {
+                        duration === '' && node.duration
+                        && ((() => {
+                          const time = stringFor(node.duration.toString())
+                          return (
+                            <Button
+                              variant="outline"
+                              p={2} ml={2} fontWeight="bold"
+                              onClick={() => {
+                                setDuration(time)
+                              }}
+                              title={
+                                `Autocomplete with ${time}`
+                              }
+                            >←</Button>
+                          )
+                        })())
+                      }
+                    </Flex>
+                  </FormControl>
+                </Flex>
+              </TabPanel>
+            </TabPanels>
+          </Tabs>
+        </ModalBody>
+
+        <ModalFooter>
+          <Button colorScheme="blue" mr={3}>
+            Save
+          </Button>
+          <Button onClick={onClose}>Cancel</Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+  )
+}
+
 const Events = ({
   node = {}, insertChild, replaceNode, insertParent,
   duration, count = 1, hovered, setHovered, ...props
 }) => {
+  const {
+    isOpen, onOpen: openSettings, onClose
+  } = useDisclosure()
+
   if (!node) return null
 
   const addChild = (parent) => {
     insertChild(
-      { parent, insert: { type: 'new' } }
+      { parent, insert: { title: 'new' } }
     )
   }
   const addPartition = (sibling) => {
@@ -351,11 +522,11 @@ const Events = ({
       insertParent({
         child: sibling,
         insert: { partition: true },
-        siblings: [newNode({ type: 'part' })],
+        siblings: [newNode({ title: 'part' })],
       })
     } else {
       insertChild({
-        parent, insert: { type: 'new' }, anchor: sibling
+        parent, insert: { title: 'new' }, anchor: sibling
       })
     }
   }
@@ -366,7 +537,7 @@ const Events = ({
       parent = parent.parent
     }
     insertChild({
-      parent, insert: { type: 'para' }, anchor: sibling
+      parent, insert: { title: 'para' }, anchor: sibling
     })
   }
   const removeNode = (node) => {
@@ -390,7 +561,7 @@ const Events = ({
   }
 
   const edit = (node) => {
-
+    openSettings()
   }
 
   const {
@@ -433,74 +604,77 @@ const Events = ({
   )
 
   return (
-    <Stack
-      id={node.id}
-      top={`${timePercent}%`}
-      minH={`${heightPercent}%`}
-      position="relative"
-      _before={{
-        content: '""', zIndex: -1,
-        position: 'absolute', opacity: 0.5,
-        top: 0, left: 0, bottom: 0, right: 0,
-        bg: colorFor(node.id),
-      }}
-      px={3} w="full"
-      sx={{
-        '&.hovered::before': { opacity: 1 }
-      }}
-      onMouseEnter={() => mouseOver(node)}
-      onMouseLeave={() => mouseOut(node)}
-      {...props} {...{ className }}
-    >
-      {node.type && (
-        <>
-          <Flex>
-            <Heading
-              textTransform="capitalize" fontSize={32}
-              color="white" pt={3}
-            >
-              {node.type}
-            </Heading>
-            <Spacer />
-            <ButtonGroup>
-            <Option
-                title="Edit This Node"
-                onClick={() => edit(node)}
-              >✏️</Option>
+    <>
+      <NodeSettings {...{ onClose, isOpen, node }}/>
+      <Stack
+        id={node.id}
+        top={`${timePercent}%`}
+        minH={`${heightPercent}%`}
+        position="relative"
+        _before={{
+          content: '""', zIndex: -1,
+          position: 'absolute', opacity: 0.5,
+          top: 0, left: 0, bottom: 0, right: 0,
+          bg: colorFor(node.id),
+        }}
+        px={3} w="full"
+        sx={{
+          '&.hovered::before': { opacity: 1 }
+        }}
+        onMouseEnter={() => mouseOver(node)}
+        onMouseLeave={() => mouseOut(node)}
+        {...props} {...{ className }}
+      >
+        {node.title && (
+          <>
+            <Flex>
+              <Heading
+                textTransform="capitalize" fontSize={32}
+                color="white" pt={3}
+              >
+                {node.title}
+              </Heading>
+              <Spacer />
+              <ButtonGroup>
               <Option
-                title="Create A Child"
-                onClick={() => addChild(node)}
-              >█ → 🬠</Option>
-              <Option
-                title="Create A Partition Sibling"
-                onClick={() => addPartition(node)}
-              >█ → 🮒</Option>
-              <Option
-                title="Create A Parallel Sibling"
-                onClick={() => addParallel(node)}
-              >█ → 🮔</Option>
-              <Option
-                title="Remove Node"
-                onClick={() => removeNode(node)}
-              >➖</Option>
-            </ButtonGroup>
-          </Flex>
-          <chakra.hr color="white" />
-        </>
-      )}
-      {node.children?.map((child, idx) => (
-        <Events
-          {...{
-            duration, insertChild,
-            insertParent, replaceNode,
-            hovered, setHovered,
-          }}
-          key={idx}
-          node={child}
-          count={count + idx + 1}
-        />
-      ))}
-    </Stack>
+                  title="Edit This Node"
+                  onClick={() => edit(node)}
+                >✏️</Option>
+                <Option
+                  title="Create A Child"
+                  onClick={() => addChild(node)}
+                >█ → 🬠</Option>
+                <Option
+                  title="Create A Partition Sibling"
+                  onClick={() => addPartition(node)}
+                >█ → 🮒</Option>
+                <Option
+                  title="Create A Parallel Sibling"
+                  onClick={() => addParallel(node)}
+                >█ → 🮔</Option>
+                <Option
+                  title="Remove Node"
+                  onClick={() => removeNode(node)}
+                >➖</Option>
+              </ButtonGroup>
+            </Flex>
+            <chakra.hr color="white" />
+          </>
+        )}
+        {node.children?.map((child, idx) => (
+          <Events
+            {...{
+              duration, insertChild,
+              insertParent, replaceNode,
+              hovered, setHovered,
+            }}
+            key={idx}
+            node={child}
+            count={count + idx + 1}
+          />
+        ))}
+      </Stack>
+    </>
   )
 }
 
@@ -519,14 +693,6 @@ const findById = (root, id) => {
 export default ({
   stops: rootStops = [], source, startsAt = new Date()
 }) => {
-  const src = useMemo(() => {
-    const regex = /^ipfs:(\/\/)?(.+)$/i
-    const match = source.match(regex)
-    if (match) {
-      return `//ipfs.io/ipfs/${match[2]}`
-    }
-    return source
-  }, [source])
   const [duration, setDuration] = useState(null)
   const vid = useRef()
   const [/*time*/, setTime] = useState(0)
@@ -535,13 +701,20 @@ export default ({
   )
   const [stops, setStops] = useState()
   const [hovered, setHovered] = useState([])
+  const src = useMemo(() => {
+    const regex = /^ipfs:(\/\/)?(.+)$/i
+    const match = source.match(regex)
+    if (match) {
+      return `//ipfs.io/ipfs/${match[2]}`
+    }
+    return source
+  }, [source])
 
   useEffect(() => {
     setStops(
-      fixTimes({ root: raw, duration })
+      generate({ root: raw, duration, raw })
     )
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [duration, raw])
+  }, [raw, duration])
 
   const insertChild = ({ parent, insert, anchor }) => {
     const rawParent = findById(raw, parent.id)
@@ -650,7 +823,7 @@ export default ({
 
   useEffect(() => {
     const video = vid.current
-    const set = () => setDuration(video.duration * 1000)
+    const set = () => setDuration(video.duration)
     video.addEventListener('loadedmetadata', set)
     return () => {
       video.removeEventListener('loadedmetadata', set)
