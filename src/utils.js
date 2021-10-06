@@ -25,6 +25,14 @@ export const propsFor = (info) => {
   return props[idx]
 }
 
+export const isSet = (value) => (
+  Boolean(value) || value === 0
+)
+
+export const ifSet = (value, { default: def } = {}) => (
+  isSet(value) ? value : def
+)
+
 export const durationFor = (str) => {
   if(typeof str !== 'string') {
     throw new Error(`Bad Argument: expected string, got ${typeof str}`)
@@ -36,35 +44,39 @@ export const durationFor = (str) => {
   }
 }
 
-export const timeFor = (str, opts = {}) => (
-  (str) ? ((() => {
-    const [secondsStr, minutesStr, ...hoursStrs] = str.split(':').reverse()
-    if(hoursStrs.length > 1) {
-      console.warn(`Got ${hoursStrs} for hours parsing ${str}.`)
-    }
-    let [seconds, minutes, hours] = ([
-      parseFloat(!!secondsStr.length ? secondsStr : 0),
-      parseInt(minutesStr ?? 0),
-      parseInt(hoursStrs?.[0] ?? 0),
-    ])
-    minutes += hours * 60
-    return seconds + minutes * 60
-  })()) : (
-    opts.default
+export const timeFor = (str, { default: def } = {}) => (
+  !isSet(str) ? def : (
+    (() => {
+      str = str.toString()
+      const [secondsStr, minutesStr, hoursStr, ...rest] = (
+        str.split(':').reverse()
+      )
+      if(rest.length >= 1) {
+        console.warn(`Got [${rest}] extraneous parameters in ${str}.`)
+      }
+      let [seconds, minutes, hours] = ([
+        parseFloat(ifSet(secondsStr) ?? 0 ),
+        parseInt(ifSet(minutesStr) ?? 0),
+        parseInt(ifSet(hoursStr) ?? 0),
+      ])
+      minutes += hours * 60
+      return seconds + minutes * 60
+    })()
   )
 )
 
-export const isSet = (value) => (
-  Boolean(value) || value === 0
-)
+export const stringFor = (time, { default: def } = {}) => {
+  if(!isSet(time)) return def
 
-export const stringFor = (time, opts = {}) => {
-  if(!isSet(time)) return opts.default
-
-  const hours = Math.floor(time / (60 * 60))
-  const minutes = Math.floor((time % (60 * 60)) / 60)
-  const seconds = Math.floor(time % 60)
-  const milliseconds = time - Math.floor(time)
+  const sign = time < 0 ? '−' : ''
+  const hours = Math.floor(Math.abs(time / (60 * 60)))
+  const minutes = (
+    Math.floor(Math.abs((time % (60 * 60)) / 60))
+  )
+  const seconds = Math.floor(Math.abs(time % 60))
+  const milliseconds = (
+    Math.abs(time) - Math.floor(Math.abs(time))
+  )
 
   if(
     ![hours, minutes, seconds, milliseconds].reduce(
@@ -72,7 +84,7 @@ export const stringFor = (time, opts = {}) => {
       true
     )
   ) {
-    return opts.default
+    return def
   }
 
   let [msStr] = (
@@ -81,7 +93,7 @@ export const stringFor = (time, opts = {}) => {
   msStr = msStr.replace(/0+$/, '')
 
   return (
-    `${
+    `${sign}${
       hours > 0 ? (
         `${hours}:${minutes.toString().padStart(2, '0')}`
       ) : (

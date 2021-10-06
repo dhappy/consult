@@ -13,8 +13,10 @@ import Markdown from 'react-markdown'
 import { v4 as uuid } from 'uuid'
 import { HashLink as Link } from 'react-router-hash-link'
 import {
-  durationFor, isoStringFor, stringFor, timeFor, isSet,
+  durationFor, isoStringFor, stringFor, timeFor, isSet, ifSet,
 } from 'utils'
+
+const DEFAULT_DURATION = Math.pow(60, 3)
 
 const Video = chakra('video')
 
@@ -127,7 +129,7 @@ const generate = ({ root, duration, raw }) => {
             next.startOffset - node.startOffset
           )
         } else if (!node.parent) {
-          node.duration = duration
+          node.duration = duration ?? DEFAULT_DURATION
           break
         } else {
           durNodes.unshift(node.parent)
@@ -239,7 +241,9 @@ const Spans = ({ node, count = 1, hovered, setHovered }) => {
   }
 
   const timePercent = 0 //100 * startOffset / duration
-  const heightPercent = 100 * duration / node.parent.duration
+  const heightPercent = (
+    100 * duration / node.parent.duration
+  )
   let className = 'span'
   if(hovered.includes(node.id)) {
     className += ' hovered'
@@ -340,7 +344,10 @@ const Times = ({
 
 const onlyTime = ({ setter }) => (
   (str) => {
-    str = str.replace(/[^0-9:.]/g, '')
+    str = (
+      str.replace(/[^0-9\-−:.]/g, '')
+      .replace(/^(.+)[-−](.*)$/g, '$1$2')
+    )
     setter.call(this, str)
     return str
   }
@@ -357,8 +364,8 @@ const NodeSettings = ({ isOpen, onClose, node }) => {
     useState(node.raw.duration ?? '')
   )
   const defaultEnd = (
-    (isSet(startOffset) ? timeFor(startOffset) : node.startOffset)
-    + (isSet(duration) ? timeFor(duration) : node.duration)
+    timeFor(ifSet(startOffset) ?? node.startOffset)
+    + timeFor(ifSet(duration) ?? node.duration)
   )
   const [endOffset, baseEndOffset] = (
     useState(
@@ -371,22 +378,28 @@ const NodeSettings = ({ isOpen, onClose, node }) => {
   )
   const setStartOffset = (str) => {
     str = onlyTime({ setter: baseStartOffset })(str)
-    if(isSet(endOffset) && isSet(duration)) {
-      const start = (
-        timeFor(str, { default: node.startOffset })
-      )
+    const start = (
+      timeFor(ifSet(str) ?? node.startOffset)
+    )
+    if(isSet(endOffset)) {
       const end = timeFor(endOffset)
       setDuration(
         stringFor(end - start),
+        { sync: false },
+      )
+    } else if(isSet(duration)) {
+      const length = timeFor(duration)
+      setEndOffset(
+        stringFor(start + length),
         { sync: false },
       )
     }
   }
   const setDuration = (str, { sync } = {}) => {
     str = onlyTime({ setter: baseDuration })(str)
-    if(sync !== false && isSet(endOffset)) {
+    if(sync !== false && (isSet(endOffset) || isSet(startOffset))) {
       const start = (
-        timeFor(startOffset, { default: node.startOffset })
+        timeFor(ifSet(startOffset) ?? node.startOffset)
       )
       setEndOffset(
         stringFor(start + timeFor(str)),
@@ -396,9 +409,12 @@ const NodeSettings = ({ isOpen, onClose, node }) => {
   }
   const setEndOffset = (str, { sync } = {}) => {
     str = onlyTime({ setter: baseEndOffset })(str)
-    if(sync !== false && isSet(duration)) {
+    if(
+      sync !== false
+      && (isSet(duration) || isSet(startOffset))
+    ) {
       const start = (
-        timeFor(startOffset, { default: node.startOffset })
+        timeFor(ifSet(startOffset) ?? node.startOffset)
       )
       const end = timeFor(str)
       setDuration(
@@ -540,7 +556,7 @@ const NodeSettings = ({ isOpen, onClose, node }) => {
                         )}
                       />
                       {
-                        duration === '' && node.duration
+                        !isSet(duration) && isSet(node.duration)
                         && ((() => {
                           const time = stringFor(node.duration.toString())
                           return (
