@@ -3,7 +3,7 @@ import {
   Stack, Spacer, Spinner, chakra,
 } from '@chakra-ui/react'
 import {
-  useEffect, useRef, useState, useMemo, useCallback,
+  useEffect, useRef, useState, useMemo,
 } from 'react'
 // import Markdown from 'react-markdown'
 import { v4 as uuid } from 'uuid'
@@ -12,15 +12,26 @@ import { durationFor, isoStringFor } from 'utils'
 const Video = chakra('video')
 
 const colors = [
-  'red', 'green', 'purple', 'yellow', 'gold',
+  'red', 'green', 'purple', 'yellow',
   'silver', 'blue', 'cyan', 'orange', 'brown',
   'black', 'white', 'coral', 'gray', 'pink',
-  'olive', 'orangered', 'teal',
+  'olive', 'orangered', 'teal', 'gold',
 ]
+
+const colorIds = []
+const colorFor = (id) => {
+  let index = colorIds.indexOf(id)
+  if(index < 0) {
+    colorIds.push(id)
+    index = colorIds.length - 1
+  }
+  return colors[index % colors.length]
+}
 
 const newNode = (obj = {}) => (
   Object.assign(
-    { id: uuid(), children: [] }, obj
+    { id: uuid(), children: [], partition: false },
+    obj,
   )
 )
 
@@ -46,22 +57,20 @@ const connectTree = ({ stops }) => {
       child.parent = rent
       return child
     })
-    console.info({ children })
     return children
   }
   let root = stops
   if(Array.isArray(root)) {
     root = newNode({ children: stops })
   }
-  console.info({ connect: root })
   return visit({ node: newNode(root), method: parent })
 }
+
+const clone = (stops) => connectTree({ stops })
 
 const fixTimes = ({ root, duration }) => {
   const fix = ({ parent, children, visit }) => (
     children.map((child) => {
-      visit({ node: child, method: fix })
-
       if (typeof child.duration === 'string') {
         child.durationStr = child.duration
         const dur = durationFor(child.duration)
@@ -74,24 +83,27 @@ const fixTimes = ({ root, duration }) => {
         const [node] = offNodes
         const siblings = siblingsOf(node)
         node.startOffset = (
-          siblings.sort((a, b) => (
-            (a.startOffset + a.duration)
-            - (b.startOffset + b.duration)
-          ))
+          siblings
           .find((sibling) => (
             (sibling.startOffset + sibling.duration)
             < (parent.startOffset + parent.duration)
           ))
           ?.startOffset
         )
-        if (node.startOffset == null && !node.parent) {
-          node.startOffset = 0
+        if(node.startOffset == null) {
+          if(!node.parent) {
+            node.startOffset = 0
+          } else {
+            offNodes.unshift(node.parent)
+          }
         } else {
-          offNodes.unshift(node.parent)
+          break
         }
       }
       offNodes.slice(1).forEach((node) => {
-        node.startOffset = offNodes[0].startOffset
+        if(!node.parent.partition) {
+          node.startOffset = offNodes[0].startOffset
+        }
       })
 
       const durNodes = [child]
@@ -113,8 +125,58 @@ const fixTimes = ({ root, duration }) => {
         }
       }
       durNodes.slice(1).forEach((node) => {
-        node.duration = durNodes[0].duration
+        if(!node.parent.partition) {
+          node.duration = durNodes[0].duration
+        }
       })
+
+      if(parent.partition) {
+        let startIdx = 0
+        while(
+          startIdx < children.length
+          && children[startIdx].duration != null
+          && children[startIdx].startOffset != null
+        ) {
+          startIdx++
+        }
+        let endIdx = startIdx
+        while(
+          endIdx < children.length
+          && children[endIdx].duration == null
+          && children[endIdx].startOffset == null
+        ) {
+          endIdx++
+        }
+        const span = endIdx - startIdx
+        if(span > 0) {
+          const start = (
+            (startIdx === 0) ? (
+              child.parent.startOffset
+            ) : (
+              children[startIdx].startOffset
+              + children[startIdx].duration
+            )
+          )
+          const dur = (
+            (endIdx === children.length) ? (
+              child.parent.duration
+            ) : (
+              children[endIdx].startOffset
+              + children[endIdx].duration
+            )
+            - start
+          )
+          const durPer = dur / span
+
+          for(let i = startIdx; i < endIdx; i++) {
+            children[i].duration = durPer
+            children[i].startOffset = (
+              (children[i - 1]?.startOffset ?? -durPer) + durPer
+            )
+          }
+        }
+      }
+  
 
       if (child.startOffset == null) {
         console.warn(`No Starting Time`, { parent })
@@ -123,19 +185,23 @@ const fixTimes = ({ root, duration }) => {
         console.warn(`No Event Duration`, { parent })
       }
 
+      visit({ node: child, method: fix })
+
       return child
     })
   )
 
-  return visit({ node: root, method: fix })
+  root = clone(root)
+  visit({ node: root, method: fix })
+  return root
 }
 
-const Spans = ({ node, duration, count = 1 }) => {
+const Spans = ({ node, count = 1 }) => {
   if (!node) return null
 
   const {
     id, children = [], startOffset,
-    duration: dur, ...rest
+    duration, partition, ...rest
   } = node
 
   if (Object.keys(rest).length === 0) {
@@ -151,8 +217,8 @@ const Spans = ({ node, duration, count = 1 }) => {
     )
   }
 
-  const timePercent = 100 * node.startOffset / duration
-  const heightPercent = 100 * node.duration / duration
+  const timePercent = 0 //100 * startOffset / duration
+  const heightPercent = 100 * duration / node.parent.duration
 
   return (
     <Flex
@@ -163,13 +229,15 @@ const Spans = ({ node, duration, count = 1 }) => {
         content: '""', zIndex: -1,
         position: 'absolute', opacity: 0.5,
         top: 0, left: 0, bottom: 0, right: 0,
-        bg: colors[count % colors.length],
+        bg: colorFor(node.id),
       }}
       pl={3} pr={1} w="full"
       sx={{ '&:hover::before': { opacity: 1 }}}
+      direction={node.partition ? 'column' : 'row'}
     >
       {node.children.map((child, idx) => (
         <Spans
+          {...{ duration }}
           key={idx}
           node={child}
           count={count + idx + 1}
@@ -189,7 +257,11 @@ const TimeBox = (({ children, ...props }) => (
   </Box>
 ))
 
-const Times = ({ node, startsAt, endsAt, ...props }) => {
+const Times = ({ node, startsAt, duration, ...props }) => {
+  const endsAt = useMemo(() => (
+    new Date(startsAt.getTime() + duration)
+  ), [startsAt, duration])
+
   if (!(endsAt instanceof Date) || isNaN(endsAt) || !node) {
     return null
   } else {
@@ -226,7 +298,7 @@ const Times = ({ node, startsAt, endsAt, ...props }) => {
 }
 
 const Events = ({
-  node = {}, insertChild, removeNode, duration, count = 1,
+  node = {}, insertChild, replaceNode, insertParent, duration, count = 1,
   ...props
 }) => {
   if (!node) return null
@@ -236,18 +308,36 @@ const Events = ({
       { parent, insert: { type: 'new' } }
     )
   }
-  const addSibling = (sibling) => {
-    insertChild(
-      {
-        parent: sibling.parent,
-        insert: { type: 'new' },
-      }
-    )
+  const addPartition = (sibling) => {
+    const { parent } = sibling
+    if(!parent.partition) {
+      insertParent({
+        child: sibling,
+        insert: { partition: true },
+        siblings: [newNode({ type: 'part' })]
+      })
+    } else {
+      insertChild({
+        parent, insert: { type: 'new' }
+      })
+    }
+  }
+  const addParallel = (sibling) => {
+    let { parent } = sibling
+    while(parent.partition && parent.parent) {
+      parent = parent.parent
+    }
+    insertChild({
+      parent, insert: { type: 'para' }
+    })
+  }
+  const removeNode = (node) => {
+    replaceNode({ node })
   }
 
   const {
     id, children = [], startOffset,
-    duration: dur, ...rest
+    duration: dur, partition, ...rest
   } = node
 
   if (Object.keys(rest).length === 0) {
@@ -255,7 +345,10 @@ const Events = ({
       children.map((child, idx) => {
         return (
         <Events
-          {...{ duration, insertChild, removeNode }}
+          {...{
+            duration, insertChild,
+            insertParent, replaceNode,
+          }}
           key={idx}
           node={child}
           count={count + idx}
@@ -267,7 +360,7 @@ const Events = ({
 
   const timePercent = 100 * startOffset / duration
   const heightPercent = 100 * dur / duration
-  
+
   return (
     <Stack
       top={`${timePercent}%`}
@@ -277,41 +370,54 @@ const Events = ({
         content: '""', zIndex: -1,
         position: 'absolute', opacity: 0.5,
         top: 0, left: 0, bottom: 0, right: 0,
-        bg: colors[count % colors.length],
+        bg: colorFor(node.id),
       }}
       px={3} w="full"
       sx={{ '&:hover::before': { opacity: 1 }}}
       {...props}
       className="events"
     >
-      <Flex>
-        <Heading
-          textTransform="capitalize" fontSize={32}
-          color="white" pt={3}
-        >
-          {node.type}
-        </Heading>
-        <Spacer />
-        <ButtonGroup>
-          {console.info({ node, count })}
-          <Button
-            title="Create A New Sibling"
-            onClick={() => addSibling(node)}
-          >➕ »</Button>
-          <Button
-            title="Create A New Child"
-            onClick={() => addChild(node)}
-          >➕ ⇓</Button>
-          <Button
-            title="Remove Node"
-            onClick={() => removeNode(node)}
-          >➖</Button>
-        </ButtonGroup>
-      </Flex>
-      <chakra.hr color="white" />
+      {node.type && (
+        <>
+          <Flex>
+            <Heading
+              textTransform="capitalize" fontSize={32}
+              color="white" pt={3}
+            >
+              {node.type}
+            </Heading>
+            <Spacer />
+            <ButtonGroup>
+              <Button
+                title="Create A Child"
+                onClick={() => addChild(node)}
+                fontWeight="normal"
+              >█ → 🬠</Button>
+              <Button
+                title="Create A Partition Sibling"
+                onClick={() => addPartition(node)}
+                fontWeight="normal"
+              >█ → 🮒</Button>
+              <Button
+                title="Create A Parallel Sibling"
+                onClick={() => addParallel(node)}
+                fontWeight="normal"
+              >█ → 🮔</Button>
+              <Button
+                title="Remove Node"
+                onClick={() => removeNode(node)}
+              >➖</Button>
+            </ButtonGroup>
+          </Flex>
+          <chakra.hr color="white" />
+        </>
+      )}
       {node.children?.map((child, idx) => (
         <Events
-          {...{ duration, insertChild, removeNode }}
+          {...{
+            duration, insertChild,
+            insertParent, replaceNode
+          }}
           key={idx}
           node={child}
           count={count + idx + 1}
@@ -350,25 +456,21 @@ export default ({
   const [raw, setRaw] = useState(
     connectTree({ stops: rootStops })
   )
-  const endsAt = useMemo(() => (
-    new Date(startsAt.getTime() + duration)
-  ), [startsAt, duration])
   const [stops, setStops] = useState()
 
   useEffect(() => {
     setStops(
-      fixTimes({ root: connectTree({ stops: raw }), duration })
+      fixTimes({ root: raw, duration })
     )
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [duration, raw])
 
-  console.info({ stops, duration, raw })
-
   const insertChild = ({ parent, insert }) => {
     const rawParent = findById(raw, parent.id)
-    console.info({ parent, rawParent, insert })
     const self = { ...rawParent }
-    self.children = [...rawParent.children, newNode(insert)]
+    insert = newNode(insert)
+    insert.parent = self
+    self.children = [...rawParent.children, insert]
     const insertion = ({ children, visit }) => (
       children.map((child) => {
         visit({ node: child, method: insertion })
@@ -378,21 +480,45 @@ export default ({
     setRaw((raw) => {
       const root = connectTree({ stops: raw })
       const altered = visit({ node: root, method: insertion })
-      console.info({ altered, stops })
       return altered
     })
   }
 
-  const removeNode = (node) => {
+  const insertParent = ({ child, insert, siblings = [] }) => {
+    const rawChild = findById(raw, child.id)
+    insert.children = [rawChild, ...siblings]
+    replaceNode({
+      node: rawChild,
+      replacement: newNode(insert),
+    })
+    return insert
+  }
+
+  const replaceNode = ({ node, replacement = null }) => {
     setRaw((raw) => {
-      const clone = connectTree({ stops: raw })
-      const rawNode = findById(clone, node.id)
-      const children = rawNode.parent.children
+      const dup = clone(raw)
+      const rawNode = findById(dup, node.id)
+
+      if(!rawNode) {
+        throw new Error(`Couldn't find node with id: ${node.id}`)
+      }
+
+      const { parent } = rawNode
+      const { children } = parent
       const index = children.findIndex(
         (child) => child.id === node.id
       )
-      children.splice(index, 1)
-      return clone
+      if(!replacement) {
+        children.splice(index, 1)
+      } else {
+        replacement.parent = parent
+        parent.children = [
+          ...children.slice(0, index),
+          replacement,
+          ...children.slice(index + 1),
+        ]
+      }
+      return dup
     })
   }
 
@@ -462,14 +588,20 @@ export default ({
         <>
           <GridItem id="spans" rowSpan={1} colSpan={1}>
             <Times
-              {...{ startsAt, endsAt, duration }}
+              {...{ startsAt, duration }}
               node={stops}
               h="calc(100vh - max(10vh, 3.5em))"
             />
           </GridItem>
-          <GridItem id="events" rowSpan={1} colSpan={1}>
+          <GridItem
+            id="events" rowSpan={1} colSpan={1}
+            overflowY="scroll"
+          >
             <Events
-              {...{ insertChild, duration, removeNode }}
+              {...{
+                insertChild, insertParent,
+                duration, replaceNode,
+              }}
               node={stops}
             />
           </GridItem>
