@@ -68,7 +68,7 @@ const connectTree = ({ stops }) => {
   }
   let root = stops
   if(Array.isArray(root)) {
-    root = newNode({ children: stops })
+    root = { children: root }
   }
   return visit({ node: newNode(root), method: parent })
 }
@@ -194,15 +194,11 @@ const generate = ({ root, duration, raw }) => {
         console.warn(`No Event Duration`, { parent })
       }
 
-      visit({ node: child, method: fix })
-
-      return child
+      return visit({ node: child, method: fix })
     })
   )
 
-  root = clone(root)
-  visit({ node: root, method: fix })
-  return root
+  return visit({ node: clone(root), method: fix })
 }
 
 const Spans = ({ node, count = 1, hovered, setHovered }) => {
@@ -815,8 +811,7 @@ export default ({
       })
     )
     setRaw((raw) => {
-      const root = clone(raw)
-      return visit({ node: root, method: insertion })
+      return visit({ node: clone(raw), method: insertion })
     })
   }
 
@@ -860,6 +855,30 @@ export default ({
 
   const seekTo = (time) => {
     vid.current.currentTime = time
+  }
+
+  const serialize = () => {
+    const rmParents = (
+      ({ parent, children, visit }) => {
+        delete parent.id
+        delete parent.parent
+        if(!parent.partition) {
+          delete parent.partition
+        }
+        return children.map((child) => (
+          visit({ node: child, method: rmParents })
+        ))
+      }
+    )
+    const stripped = (
+      visit({ node: clone(raw), method: rmParents })
+    )
+    const blob = new Blob(
+      [JSON.stringify(stripped, null, 2)],
+      { type: "text/json" },
+    )
+    const url = window.URL.createObjectURL(blob)
+    window.open(url, '_blank').focus()
   }
 
   /*
@@ -949,15 +968,22 @@ export default ({
       <GridItem
         id="video"
         rowSpan={1} colSpan={2}
-        maxH="max(10vh, 3.5em)"
+        maxH="max(10vh, 3.5em)" maxW="100vw"
       >
-        <Video
-          w="100%" maxH="100%" controls
-          ref={vid}
-        >
-          <source {...{ src, type: 'video/mp4' }} />
-          {/* {VTT && <track default src={VTT}/>} */}
-        </Video>
+        <Flex maxH="100%" maxW="100vw">
+          <Video
+            flexGrow={1} controls
+            maxH="100%" maxW="calc(100vw - 3em)"
+            ref={vid}
+          >
+            <source {...{ src, type: 'video/mp4' }} />
+            {/* {VTT && <track default src={VTT}/>} */}
+          </Video>
+          <Button
+            title="Download the current configuration"
+            onClick={serialize}
+          >⭳</Button>
+        </Flex>
       </GridItem>
     </Grid>
   )
