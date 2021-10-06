@@ -252,24 +252,32 @@ const Spans = ({ node, count = 1, hovered, setHovered }) => {
         top: 0, left: 0, bottom: 0, right: 0,
         bg: colorFor(node.id),
       }}
-      pl={3} pr={1} w="full" {...{ className }}
+      p={0} w="full" {...{ className }}
       sx={{
         '&.hovered::before': { opacity: 1 }
       }}
-      direction={node.partition ? 'column' : 'row'}
       onMouseEnter={() => mouseOver(node)}
       onMouseLeave={() => mouseOut(node)}
     >
-      {node.children.map((child, idx) => (
-        <Link to={`#${child.id}`} style={{ display: 'contents' }}>
+      <Link
+        style={{ display: 'block', width: '0.75em' }}
+        to={`#${node.id}`}
+      />
+      <Flex
+        direction={node.partition ? 'column' : 'row'}
+      >
+        {node.children.map((child, idx) => (
           <Spans
             {...{ duration, hovered, setHovered }}
-            key={idx}
-            node={child}
+            key={child.id} node={child}
             count={count + idx + 1}
           />
-        </Link>
-      ))}
+        ))}
+      </Flex>
+      <Link
+        style={{ display: 'block', width: '0.25em' }}
+        to={`#${node.id}`}
+      />
     </Flex>
   )
 }
@@ -343,21 +351,22 @@ const Events = ({
       insertParent({
         child: sibling,
         insert: { partition: true },
-        siblings: [newNode({ type: 'part' })]
+        siblings: [newNode({ type: 'part' })],
       })
     } else {
       insertChild({
-        parent, insert: { type: 'new' }
+        parent, insert: { type: 'new' }, anchor: sibling
       })
     }
   }
   const addParallel = (sibling) => {
     let { parent } = sibling
     while(parent.partition && parent.parent) {
+      sibling = parent
       parent = parent.parent
     }
     insertChild({
-      parent, insert: { type: 'para' }
+      parent, insert: { type: 'para' }, anchor: sibling
     })
   }
   const removeNode = (node) => {
@@ -378,6 +387,10 @@ const Events = ({
       dup.splice(ids.indexOf(node.id), 1)
       return dup
     })
+  }
+
+  const edit = (node) => {
+
   }
 
   const {
@@ -411,6 +424,14 @@ const Events = ({
     className += ' hovered'
   }
 
+  const Option = ({ children, ...props }) => (
+    <Button
+      {...props}
+      fontWeight="normal" variant="outline" mt={1.5}
+      fontSize={15} p={1} _hover={{ bg: '#00000077' }}
+    >{children}</Button>
+  )
+
   return (
     <Stack
       id={node.id}
@@ -442,25 +463,26 @@ const Events = ({
             </Heading>
             <Spacer />
             <ButtonGroup>
-              <Button
+            <Option
+                title="Edit This Node"
+                onClick={() => edit(node)}
+              >✏️</Option>
+              <Option
                 title="Create A Child"
                 onClick={() => addChild(node)}
-                fontWeight="normal"
-              >█ → 🬠</Button>
-              <Button
+              >█ → 🬠</Option>
+              <Option
                 title="Create A Partition Sibling"
                 onClick={() => addPartition(node)}
-                fontWeight="normal"
-              >█ → 🮒</Button>
-              <Button
+              >█ → 🮒</Option>
+              <Option
                 title="Create A Parallel Sibling"
                 onClick={() => addParallel(node)}
-                fontWeight="normal"
-              >█ → 🮔</Button>
-              <Button
+              >█ → 🮔</Option>
+              <Option
                 title="Remove Node"
                 onClick={() => removeNode(node)}
-              >➖</Button>
+              >➖</Option>
             </ButtonGroup>
           </Flex>
           <chakra.hr color="white" />
@@ -521,12 +543,20 @@ export default ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [duration, raw])
 
-  const insertChild = ({ parent, insert }) => {
+  const insertChild = ({ parent, insert, anchor }) => {
     const rawParent = findById(raw, parent.id)
     const self = { ...rawParent }
     insert = newNode(insert)
     insert.parent = self
-    self.children = [...rawParent.children, insert]
+    const { children } = parent
+    const pos = (
+      anchor ? children.indexOf(anchor) : children.length
+    )
+    self.children = [
+      ...self.children.slice(0, pos + 1),
+      insert,
+      ...self.children.slice(pos + 1),
+    ]
     const insertion = ({ children, visit }) => (
       children.map((child) => {
         visit({ node: child, method: insertion })
@@ -534,9 +564,8 @@ export default ({
       })
     )
     setRaw((raw) => {
-      const root = connectTree({ stops: raw })
-      const altered = visit({ node: root, method: insertion })
-      return altered
+      const root = clone(raw)
+      return visit({ node: root, method: insertion })
     })
   }
 
