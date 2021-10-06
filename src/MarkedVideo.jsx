@@ -13,7 +13,7 @@ import Markdown from 'react-markdown'
 import { v4 as uuid } from 'uuid'
 import { HashLink as Link } from 'react-router-hash-link'
 import {
-  durationFor, isoStringFor, stringFor,
+  durationFor, isoStringFor, stringFor, timeFor, isSet,
 } from 'utils'
 
 const Video = chakra('video')
@@ -343,7 +343,11 @@ const Times = ({
 }
 
 const onlyTime = ({ setter }) => (
-  (str) => setter.call(this, str.replace(/[^0-9:.]/g, ''))
+  (str) => {
+    str = str.replace(/[^0-9:.]/g, '')
+    setter.call(this, str)
+    return str
+  }
 )
 
 const NodeSettings = ({ isOpen, onClose, node }) => {
@@ -353,15 +357,60 @@ const NodeSettings = ({ isOpen, onClose, node }) => {
   const [startOffset, baseStartOffset] = (
     useState(node.raw.startOffset ?? '')
   )
-  const setStartOffset = (
-    onlyTime({ setter: baseStartOffset })
-  )
   const [duration, baseDuration] = (
     useState(node.raw.duration ?? '')
   )
-  const setDuration = (
-    onlyTime({ setter: baseDuration })
+  const defaultEnd = (
+    (isSet(startOffset) ? timeFor(startOffset) : node.startOffset)
+    + (isSet(duration) ? timeFor(duration) : node.duration)
   )
+  const [endOffset, baseEndOffset] = (
+    useState(
+      (isSet(startOffset) && isSet(duration)) ? (
+        stringFor(defaultEnd)
+      ) : (
+        ''
+      )
+    )
+  )
+  const setStartOffset = (str) => {
+    str = onlyTime({ setter: baseStartOffset })(str)
+    if(isSet(endOffset) && isSet(duration)) {
+      const start = (
+        timeFor(str, { default: node.startOffset })
+      )
+      const end = timeFor(endOffset)
+      setDuration(
+        stringFor(end - start),
+        { sync: false },
+      )
+    }
+  }
+  const setDuration = (str, { sync } = {}) => {
+    str = onlyTime({ setter: baseDuration })(str)
+    if(sync !== false && isSet(endOffset)) {
+      const start = (
+        timeFor(startOffset, { default: node.startOffset })
+      )
+      setEndOffset(
+        stringFor(start + timeFor(str)),
+        { sync: false },
+      )
+    }
+  }
+  const setEndOffset = (str, { sync } = {}) => {
+    str = onlyTime({ setter: baseEndOffset })(str)
+    if(sync !== false && isSet(duration)) {
+      const start = (
+        timeFor(startOffset, { default: node.startOffset })
+      )
+      const end = timeFor(str)
+      setDuration(
+        stringFor(end - start),
+        { sync: false },
+      )
+    }
+  }
 
   return (
     <Modal
@@ -370,7 +419,11 @@ const NodeSettings = ({ isOpen, onClose, node }) => {
     >
       <ModalOverlay/>
       <ModalContent>
-        <ModalHeader>Node: {title}</ModalHeader>
+        <ModalHeader
+          textOverflow="ellipsis"
+          overflow="hidden"
+          whiteSpace="nowrap"
+        >Node: <q>{title}</q></ModalHeader>
         <ModalCloseButton/>
         <ModalBody pb={6}>
 
@@ -451,7 +504,33 @@ const NodeSettings = ({ isOpen, onClose, node }) => {
                 <Flex>
                   <FormControl mt={4}>
                     <FormLabel>End Offset</FormLabel>
-                    <Input placeholder="automatic" />
+                    <Flex>
+                      <Input
+                        placeholder="automatic"
+                        value={endOffset}
+                        onChange={({ target: { value }}) => {
+                          setEndOffset(value)
+                        }}
+                      />
+                      {
+                        endOffset === '' && !!defaultEnd
+                        && ((() => {
+                          const time = stringFor(defaultEnd.toString())
+                          return (
+                            <Button
+                              variant="outline"
+                              p={2} ml={2} fontWeight="bold"
+                              onClick={() => {
+                                setEndOffset(time)
+                              }}
+                              title={
+                                `Autocomplete with ${time}`
+                              }
+                            >←</Button>
+                          )
+                        })())
+                      }
+                    </Flex>
                   </FormControl>
                   <Text alignSelf="end" mb={2} mx={2}>or</Text>
                   <FormControl mt={4}>
@@ -629,8 +708,7 @@ const Events = ({
           <>
             <Flex>
               <Heading
-                textTransform="capitalize" fontSize={32}
-                color="white" pt={3}
+                fontSize={32} color="white" pt={3}
               >
                 {node.title}
               </Heading>

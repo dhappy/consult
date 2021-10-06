@@ -36,27 +36,45 @@ export const durationFor = (str) => {
   }
 }
 
-export const timeFor = (str) => (
+export const timeFor = (str, opts = {}) => (
   (str) ? ((() => {
     const [secondsStr, minutesStr, ...hoursStrs] = str.split(':').reverse()
     if(hoursStrs.length > 1) {
       console.warn(`Got ${hoursStrs} for hours parsing ${str}.`)
     }
-    let [seconds, minutes, hours] = (
-      [parseFloat(secondsStr), parseFloat(minutesStr ?? 0), parseFloat(hoursStrs?.[0] ?? 0)]
-    )
+    let [seconds, minutes, hours] = ([
+      parseFloat(!!secondsStr.length ? secondsStr : 0),
+      parseInt(minutesStr ?? 0),
+      parseInt(hoursStrs?.[0] ?? 0),
+    ])
     minutes += hours * 60
     return seconds + minutes * 60
   })()) : (
-    undefined
+    opts.default
   )
 )
 
-export const stringFor = (time) => {
+export const isSet = (value) => (
+  Boolean(value) || value === 0
+)
+
+export const stringFor = (time, opts = {}) => {
+  if(!isSet(time)) return opts.default
+
   const hours = Math.floor(time / (60 * 60))
   const minutes = Math.floor((time % (60 * 60)) / 60)
   const seconds = Math.floor(time % 60)
   const milliseconds = time - Math.floor(time)
+
+  if(
+    ![hours, minutes, seconds, milliseconds].reduce(
+      (acc, num) => acc && !isNaN(num),
+      true
+    )
+  ) {
+    return opts.default
+  }
+
   let [msStr] = (
     milliseconds.toFixed(4).split('.').slice(-1)
   )
