@@ -9,8 +9,8 @@ export default () => (
   <Router>
     <Switch>
       <Route exact path="/new" component={New}/>
-      <Route exact path="/" component={ListAvailable}/>
       <Route path="/" component={View}/>
+      <Route exact path="/" component={ListAvailable}/>
     </Switch>
   </Router>
 )

@@ -13,7 +13,7 @@ import Markdown from 'react-markdown'
 import { v4 as uuid } from 'uuid'
 import { HashLink as Link } from 'react-router-hash-link'
 import {
-  durationFor, isoStringFor, stringFor, timeFor, isSet, ifSet,
+  isoStringFor, stringFor, timeFor, isSet, ifSet,
 } from 'utils'
 import CeramicLogo from './ceramic.svg'
 
@@ -47,10 +47,13 @@ const newNode = (obj = {}) => (
 )
 
 const visit = ({ node, method }) => {
-  const children = node?.children ?? []
-  node.children = method.apply(
+  let children = node?.children ?? []
+  children = method.apply(
     node, [{ children, parent: node, visit }]
   )
+  if(isSet(node.children)) {
+    node.children = children
+  }
   return node
 }
 
@@ -80,38 +83,38 @@ const connect = ({ stops }) => {
 const clone = (stops) => connect({ stops })
 
 const generate = ({ root, duration, raw }) => {
+  const node = clone(root)
   const fix = ({ parent, children, visit }) => (
     children.map((child) => {
-      child.raw = findById(raw, child.id)
-      child.root = raw
+      child.raw = findById(node, child.id)
 
       if (typeof child.duration === 'string') {
         child.durationStr = child.duration
-        const dur = durationFor(child.duration)
-        dur.duration *= 1000 // originally seconds
-        Object.assign(child, dur)
+        child.duration = timeFor(child.duration)
+      }
+
+      if (typeof child.startOffset === 'string') {
+        child.startOffsetStr = child.startOffset
+        child.startOffset = timeFor(child.startOffset)
       }
 
       const offNodes = [child]
       while(offNodes[0].startOffset == null) {
         const [node] = offNodes
         const siblings = siblingsOf(node)
-        node.startOffset = (
-          siblings
-          .find((sibling) => (
-            (sibling.startOffset + sibling.duration)
-            < (parent.startOffset + parent.duration)
-          ))
-          ?.startOffset
-        )
-        if(node.startOffset == null) {
-          if(!node.parent) {
-            node.startOffset = 0
-          } else {
-            offNodes.unshift(node.parent)
-          }
-        } else {
+        const index = siblings.indexOf(node)
+        if(index < siblings.length - 1) {
+          node.startOffset = (
+            siblings[index + 1].startOffset
+            - node.duration
+          )
+        }
+        if(node.startOffset != null) {
           break
+        } else if(!node.parent) {
+          node.startOffset = 0
+        } else {
+          offNodes.unshift(node.parent)
         }
       }
       offNodes.slice(1).forEach((node) => {
@@ -191,7 +194,6 @@ const generate = ({ root, duration, raw }) => {
         }
       }
   
-
       if (child.startOffset == null) {
         console.warn(`No Starting Time`, { parent })
       }
@@ -203,7 +205,7 @@ const generate = ({ root, duration, raw }) => {
     })
   )
 
-  return visit({ node: clone(root), method: fix })
+  return visit({ node, method: fix })
 }
 
 const Spans = ({ node, count = 1, hovered, setHovered }) => {
@@ -304,7 +306,8 @@ const TimeBox = (({ children, ...props }) => (
 ))
 
 const Times = ({
-  node, startsAt, duration, hovered, setHovered, ...props
+  node, startsAt, duration, time,
+  hovered, setHovered, ...props
 }) => {
   const endsAt = useMemo(() => (
     new Date(startsAt.getTime() + duration * 1000)
@@ -313,9 +316,9 @@ const Times = ({
   if (!(endsAt instanceof Date) || isNaN(endsAt) || !node) {
     return null
   } else {
-    const [, endTime] = isoStringFor(endsAt).split('T')
-    const ends = endTime.replace(
-      /^((\d\d)(:(\d\d)){2}).*$/, '$1'
+    const ends = isoStringFor(
+      endsAt,
+      { date: false, tz: false },
     )
 
     return (
@@ -829,8 +832,8 @@ const findById = (root, id) => {
   }
 }
 
-const FileSettings = ({
-  open, closeFileSettings, info, setInfo,
+const VideoSettings = ({
+  open, closeVideoSettings, info, setInfo,
 }) => {
   if(!isSet(info.startsAt)) {
     info.startsAt = new Date()
@@ -844,13 +847,13 @@ const FileSettings = ({
     setInfo((info) => ({
       ...info, startsAt: new Date(startsAt),
     }))
-    closeFileSettings()
+    closeVideoSettings()
   }
 
   return (
     <Modal
       size="xl"
-      {...{ isOpen: open, onClose: closeFileSettings }}
+      {...{ isOpen: open, onClose: closeVideoSettings }}
     >
       <ModalOverlay/>
       <ModalContent as="form" onSubmit={save}>
@@ -858,7 +861,7 @@ const FileSettings = ({
           textOverflow="ellipsis"
           overflow="hidden"
           whiteSpace="nowrap"
-        >File Settings</ModalHeader>
+        >Video Settings</ModalHeader>
         <ModalCloseButton/>
         <ModalBody pb={6}>
           <FormControl mt={4}>
@@ -875,7 +878,7 @@ const FileSettings = ({
         <ModalFooter>
           <Button
             colorScheme="red"
-            onClick={closeFileSettings}
+            onClick={closeVideoSettings}
           >Cancel</Button>
           <Button
             type="submit"
@@ -897,30 +900,29 @@ const DateTime = ({ startsAt, time }) => {
   </Box>
 }
 
-export default ({
-  stops: rootStops = [], source,
-}) => {
+export default (config) => {
   const [duration, setDuration] = (
     useState(DEFAULT_DURATION)
   )
   const vid = useRef()
   const [time, setTime] = useState(0)
   const [raw, setRaw] = useState(
-    connect({ stops: rootStops })
+    connect({ stops: config.stops })
   )
   const [stops, setStops] = useState()
   const [hovered, setHovered] = useState([])
   const [info, setInfo] = useState({
-    startsAt: new Date()
+    startsAt: config.startsAt,
+    source: encodeURI(config.source),
   })
-  const { startsAt } = info
+  const { startsAt, source } = info
   const [vidHeight, setVidHeight] = (
     useState(DEFAULT_VID_HEIGHT)
   )
   const {
     isOpen: open,
-    onOpen: openFileSettings,
-    onClose: closeFileSettings,
+    onOpen: openVideoSettings,
+    onClose: closeVideoSettings,
   } = useDisclosure()
   const src = useMemo(() => {
     const regex = /^ipfs:(\/\/)?(.+)$/i
@@ -936,9 +938,9 @@ export default ({
   }, [source])
 
   useEffect(() => {
-    setStops(
-      generate({ root: raw, duration, raw })
-    )
+    const stops = generate({ root: raw, duration, raw })
+    console.info({ stops })
+    setStops(stops)
   }, [raw, duration])
 
   const insertChild = ({ parent, insert, anchor }) => {
@@ -1017,6 +1019,9 @@ export default ({
         if(!parent.partition) {
           delete parent.partition
         }
+        if(children.length === 0) {
+          delete parent.children
+        }
 
         return children.map((child) => (
           visit({ node: child, method: strip })
@@ -1027,16 +1032,19 @@ export default ({
       visit({ node: clone(raw), method: strip })
     )
     const metadata = {
-      file: info,
+      video: info,
       stops: stripped,
     }
-    console.info({ metadata })
-    const blob = new Blob(
-      [JSON.stringify(metadata, null, 2)],
-      { type: "text/json" },
-    )
-    const url = window.URL.createObjectURL(blob)
-    window.open(url, '_blank').focus()
+    try {
+      const blob = new Blob(
+        [JSON.stringify(metadata, null, 2)],
+        { type: "text/json" },
+      )
+      const url = window.URL.createObjectURL(blob)
+      window.open(url, '_blank').focus()
+    } catch(error) {
+      console.error({ error })
+    }
   }
 
   const upload = () => {
@@ -1090,8 +1098,8 @@ export default ({
 
   return (
     <>
-      <FileSettings {...{
-        open, closeFileSettings, info, setInfo,
+      <VideoSettings {...{
+        open, closeVideoSettings, info, setInfo,
       }}/>
       <Grid
         as="form"
@@ -1108,7 +1116,7 @@ export default ({
             <GridItem id="spans" rowSpan={1} colSpan={1}>
               <Times
                 {...{
-                  startsAt, duration,
+                  startsAt, duration, time,
                   hovered, setHovered,
                 }}
                 node={stops}
@@ -1148,8 +1156,8 @@ export default ({
             <Flex align="center">
               <Stack>
                 <Button
-                  title="Edit the file information"
-                  onClick={openFileSettings}
+                  title="Edit the video information"
+                  onClick={openVideoSettings}
                   h="auto"
                 >⚙</Button>
                 <Button
@@ -1160,7 +1168,7 @@ export default ({
               </Stack>
               <Button
                 title="Upload to Ceramic"
-                onClick={openFileSettings}
+                onClick={upload}
               >
                 <Image
                   minH={25} minW={25}
