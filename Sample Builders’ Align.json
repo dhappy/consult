@@ -26,7 +26,27 @@
                 "startOffset": "7:45"
               },
               {
-                "title": "new"
+                "title": "Presenter: @!Udit-takkar",
+                "startOffset": "9:44",
+                "children": [
+                  {
+                    "partition": true,
+                    "children": [
+                      {
+                        "title": "Previously: Submitted a Pull Request",
+                        "startOffset": "9:50"
+                      },
+                      {
+                        "title": "Waiting: The Top Three Skills Interface from @Dave",
+                        "startOffset": "10:02"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "title": "Presenter: @Dave",
+                "startOffset": "13:00"
               },
               {
                 "children": [
@@ -56,7 +76,7 @@
             "partition": true
           }
         ],
-        "title": "MetaGame’s Builders’s Align for 1443/2/28‒3/6"
+        "title": "MetaGame’s Builders’ Align for 1443/2/28‒3/6"
       }
     ]
   }
