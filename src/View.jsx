@@ -69,7 +69,7 @@ export default () => {
             </ListItem>
             <ListItem>
               <Link
-                to="ipfs://QmeoVmZ637igvMFNMk9pKqfUrybTXBG4WNPFkFyEV6UPfT/Sample%20Builders’%20Align.json"
+                to="ipfs://QmUzL5e62bahB7xP6P2jv235VQkVCUKJS6guVWL1SEnU5X/Sample%20Builders’%20Align.json"
               >Builders’ Align Metadata</Link>
             </ListItem>
           </UnorderedList>

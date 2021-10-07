@@ -83,129 +83,86 @@ const connect = ({ stops }) => {
 const clone = (stops) => connect({ stops })
 
 const generate = ({ root, duration, raw }) => {
-  const node = clone(root)
-  const fix = ({ parent, children, visit }) => (
-    children.map((child) => {
-      child.raw = findById(node, child.id)
+  const fix = ({ parent, children, visit }) => {
+    parent.raw = findById(raw, parent.id)
 
-      if (typeof child.duration === 'string') {
-        child.durationStr = child.duration
-        child.duration = timeFor(child.duration)
-      }
-
-      if (typeof child.startOffset === 'string') {
-        child.startOffsetStr = child.startOffset
-        child.startOffset = timeFor(child.startOffset)
-      }
-
-      const offNodes = [child]
-      while(offNodes[0].startOffset == null) {
-        const [node] = offNodes
-        const siblings = siblingsOf(node)
-        const index = siblings.indexOf(node)
-        if(index < siblings.length - 1) {
-          node.startOffset = (
-            siblings[index + 1].startOffset
-            - node.duration
-          )
-        }
-        if(node.startOffset != null) {
-          break
-        } else if(!node.parent) {
-          node.startOffset = 0
-        } else {
-          offNodes.unshift(node.parent)
-        }
-      }
-      offNodes.slice(1).forEach((node) => {
-        if(!node.parent.partition) {
-          node.startOffset = offNodes[0].startOffset
+    children.forEach((child) => {
+      ['duration', 'startOffset'].forEach((attr) => {
+        if (typeof child[attr] === 'string') {
+          child[attr] = timeFor(child[attr])
         }
       })
-
-      const durNodes = [child]
-      while(durNodes[0].duration == null) {
-        const [node] = durNodes
-        const siblings = siblingsOf(node)
-        const next = siblings.find((sibling) => (
-          sibling.startOffset > node.startOffset
-        ))
-        if (next) {
-          node.duration = (
-            next.startOffset - node.startOffset
-          )
-        } else if (!node.parent) {
-          node.duration = duration ?? DEFAULT_DURATION
-          break
-        } else {
-          durNodes.unshift(node.parent)
-        }
-      }
-      durNodes.slice(1).forEach((node) => {
-        if(!node.parent.partition) {
-          node.duration = durNodes[0].duration
-        }
-      })
-
-      if(parent.partition) {
-        let startIdx = 0
-        while(
-          startIdx < children.length
-          && children[startIdx].duration != null
-          && children[startIdx].startOffset != null
-        ) {
-          startIdx++
-        }
-        let endIdx = startIdx
-        while(
-          endIdx < children.length
-          && children[endIdx].duration == null
-          && children[endIdx].startOffset == null
-        ) {
-          endIdx++
-        }
-        const span = endIdx - startIdx
-        if(span > 0) {
-          const start = (
-            (startIdx === 0) ? (
-              child.parent.startOffset
-            ) : (
-              children[startIdx].startOffset
-              + children[startIdx].duration
-            )
-          )
-          const dur = (
-            (endIdx === children.length) ? (
-              child.parent.duration
-            ) : (
-              children[endIdx].startOffset
-              + children[endIdx].duration
-            )
-            - start
-          )
-          const durPer = dur / span
-
-          for(let i = startIdx; i < endIdx; i++) {
-            children[i].duration = durPer
-            children[i].startOffset = (
-              (children[i - 1]?.startOffset ?? -durPer) + durPer
-            )
-          }
-        }
-      }
-  
-      if (child.startOffset == null) {
-        console.warn(`No Starting Time`, { parent })
-      }
-      if (child.duration == null) {
-        console.warn(`No Event Duration`, { parent })
-      }
-
-      return visit({ node: child, method: fix })
     })
-  )
 
-  return visit({ node, method: fix })
+    const siblings = siblingsOf(parent)
+    const index = siblings.indexOf(parent)
+    const gparent = parent.parent
+    if(
+      !isSet(parent.startOffset)
+      || isNaN(parent.startOffset)
+    ) {
+      if(index === 0) {
+        if(gparent) {
+          parent.startOffset = gparent.startOffset
+        } else {
+          parent.startOffset = 0
+        }
+      } else if(index <= siblings.length - 1) {
+        parent.startOffset = (
+          siblings[index - 1].startOffset
+          + siblings[index - 1].duration
+        )
+      } else {
+        console.warn(
+          'Bad Index',
+          { index, parent, siblings },
+        )
+      }
+    }
+
+    if(
+      !isSet(parent.duration)
+      || isNaN(parent.duration)
+    ) {
+      if(index >= 0 && index < siblings.length - 1) {
+        parent.duration = (
+          siblings[index + 1].startOffset
+          - parent.startOffset
+        )
+      } else if(index === siblings.length - 1) {
+        if(parent.parent) {
+          const {
+            startOffset: pStart, duration: pDur
+          } = parent.parent
+          parent.duration = (
+            (pStart + pDur) - parent.startOffset
+          )
+        } else {
+          parent.duration = (
+            duration - parent.startOffset
+          )
+        }
+      } else {
+        console.warn(
+          'Bad Index',
+          { index, parent, siblings },
+        )
+      }
+    }
+  
+    if (!isSet(parent.startOffset)) {
+      console.warn(`No Starting Time`, { parent })
+    }
+    if (!isSet(parent.duration)) {
+      console.warn(`No Event Duration`, { parent })
+    }
+
+    return children.map((child) => (
+      visit({ node: child, method: fix })
+    ))
+  }
+
+  return visit({ node: clone(root), method: fix })
 }
 
 const Spans = ({ node, count = 1, hovered, setHovered }) => {
@@ -247,7 +204,7 @@ const Spans = ({ node, count = 1, hovered, setHovered }) => {
 
   const timePercent = 0 //100 * startOffset / duration
   const heightPercent = (
-    100 * duration / node.parent.duration
+    100 * duration / (node.parent?.duration ?? duration)
   )
   let className = 'span'
   if(hovered.includes(node.id)) {
@@ -273,10 +230,16 @@ const Spans = ({ node, count = 1, hovered, setHovered }) => {
       onMouseLeave={() => mouseOut(node)}
     >
       <Link
-        style={{ display: 'block', width: '0.75em' }}
+        style={{
+          display: 'block',
+          flexGrow: 2,
+          minWidth: "0.75em",
+        }}
         to={`#${node.id}`}
       />
       <Flex
+        flexGrow={0}
+        minW={node.children.length === 0 ? 0 : '1em'}
         direction={node.partition ? 'column' : 'row'}
       >
         {node.children.map((child, idx) => (
@@ -288,7 +251,11 @@ const Spans = ({ node, count = 1, hovered, setHovered }) => {
         ))}
       </Flex>
       <Link
-        style={{ display: 'block', width: '0.25em' }}
+        style={{
+          display: 'block',
+          flexGrow: 1,
+          minWidth: "0.25em",
+        }}
         to={`#${node.id}`}
       />
     </Flex>
@@ -487,7 +454,6 @@ const NodeSettings = ({
                     }}
                   />
                 </FormControl>
-
                 <FormControl mt={4}>
                   <Tabs isFitted variant="enclosed">
                     <TabList mb="1em">
@@ -509,6 +475,12 @@ const NodeSettings = ({
                       </TabPanel>
                     </TabPanels>
                   </Tabs>
+                </FormControl>
+                <FormControl mt={4}>
+                  <FormLabel>ID</FormLabel>
+                  <Input
+                    value={node.id} disabled
+                  />
                 </FormControl>
               </TabPanel>
               <TabPanel>
@@ -939,12 +911,11 @@ export default (config) => {
 
   useEffect(() => {
     const stops = generate({ root: raw, duration, raw })
-    console.info({ stops })
     setStops(stops)
   }, [raw, duration])
 
   const insertChild = ({ parent, insert, anchor }) => {
-    const self = { ...parent.raw }
+    const self = { ...findById(raw, parent.id) }
     insert = newNode(insert)
     insert.parent = self
     const { children } = parent
@@ -1022,6 +993,7 @@ export default (config) => {
         if(children.length === 0) {
           delete parent.children
         }
+        delete parent.raw
 
         return children.map((child) => (
           visit({ node: child, method: strip })
@@ -1095,6 +1067,8 @@ export default (config) => {
       video.removeEventListener('loadedmetadata', set)
     }
   }, [])
+
+  console.info({ stops, raw })
 
   return (
     <>
