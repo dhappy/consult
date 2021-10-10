@@ -1,7 +1,7 @@
 {
   "video": {
     "startsAt": "2021-10-06T21:32:34.088Z",
-    "source": "ipfs://Qmeiz7YmwtVYMRSUG3VdKTxU634JTPaB5j2xLj5RREqAkG/2021%25E2%2581%258410%25E2%2581%258406@09:56:54.MetaGame%25E2%2580%2599s%2520Builders%25E2%2580%2599%2520Align.x264.mp4"
+    "source": "ipfs://Qmeiz7YmwtVYMRSUG3VdKTxU634JTPaB5j2xLj5RREqAkG/2021%2525252525252525E2%252525252525252581%25252525252525258410%2525252525252525E2%252525252525252581%25252525252525258406@09:56:54.MetaGame%2525252525252525E2%252525252525252580%252525252525252599s%252525252525252520Builders%2525252525252525E2%252525252525252580%252525252525252599%252525252525252520Align.x264.mp4"
   },
   "stops": {
     "children": [
@@ -26,11 +26,8 @@
                 "startOffset": "7:45"
               },
               {
-                "title": "Presenter: @!Udit-takkar",
-                "startOffset": "9:44",
                 "children": [
                   {
-                    "partition": true,
                     "children": [
                       {
                         "title": "Previously: Submitted a Pull Request",
@@ -39,10 +36,17 @@
                       {
                         "title": "Waiting: The Top Three Skills Interface from @Dave",
                         "startOffset": "10:02"
+                      },
+                      {
+                        "title": "Logistics: Reviewing @!Udit-takkar’s Existing Work",
+                        "startOffset": "10:22"
                       }
-                    ]
+                    ],
+                    "partition": true
                   }
-                ]
+                ],
+                "title": "Presenter: @!Udit-takkar",
+                "startOffset": "9:44"
               },
               {
                 "title": "Presenter: @Dave",
@@ -55,11 +59,35 @@
                       {
                         "title": "Issue: Ceramic’s IDX Is Being Deprecated",
                         "body": "[Glaze](https://developers.ceramic.network/tools/glaze/overview/) is the now the accepted method for managing user document collections.",
-                        "startOffset": "14:02"
+                        "startOffset": "14:15"
                       },
                       {
                         "title": "Issue: Glaze Requires Webpack 5",
-                        "startOffset": "14:25"
+                        "startOffset": "14:43"
+                      },
+                      {
+                        "title": "Issue: IDX Has Version Conflicts With Ceramic's HTTP Client",
+                        "startOffset": "14:54"
+                      },
+                      {
+                        "title": "Decision: Refactor IDX Code To Use Glaze",
+                        "startOffset": "15:34"
+                      },
+                      {
+                        "title": "Plan: Use Glaze To Interface With Ceramic For ETHOnline",
+                        "startOffset": "16:00"
+                      },
+                      {
+                        "title": "Plan: Upgrade Next.js From v10 to v11",
+                        "startOffset": "16:40"
+                      },
+                      {
+                        "title": "Logistics: Next.js Upgrade Ticket Missing From @Michiel’s ZenHub",
+                        "startOffset": "17:07"
+                      },
+                      {
+                        "title": "Logistics: Closing And Reopening Timezone Ticket",
+                        "startOffset": "21:06"
                       }
                     ],
                     "partition": true
@@ -71,6 +99,136 @@
               {
                 "title": "Presenter: @johnathanp",
                 "startOffset": "25:28"
+              },
+              {
+                "children": [
+                  {
+                    "title": "Plan: Develop Edit Profile Popup",
+                    "startOffset": "26:19"
+                  }
+                ],
+                "title": "Presenter: @LeewardB",
+                "startOffset": "25:52"
+              },
+              {
+                "title": "Question: How To Create A Profile Setup Tutorial?",
+                "startOffset": "28:17"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "title": "Previously: Test Instances On Google Cloud Run [Pull Request](https://github.com/MetaFam/TheGame/pull/841) Submitted",
+                        "startOffset": "33:45"
+                      },
+                      {
+                        "title": "Plan: Reduce The Size Of The Docker Images",
+                        "startOffset": "33:54"
+                      },
+                      {
+                        "title": "Discussion: Advisability Of Using Google For Services",
+                        "startOffset": "34:08"
+                      },
+                      {
+                        "title": "Issue: Test Instances Contain No Data",
+                        "startOffset": "36:01"
+                      }
+                    ],
+                    "partition": true
+                  }
+                ],
+                "title": "Presenter: @Polimyl",
+                "startOffset": "33:41"
+              },
+              {
+                "children": [
+                  {
+                    "title": "Plan: Schedule A Call To Discuss Raid Guild’s “Dungeon Master”",
+                    "startOffset": "37:32"
+                  }
+                ],
+                "title": "Presenter: @scottrepreneur",
+                "startOffset": "37:18"
+              },
+              {
+                "children": [
+                  {
+                    "title": "Plan: Develop An Interface For Buyer/Seller Agreement",
+                    "startOffset": "38:33"
+                  }
+                ],
+                "title": "Presenter: @tenfinney",
+                "startOffset": "38:05"
+              },
+              {
+                "title": "Presenter: @ApeironCreations",
+                "startOffset": "39:26"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "title": "Plan: SourceCred AMA On Friday Community Call @ 5ᴘᴍ ᴜᴛᴄ",
+                        "startOffset": "41:35"
+                      },
+                      {
+                        "title": "Plan: Diversity In DAOs Opening Friday Community Call @ 4ᴘᴍ ᴜᴛᴄ",
+                        "startOffset": "41:48"
+                      },
+                      {
+                        "title": "Plan: MyMeta Discussion Call Tuesday @ ?",
+                        "startOffset": "42:08"
+                      }
+                    ],
+                    "partition": true
+                  }
+                ],
+                "title": "Presenter: @peth don't need your eth",
+                "startOffset": "41:26"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "title": "Previously: Refining Profile Editor & Display Page",
+                        "startOffset": "45:36"
+                      },
+                      {
+                        "title": "Previously: Submitted [Pull Request](//github.com/MetaFam/TheGame/pull/854) To Remove Unused Files",
+                        "startOffset": "46:23"
+                      }
+                    ],
+                    "partition": true
+                  }
+                ],
+                "title": "Presenter: @vid",
+                "startOffset": "45:30"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "title": "Previously: Finalizing Profile Page Design",
+                        "startOffset": "49:44"
+                      },
+                      {
+                        "title": "Plan: Top Three Skills",
+                        "startOffset": "51:15"
+                      }
+                    ],
+                    "partition": true
+                  }
+                ],
+                "title": "Presenter: @Dave",
+                "startOffset": "49:13"
+              },
+              {
+                "title": "Presenter: @joseacabreraw",
+                "startOffset": "55:06"
               }
             ],
             "partition": true
