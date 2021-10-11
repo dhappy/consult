@@ -65,47 +65,49 @@ export const timeFor = (str, { default: def } = {}) => (
   )
 )
 
-export const stringFor = (time, { default: def } = {}) => {
-  if(!isSet(time)) return def
+export const stringFor = (
+  (time, { default: def, milliseconds = true } = {}) => {
+    if(!isSet(time)) return def
 
-  const sign = time < 0 ? '−' : ''
-  const hours = Math.floor(Math.abs(time / (60 * 60)))
-  const minutes = (
-    Math.floor(Math.abs((time % (60 * 60)) / 60))
-  )
-  const seconds = Math.floor(Math.abs(time % 60))
-  const milliseconds = (
-    Math.abs(time) - Math.floor(Math.abs(time))
-  )
-
-  if(
-    ![hours, minutes, seconds, milliseconds].reduce(
-      (acc, num) => acc && !isNaN(num),
-      true
+    const sign = time < 0 ? '−' : ''
+    const hours = Math.floor(Math.abs(time / (60 * 60)))
+    const minutes = (
+      Math.floor(Math.abs((time % (60 * 60)) / 60))
     )
-  ) {
-    return def
-  }
+    const seconds = Math.floor(Math.abs(time % 60))
+    const mss = (
+      Math.abs(time) - Math.floor(Math.abs(time))
+    )
 
-  let [msStr] = (
-    milliseconds.toFixed(4).split('.').slice(-1)
-  )
-  msStr = msStr.replace(/0+$/, '')
-
-  return (
-    `${sign}${
-      hours > 0 ? (
-        `${hours}:${minutes.toString().padStart(2, '0')}`
-      ) : (
-        minutes
+    if(
+      ![hours, minutes, seconds, mss].reduce(
+        (acc, num) => acc && !isNaN(num),
+        true
       )
-    }:${
-      seconds.toString().padStart(2, '0')
-    }${
-      msStr === '' ? '' : `.${msStr}`
-    }`
-  )
-}
+    ) {
+      return def
+    }
+
+    let [msStr] = (
+      mss.toFixed(4).split('.').slice(-1)
+    )
+    msStr = msStr.replace(/0+$/, '')
+
+    return (
+      `${sign}${
+        hours > 0 ? (
+          `${hours}:${minutes.toString().padStart(2, '0')}`
+        ) : (
+          minutes
+        )
+      }:${
+        seconds.toString().padStart(2, '0')
+      }${
+        (!milliseconds || msStr === '') ? '' : `.${msStr}`
+      }`
+    )
+  }
+)
 
 export const isoStringFor = (date, opts = {}) => {
   const tzo = -date.getTimezoneOffset()

@@ -3,7 +3,7 @@ import {
   Stack, Spacer, Spinner, chakra, useDisclosure, Input,
   ModalOverlay, ModalContent, ModalHeader, ModalFooter,
   ModalCloseButton, ModalBody, FormControl, FormLabel,
-  Modal, Text, Textarea, Divider, Image,
+  Modal, Text, Textarea, Divider, Image, Tooltip,
   Tabs, TabList, TabPanels, Tab, TabPanel,
 } from '@chakra-ui/react'
 import {
@@ -17,8 +17,23 @@ import {
 } from 'utils'
 import CeramicLogo from './ceramic.svg'
 
-const DEFAULT_DURATION = Math.pow(60, 3)
-const DEFAULT_VID_HEIGHT = 85
+import plan from './images/planning.svg'
+import decision from './images/gavel.svg'
+import issue from './images/ticket.svg'
+import presenter from './images/speaker.svg'
+import unknown from './images/question mark.svg'
+import previously from './images/left arrow.svg'
+import discussion from './images/discuss.svg'
+import logistics from './images/certification.svg'
+import blocked from './images/brick wall.svg'
+
+const icons = {
+  plan, decision, issue, presenter, previously,
+  discussion, logistics, blocked, unknown,
+}
+
+const DEFAULT_DURATION = Math.pow(60, 2)
+const DEFAULT_VID_HEIGHT = 100
 
 const Video = chakra('video')
 
@@ -101,22 +116,24 @@ const generate = ({ root, duration, raw }) => {
       !isSet(parent.startOffset)
       || isNaN(parent.startOffset)
     ) {
-      if(index === 0) {
-        if(gparent) {
+      if(gparent?.partition) {
+        if(index === 0) {
           parent.startOffset = gparent.startOffset
+        } else if(index <= siblings.length - 1) {
+          parent.startOffset = (
+            siblings[index - 1].startOffset
+            + siblings[index - 1].duration
+          )
         } else {
-          parent.startOffset = 0
+          console.warn(
+            'Bad Index',
+            { index, parent, siblings },
+          )
         }
-      } else if(index <= siblings.length - 1) {
-        parent.startOffset = (
-          siblings[index - 1].startOffset
-          + siblings[index - 1].duration
-        )
+      } else if(gparent) {
+        parent.startOffset = gparent.startOffset
       } else {
-        console.warn(
-          'Bad Index',
-          { index, parent, siblings },
-        )
+        parent.startOffset = 0
       }
     }
 
@@ -124,29 +141,46 @@ const generate = ({ root, duration, raw }) => {
       !isSet(parent.duration)
       || isNaN(parent.duration)
     ) {
-      if(index >= 0 && index < siblings.length - 1) {
-        parent.duration = (
-          siblings[index + 1].startOffset
-          - parent.startOffset
-        )
-      } else if(index === siblings.length - 1) {
-        if(parent.parent) {
+      if(gparent?.partition) {
+        if(index >= 0 && index < siblings.length - 1) {
+          const start = index
+          let end = start + 1
+          while(
+            end < siblings.length
+            && !isSet(siblings[end].startOffset)
+          ) {
+            end++
+          }
+          const total = (
+            (end === siblings.length ? (
+              gparent.startOffset + gparent.duration
+            ) : (
+              siblings[end].startOffset
+            ))
+            - siblings[start].startOffset
+          )
+          for(let i = start; i < end; i++) {
+            siblings[i].duration = (
+              total / (end - start)
+            )
+          }
+        } else if(index === siblings.length - 1) {
           const {
             startOffset: pStart, duration: pDur
-          } = parent.parent
+          } = gparent
           parent.duration = (
             (pStart + pDur) - parent.startOffset
           )
         } else {
-          parent.duration = (
-            duration - parent.startOffset
+          console.warn(
+            'Bad Index',
+            { index, parent, siblings },
           )
         }
+      } else if(gparent) {
+        parent.duration = gparent.duration
       } else {
-        console.warn(
-          'Bad Index',
-          { index, parent, siblings },
-        )
+        parent.duration = duration
       }
     }
   
@@ -186,7 +220,7 @@ const Spans = ({ node, count = 1, hovered, setHovered }) => {
 
   const {
     id, children = [], startOffset,
-    duration, partition, ...rest
+    duration, partition, raw, ...rest
   } = node
 
   if (Object.keys(rest).length === 0) {
@@ -212,53 +246,55 @@ const Spans = ({ node, count = 1, hovered, setHovered }) => {
   }
 
   return (
-    <Flex
-      top={`${timePercent}%`}
-      height={`${heightPercent}%`}
-      position="relative"
-      _before={{
-        content: '""', zIndex: -1,
-        position: 'absolute', opacity: 0.5,
-        top: 0, left: 0, bottom: 0, right: 0,
-        bg: colorFor(node.id),
-      }}
-      p={0} w="full" {...{ className }}
-      sx={{
-        '&.hovered::before': { opacity: 1 }
-      }}
-      onMouseEnter={() => mouseOver(node)}
-      onMouseLeave={() => mouseOut(node)}
-    >
-      <Link
-        style={{
-          display: 'block',
-          flexGrow: 2,
-          minWidth: "0.75em",
-        }}
-        to={`#${node.id}`}
-      />
+    <Tooltip label={node.title}>
       <Flex
-        flexGrow={0}
-        minW={node.children.length === 0 ? 0 : '1em'}
-        direction={node.partition ? 'column' : 'row'}
-      >
-        {node.children.map((child, idx) => (
-          <Spans
-            {...{ duration, hovered, setHovered }}
-            key={child.id} node={child}
-            count={count + idx + 1}
-          />
-        ))}
-      </Flex>
-      <Link
-        style={{
-          display: 'block',
-          flexGrow: 1,
-          minWidth: "0.25em",
+        top={`${timePercent}%`}
+        height={`${heightPercent}%`}
+        position="relative"
+        _before={{
+          content: '""', zIndex: -1,
+          position: 'absolute', opacity: 0.5,
+          top: 0, left: 0, bottom: 0, right: 0,
+          bg: colorFor(node.id),
         }}
-        to={`#${node.id}`}
-      />
-    </Flex>
+        p={0} w="full" {...{ className }}
+        sx={{
+          '&.hovered::before': { opacity: 1 }
+        }}
+        onMouseEnter={() => mouseOver(node)}
+        onMouseLeave={() => mouseOut(node)}
+      >
+        <Link
+          style={{
+            display: 'block',
+            flexGrow: 2,
+            minWidth: "0.75em",
+          }}
+          to={`#${node.id}`}
+        />
+        <Flex
+          flexGrow={0}
+          minW={node.children.length === 0 ? 0 : '1em'}
+          direction={node.partition ? 'column' : 'row'}
+        >
+          {node.children.map((child, idx) => (
+            <Spans
+              {...{ duration, hovered, setHovered }}
+              key={child.id} node={child}
+              count={count + idx + 1}
+            />
+          ))}
+        </Flex>
+        <Link
+          style={{
+            display: 'block',
+            flexGrow: 1,
+            minWidth: "0.25em",
+          }}
+          to={`#${node.id}`}
+        />
+      </Flex>
+    </Tooltip>
   )
 }
 
@@ -452,6 +488,9 @@ const NodeSettings = ({
                     onChange={({ target: { value }}) => {
                       setTitle(value)
                     }}
+                    onKeyPress={(evt) => {
+                      evt.stopPropagation()
+                    }}
                   />
                 </FormControl>
                 <FormControl mt={4}>
@@ -601,10 +640,51 @@ const NodeSettings = ({
   )
 }
 
+const Option = ({ children, onClick, ...props }) => {
+  const clicked = (evt) => {
+    evt.stopPropagation()
+    onClick(evt)
+  }
+  return (
+    <Button
+      {...props}
+      fontWeight="normal" variant="outline" mt={1.25}
+      fontSize={15} p={1} _hover={{ bg: '#00000077' }}
+      onClick={onClick ? clicked : null}
+    >{children}</Button>
+  )
+}
+
+const WrapPartition = ({ children, node }) => {
+  if(node.partition) {
+    const id = `${node.id}-wrap`
+    return (
+      <Box
+        {...{ id }}
+        px={2}
+        position="relative"
+        _before={{
+          content: '""', zIndex: -1,
+          position: 'absolute', opacity: 0.5,
+          top: 0, left: 0, bottom: 0, right: 0,
+          bg: colorFor(id),
+        }}
+      >
+        {children}
+      </Box>
+    )
+  }
+  return children
+}
+
 const Events = ({
   node = {}, insertChild, replaceNode, insertParent,
-  duration, count = 1, hovered, setHovered, ...props
+  duration, count = 1, hovered, setHovered, seekTo,
+  index = 0, ...props
 }) => {
+  const [menuVisible, setMenuVisible] = (
+    useState(false)
+  )
   const {
     isOpen: open,
     onOpen: openNodeSettings,
@@ -612,6 +692,14 @@ const Events = ({
   } = useDisclosure()
 
   if (!node) return null
+
+  const toggleMenu = (value = null) => {
+    if(value !== null) {
+      setMenuVisible(value)
+    } else {
+      setMenuVisible((val) => !val)
+    }
+  }
 
   const addChild = (parent) => {
     insertChild(
@@ -668,22 +756,23 @@ const Events = ({
 
   const {
     id, children = [], startOffset,
-    duration: dur, partition, ...rest
+    duration: dur, partition, raw, ...rest
   } = node
 
   if (Object.keys(rest).length === 0) {
     return (
-      children.map((child, idx) => {
+      children.map((child, index) => {
         return (
         <Events
           {...{
             duration, insertChild,
             insertParent, replaceNode,
             hovered, setHovered,
+            seekTo, index,
           }}
-          key={idx}
+          key={index}
           node={child}
-          count={count + idx}
+          count={count + index}
         />
         )
       })
@@ -697,13 +786,11 @@ const Events = ({
     className += ' hovered'
   }
 
-  const Option = ({ children, ...props }) => (
-    <Button
-      {...props}
-      fontWeight="normal" variant="outline" mt={1.25}
-      fontSize={15} p={1} _hover={{ bg: '#00000077' }}
-    >{children}</Button>
-  )
+  const prefix = node.title?.replace(/:.*/g, '').toLowerCase()
+  let icon = icons[prefix]
+  if(!icon) {
+    icon = icons.unknown
+  }
 
   return (
     <>
@@ -724,44 +811,83 @@ const Events = ({
           top: 0, left: 0, bottom: 0, right: 0,
           bg: colorFor(node.id),
         }}
-        px={3} w="full"
+        mt={index === 0 ? 0 : 1.5} px={3} w="full"
         sx={{
           '&.hovered::before': { opacity: 1 }
         }}
         onMouseEnter={() => mouseOver(node)}
         onMouseLeave={() => mouseOut(node)}
+        onClick={(evt) => {
+          evt.stopPropagation()
+          seekTo(node.startOffset)
+        }}
         {...props} {...{ className }}
       >
         {node.title && (
           <Flex>
+            {icon && (
+              <Image
+                borderRadius="50%" bg="#FFFFFF55"
+                minW={10} maxW={10} minH={10} maxH={10}
+                p={0.5} mr={1}
+                src={icon} alt={prefix}
+                border="1px solid black"
+              />
+            )}
             <Heading
               fontSize={32} color="white" pt={1.5}
+              textOverflow="ellipsis"
+              overflow="hidden"
+              whiteSpace="nowrap"
+              title={node.title}
+              sx={{
+                a: { borderBottom: '2px dashed' },
+                'a:hover': { borderBottom: '2px solid' },
+              }}
             >
-              {node.title}
+              <Markdown linkTarget="_blank">
+                {node.title}
+              </Markdown>
             </Heading>
             <Spacer />
-            <ButtonGroup>
-            <Option
-                title="Edit This Node"
-                onClick={() => edit(node)}
-              >✏️</Option>
-              <Option
-                title="Create A Child"
-                onClick={() => addChild(node)}
-              >█ → 🬠</Option>
-              <Option
-                title="Create A Partition Sibling"
-                onClick={() => addPartition(node)}
-              >█ → 🮒</Option>
-              <Option
-                title="Create A Parallel Sibling"
-                onClick={() => addParallel(node)}
-              >█ → 🮔</Option>
-              <Option
-                title="Remove Node"
-                onClick={() => removeNode(node)}
-              >➖</Option>
-            </ButtonGroup>
+            {menuVisible && (
+              <ButtonGroup>
+                <Option
+                  title="Edit This Node"
+                  onClick={() => edit(node)}
+                >✏️</Option>
+                <Option
+                  title="Create A Child"
+                  onClick={() => addChild(node)}
+                >█ → 🬠</Option>
+                <Option
+                  title="Create A Partition Sibling"
+                  onClick={() => addPartition(node)}
+                >█ → 🮒</Option>
+                <Option
+                  title="Create A Parallel Sibling"
+                  onClick={() => addParallel(node)}
+                >█ → 🮔</Option>
+                <Option
+                  title="Remove Node"
+                  onClick={() => removeNode(node)}
+                >➖</Option>
+              </ButtonGroup>
+            )}
+            <Button
+              ml={3}
+              onClick={(evt) => {
+                evt.stopPropagation()
+                toggleMenu()
+              }}
+              title={menuVisible ? (
+                'Hide Node Options'
+              ) : (
+                'Show Node Options'
+              )}
+            >
+              {menuVisible ? <Text fontWeight="bold">┆</Text> : '☰'}
+            </Button>
           </Flex>
         )}
         {isSet(node.body) && (
@@ -772,21 +898,26 @@ const Events = ({
             }}
           >
             <Divider color="white"/>
-            <Markdown>{node.body}</Markdown>
+            <Markdown linkTarget="_blank">
+              {node.body}
+            </Markdown>
           </Box>
         )}
-        {node.children?.map((child, idx) => (
-          <Events
-            {...{
-              duration, insertChild,
-              insertParent, replaceNode,
-              hovered, setHovered,
-            }}
-            key={idx}
-            node={child}
-            count={count + idx + 1}
-          />
-        ))}
+        <WrapPartition {...{ node }}>
+          {node.children?.map((child, index) => (
+            <Events
+              {...{
+                duration, insertChild,
+                insertParent, replaceNode,
+                hovered, setHovered,
+                seekTo, index,
+              }}
+              key={index}
+              node={child}
+              count={count + index + 1}
+            />
+          ))}
+        </WrapPartition>
       </Stack>
     </>
   )
@@ -813,12 +944,23 @@ const VideoSettings = ({
   const [startsAt, setStartsAt] = useState(
     isoStringFor(info.startsAt, { tz: false })
   )
+  const [source, setSource] = (
+    useState(info.source)
+  )
+  const [port, setPort] = useState(info.port)
 
   const save = (evt) => {
     evt.preventDefault()
     setInfo((info) => ({
-      ...info, startsAt: new Date(startsAt),
+      ...info,
+      startsAt: new Date(startsAt),
+      source,
+      port,
     }))
+    localStorage.setItem(
+      'consult.localhost.ipfs.gateway.port',
+      port,
+    )
     closeVideoSettings()
   }
 
@@ -836,13 +978,31 @@ const VideoSettings = ({
         >Video Settings</ModalHeader>
         <ModalCloseButton/>
         <ModalBody pb={6}>
-          <FormControl mt={4}>
+        <FormControl mt={4}>
             <FormLabel>Start Time</FormLabel>
             <Input
               type="datetime-local"
               value={startsAt} autoFocus
               onChange={({ target: { value }}) => {
                 setStartsAt(value)
+              }}
+            />
+          </FormControl>
+          <FormControl mt={4}>
+            <FormLabel>Video Source</FormLabel>
+            <Input
+              value={source}
+              onChange={({ target: { value }}) => {
+                setSource(value)
+              }}
+            />
+          </FormControl>
+          <FormControl mt={4}>
+            <FormLabel>Local IPFS Port</FormLabel>
+            <Input
+              value={port}
+              onChange={({ target: { value }}) => {
+                setPort(value)
               }}
             />
           </FormControl>
@@ -867,9 +1027,17 @@ const DateTime = ({ startsAt, time }) => {
     new Date(startsAt.getTime() + time * 1000)
   )
   const opts = { date: false, tz: false }
-  return <Box alignSelf="center">
-    {isoStringFor(current, opts)}
-  </Box>
+  return (
+    <Flex
+      direction="column" lineHeight={1}
+      align="center" justify="center"
+    >
+      <Box>{isoStringFor(current, opts)}</Box>
+      <Box>
+        +{stringFor(time, { milliseconds: false })}
+      </Box>
+    </Flex>
+  )
 }
 
 export default (config) => {
@@ -885,9 +1053,15 @@ export default (config) => {
   const [hovered, setHovered] = useState([])
   const [info, setInfo] = useState({
     startsAt: config.startsAt,
-    source: encodeURI(config.source),
+    source: config.source,
+    port: (
+      localStorage.getItem(
+        'consult.localhost.ipfs.gateway.port'
+      )
+      ?? '8080'
+    ),
   })
-  const { startsAt, source } = info
+  const { startsAt, source, port } = info
   const [vidHeight, setVidHeight] = (
     useState(DEFAULT_VID_HEIGHT)
   )
@@ -897,22 +1071,89 @@ export default (config) => {
     onClose: closeVideoSettings,
   } = useDisclosure()
   const src = useMemo(() => {
-    const regex = /^ipfs:(\/\/)?(.+)$/i
+    const regex = /^ipfs:(\/\/)?(([^/]+)\/?(.*))$/i
     const match = source.match(regex)
-    if (match) {
-      if(match[2].includes('Qmeiz7YmwtVYMRSUG3VdKTxU634JTPaB5j2xLj5RREqAkG')) {
-        return 'http://bafybeihtoo2yau6rnzlfad3jh62u3wccm4bs7j7wh5wb76estw77codume.ipfs.localhost:8888/2021%E2%81%8410%E2%81%8406@09:56:54.MetaGame%E2%80%99s%20Builders%E2%80%99%20Align.x264.mp4'
+    if(match) {
+      if(
+        match[3].startsWith('bafybei')
+        && isSet(port)
+      ) {
+        return (
+          `http://${match[3]}.ipfs.localhost:${port}`
+          + `/${match[4]}`
+        )
       }
-
       return `//ipfs.io/ipfs/${match[2]}`
     }
     return source
-  }, [source])
+  }, [source, port])
 
   useEffect(() => {
     const stops = generate({ root: raw, duration, raw })
     setStops(stops)
   }, [raw, duration])
+
+  useEffect(() => {
+    const togglePause = (evt) => {
+      switch(evt.key) {
+        case 'p': case 'P':
+          if(vid.current.paused) {
+            vid.current.play()
+          } else {
+            vid.current.pause()
+          }
+        break
+        case 'b':
+          seekTo(time - 5)
+        break
+        case 'B':
+          seekTo(time - 20)
+        break
+        case 'f':
+          seekTo(time + 5)
+        break
+        case 'F':
+          seekTo(time + 20)
+        break
+        default:
+        break
+      }
+    }
+    window.addEventListener('keypress', togglePause)
+    return () => {
+      window.removeEventListener('keypress', togglePause)
+    }
+  })
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const chapterIdx = params.get('chapter')
+    if (chapterIdx) {
+      seekTo(
+        // chapters[parseInt(chapterIdx)].start
+      )
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const video = vid.current
+    const update = ({ target: { currentTime: time }}) => {
+      setTime(time)
+    }
+    video.addEventListener('timeupdate', update)
+    return () => {
+      video.removeEventListener('timeupdate', update)
+    }
+  }, [setTime])
+
+  useEffect(() => {
+    const video = vid.current
+    const set = () => setDuration(video.duration)
+    video.addEventListener('loadedmetadata', set)
+    return () => {
+      video.removeEventListener('loadedmetadata', set)
+    }
+  }, [])
 
   const insertChild = ({ parent, insert, anchor }) => {
     const self = { ...findById(raw, parent.id) }
@@ -979,6 +1220,7 @@ export default (config) => {
   }
 
   const seekTo = (time) => {
+    console.info('Seeking To', time)
     vid.current.currentTime = time
   }
 
@@ -1022,54 +1264,6 @@ export default (config) => {
   const upload = () => {
   }
 
-  /*
-  const clicked = (elem) => {
-    const currentClicked = info.current === elem
-    if (currentClicked && !vid.current.paused) {
-      vid.current.pause()
-    } else if (currentClicked && vid.current.paused) {
-      vid.current.play()
-    } else if (!currentClicked) {
-      vid.current.currentTime = elem.start + 0.01 // it misses
-      if (vid.current.paused) {
-        vid.current.play()
-      }
-    }
-  }
-  */
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const chapterIdx = params.get('chapter')
-    if (chapterIdx) {
-      seekTo(
-        // chapters[parseInt(chapterIdx)].start
-      )
-    }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    const video = vid.current
-    const update = ({ target: { currentTime: time }}) => {
-      setTime(time)
-    }
-    video.addEventListener('timeupdate', update)
-    return () => {
-      video.removeEventListener('timeupdate', update)
-    }
-  }, [setTime])
-
-  useEffect(() => {
-    const video = vid.current
-    const set = () => setDuration(video.duration)
-    video.addEventListener('loadedmetadata', set)
-    return () => {
-      video.removeEventListener('loadedmetadata', set)
-    }
-  }, [])
-
-  console.info({ stops, raw })
-
   return (
     <>
       <VideoSettings {...{
@@ -1106,6 +1300,7 @@ export default (config) => {
                   insertChild, insertParent,
                   duration, replaceNode,
                   hovered, setHovered,
+                  seekTo,
                 }}
                 node={stops}
               />
@@ -1163,11 +1358,9 @@ export default (config) => {
             target.getBoundingClientRect()
           )
           if(y > 0) { // an event w/ y = 0 fires at the end
-            // ToDo: keep the button on the screen
-            setVidHeight(Math.max(
-              window.innerHeight - y,
-              height,
-            ))
+            if(y <= window.innerHeight - DEFAULT_VID_HEIGHT) {
+              setVidHeight(window.innerHeight - y)
+            }
           }
         }}
       >⇅</Button>

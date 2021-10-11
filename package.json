@@ -7,7 +7,6 @@
   "author": "W.J. “δυς” H. <dys@dhappy.org>",
   "license": "MIT",
   "version": "0.2.0",
-  "private": false,
   "dependencies": {
     "@3id/connect": "^0.1.6",
     "@ceramicnetwork/3id-did-resolver": "^1.2.7",
@@ -17,7 +16,7 @@
     "@ceramicstudio/idx": "^0.12.1",
     "@ceramicstudio/idx-tools": "^0.11.0",
     "@chakra-ui/icons": "^1.0.14",
-    "@chakra-ui/react": "^1.6.0",
+    "@chakra-ui/react": "^1.6.9",
     "@emotion/react": "^11",
     "@emotion/styled": "^11",
     "@loadable/component": "^5.15.0",
@@ -35,6 +34,7 @@
     "react-router-dom": "^5.2.0",
     "react-router-hash-link": "^2.4.3",
     "react-scripts": "4.0.1",
+    "remove-markdown": "^0.3.0",
     "uuid": "^8.3.2",
     "web-vitals": "^1.0.1"
   },
@@ -71,12 +71,18 @@
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.0",
     "@nomiclabs/hardhat-waffle": "^2.0.0",
+    "@testing-library/dom": "^8.7.2",
+    "@types/react": "^17.0.27",
     "chai": "^4.2.0",
     "ethereum-waffle": "^3.0.0",
     "ethers": "^5.4.4",
     "gh-pages": "^3.2.3",
     "hardhat": "^2.6.0",
     "hardhat-abi-exporter": "^2.2.1",
-    "mocha": "^9.0.3"
-  }
+    "mocha": "^9.0.3",
+    "node-fetch": "^3.0.0",
+    "typescript": "^4.4.3",
+    "webpack": "^5.58.1"
+  },
+  "packageManager": "yarn@3.0.2"
 }
