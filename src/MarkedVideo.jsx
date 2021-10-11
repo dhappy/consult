@@ -10,6 +10,7 @@ import {
   useEffect, useRef, useState, useMemo,
 } from 'react'
 import Markdown from 'react-markdown'
+import demark from 'remove-markdown'
 import { v4 as uuid } from 'uuid'
 import { HashLink as Link } from 'react-router-hash-link'
 import {
@@ -246,7 +247,7 @@ const Spans = ({ node, count = 1, hovered, setHovered }) => {
   }
 
   return (
-    <Tooltip label={node.title}>
+    <Tooltip label={demark(node.title)}>
       <Flex
         top={`${timePercent}%`}
         height={`${heightPercent}%`}
@@ -839,7 +840,7 @@ const Events = ({
               textOverflow="ellipsis"
               overflow="hidden"
               whiteSpace="nowrap"
-              title={node.title}
+              title={demark(node.title)}
               sx={{
                 a: { borderBottom: '2px dashed' },
                 'a:hover': { borderBottom: '2px solid' },
