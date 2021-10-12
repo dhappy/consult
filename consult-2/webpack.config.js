@@ -13,5 +13,8 @@ module.exports = {
       exclude: /node_modules/,
     }],
   },
+  resolve: {
+    extensions: ['.ts', '.js', '.jsx'],
+  },
   mode: 'development',
 }
