@@ -1,0 +1,14 @@
+{
+  "name": "consult",
+  "packageManager": "yarn@3.0.2",
+  "dependencies": {
+  },
+  "devDependencies": {
+    "@babel/core": "7.15.0",
+    "@babel/preset-env": "7.15.0",
+    "@babel/preset-react": "7.14.5",
+    "webpack": "5.51.1",
+    "webpack-cli": "4.8.0",
+    "webpack-dev-server": "4.0.0"
+  }
+}
