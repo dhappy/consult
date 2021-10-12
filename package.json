@@ -23,7 +23,7 @@
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.1.0",
     "@testing-library/user-event": "^12.1.10",
-    "create-react-app": "https://github.com/facebook/create-react-app.git#head=wp5",
+    "create-react-app": "git@github.com:facebook/create-react-app.git#head=wp5",
     "dids": "^2.4.0",
     "framer-motion": "^4",
     "ipfs-http-client": "^50.1.2",
@@ -34,7 +34,7 @@
     "react-markdown": "^7.0.0",
     "react-router-dom": "^5.2.0",
     "react-router-hash-link": "^2.4.3",
-    "react-scripts": "^4",
+    "react-scripts": "git@github.com:facebook/create-react-app.git#workspace=react-scripts&head=wp5",
     "remove-markdown": "^0.3.0",
     "uuid": "^8.3.2",
     "web-vitals": "^1.0.1",
@@ -84,6 +84,17 @@
     "mocha": "^9.0.3",
     "node-fetch": "^3.0.0",
     "typescript": "^4.4.3"
+  },
+  "resolutions": {
+    "react-dev-utils": "git@github.com:facebook/create-react-app.git#workspace=react-dev-utils&head=wp5",
+    "react-error-overlay": "git@github.com:facebook/create-react-app.git#workspace=react-error-overlay&head=wp5",
+    "anser": "2.0.1",
+    "cross-env": "7.0.3",
+    "fork-ts-checker-webpack-plugin": "6.2.10",
+    "raw-loader": "4.0.2",
+    "settle-promise": "1.0.0",
+    "webpack": "5.41.1",
+    "workbox": "6.1.5"
   },
   "packageManager": "yarn@3.0.2"
 }
