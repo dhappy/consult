@@ -6,8 +6,8 @@ import {
   Flex, Textarea, Button,
 } from '@chakra-ui/react'
 import { useLocation } from 'react-router'
-import MarkedVideo from 'MarkedVideo'
 import { HashLink as Link } from 'react-router-hash-link'
+import MarkedVideo from './MarkedVideo'
 
 export default () => {
   const { pathname: path } = useLocation()
@@ -95,6 +95,7 @@ export default () => {
             console.info({ form: evt })
             evt.preventDefault()
             setFromObject(
+              // @ts-ignore
               JSON.parse(evt.target.json.value)
             )
           }}
@@ -105,6 +106,7 @@ export default () => {
             onKeyPress={(evt) => {
               console.info({ area: evt })
               if(evt.key === 'Enter' && evt.ctrlKey) {
+                // @ts-ignore
                 evt.target.form.submit()
               }
             }}

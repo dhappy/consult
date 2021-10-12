@@ -15,9 +15,8 @@ import { v4 as uuid } from 'uuid'
 import { HashLink as Link } from 'react-router-hash-link'
 import {
   isoStringFor, stringFor, timeFor, isSet, ifSet,
-} from 'utils'
-import CeramicLogo from './ceramic.svg'
-
+} from './utils'
+import CeramicLogo from './images/ceramic.svg'
 import plan from './images/planning.svg'
 import decision from './images/gavel.svg'
 import issue from './images/ticket.svg'
