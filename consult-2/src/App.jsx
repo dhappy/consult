@@ -1,9 +1,9 @@
-import View from 'View'
-import New from 'New'
-import ListAvailable from 'ListAvailable'
 import {
   HashRouter as Router, Switch, Route,
 } from 'react-router-dom'
+import New from './New'
+import View from './View'
+import ListAvailable from './ListAvailable'
 
 export default () => (
   <Router>
