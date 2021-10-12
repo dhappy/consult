@@ -317,7 +317,7 @@ const Times = ({
     new Date(startsAt.getTime() + duration * 1000)
   ), [startsAt, duration])
 
-  if (!(endsAt instanceof Date) || isNaN(endsAt) || !node) {
+  if (!(endsAt instanceof Date) || !node) {
     return null
   } else {
     const ends = isoStringFor(
@@ -408,7 +408,7 @@ const NodeSettings = ({
       )
     }
   }
-  const setDuration = (str, { sync } = {}) => {
+  const setDuration = (str, { sync = true } = {}) => {
     str = onlyTime({ setter: baseDuration })(str)
     if(sync !== false && (isSet(endOffset) || isSet(startOffset))) {
       const start = (
@@ -420,7 +420,7 @@ const NodeSettings = ({
       )
     }
   }
-  const setEndOffset = (str, { sync } = {}) => {
+  const setEndOffset = (str, { sync = true } = {}) => {
     str = onlyTime({ setter: baseEndOffset })(str)
     if(
       sync !== false
