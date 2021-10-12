@@ -1,11 +1,19 @@
 {
   "name": "call-meta",
-  "version": "0.3.0",
+  "repository": "https://github.com/dhappy/consult",
+  "homepage": "https://dhappy.github.io/consult/",
+  "author": "W.J. “δυς” H. <dys@dhappy.org>",
+  "license": "CC0",
+  "version": "0.4.0",
   "description": "A system for encoding time-correlated metainformation regarding recordings of distributed work calls.",
   "main": "index.jsx",
+  "module": "src/index.jsx",
   "scripts": {
     "build": "webpack",
-    "start": "webpack serve"
+    "start": "webpack serve",
+    "deploy": "gh-pages -d build/",
+    "contract:compile": "npx hardhat compile",
+    "contract:deploy": "npx hardhat run scripts/deploy.js"
   },
   "dependencies": {
     "@babel/runtime": "^7.15.4",
@@ -15,6 +23,7 @@
     "@emotion/react": "^11",
     "@emotion/styled": "^11",
     "framer-motion": "^4",
+    "json5": "^2.2.0",
     "react": "17.0.2",
     "react-dom": "17.0.2",
     "react-markdown": "^7.0.1",
@@ -33,7 +42,8 @@
     "babel-loader": "8.2.2",
     "babel-plugin-transform-runtime": "^6.23.0",
     "core-js": "3",
-    "file-loader": "^6.2.0",
+    "gh-pages": "^3.2.3",
+    "html-webpack-plugin": "^5.3.2",
     "webpack": "5.51.1",
     "webpack-cli": "4.8.0",
     "webpack-dev-server": "4.0.0"

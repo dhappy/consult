@@ -13,6 +13,7 @@ import Markdown from 'react-markdown'
 import demark from 'remove-markdown'
 import { v4 as uuid } from 'uuid'
 import { HashLink as Link } from 'react-router-hash-link'
+import JSON5 from 'json5'
 import {
   isoStringFor, stringFor, timeFor, isSet, ifSet,
 } from './utils'
@@ -1251,7 +1252,7 @@ export default (config) => {
     }
     try {
       const blob = new Blob(
-        [JSON.stringify(metadata, null, 2)],
+        [JSON5.stringify(metadata, null, 2)],
         { type: "text/json" },
       )
       const url = window.URL.createObjectURL(blob)
