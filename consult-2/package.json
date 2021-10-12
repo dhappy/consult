@@ -1,7 +1,17 @@
 {
-  "name": "consult",
-  "packageManager": "yarn@3.0.2",
+  "name": "call-meta",
+  "version": "0.3.0",
+  "description": "A system for encoding time-correlated metainformation regarding recordings of distributed work calls.",
+  "main": "index.jsx",
+  "scripts": {
+    "build": "webpack",
+    "start": "webpack serve"
+  },
   "dependencies": {
+    "@chakra-ui/react": "^1.6.9",
+    "@emotion/react": "^11",
+    "@emotion/styled": "^11",
+    "framer-motion": "^4",
     "react": "17.0.2",
     "react-dom": "17.0.2"
   },
@@ -13,5 +23,9 @@
     "webpack": "5.51.1",
     "webpack-cli": "4.8.0",
     "webpack-dev-server": "4.0.0"
-  }
+  },
+  "resolutions": {
+    "@webpack-cli/serve": "1.5.2"
+  },
+  "packageManager": "yarn@3.0.2"
 }
