@@ -147,3 +147,16 @@ export const isoStringFor = (date, opts = {}) => {
   }
   return ret
 }
+
+export const capitalize = (str) => {
+  if(!str?.split) return str
+  return (
+    str.trim().split(/\s+/g)
+    .map((sub) => (`${
+      sub[0]?.toUpperCase() ?? ''
+    }${
+      sub.substring(1)?.toLowerCase() ?? ''
+    }`))
+    .join(' ')
+  )
+}

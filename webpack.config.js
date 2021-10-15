@@ -1,6 +1,7 @@
 const path = require('path')
 const json5 = require('json5')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
+const CopyPlugin = require('copy-webpack-plugin')
 
 module.exports = {
   entry: './src/index.jsx',
@@ -8,6 +9,7 @@ module.exports = {
   output: {
     filename: 'bundle.js',
     path: path.join(__dirname, 'build'),
+    publicPath: 'auto',
     clean: true,
   },
   resolve: {
@@ -31,7 +33,17 @@ module.exports = {
       },
     ],
   },
-  plugins: [new HtmlWebpackPlugin()],
+  plugins: [
+    new HtmlWebpackPlugin(),
+    new CopyPlugin({
+      patterns: [
+        { from: 'public', to: '' },
+      ],
+    }),
+  ],
   mode: 'development',
-  watch: true,
+  devServer: {
+    port: 3000,
+    open: true,
+  },
 }

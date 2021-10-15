@@ -15,7 +15,8 @@ import { v4 as uuid } from 'uuid'
 import { HashLink as Link } from 'react-router-hash-link'
 import JSON5 from 'json5'
 import {
-  isoStringFor, stringFor, timeFor, isSet, ifSet,
+  isoStringFor, stringFor, timeFor,
+  isSet, ifSet, capitalize,
 } from './utils'
 import CeramicLogo from './images/ceramic.svg'
 import plan from './images/planning.svg'
@@ -27,10 +28,12 @@ import previously from './images/left arrow.svg'
 import discussion from './images/discuss.svg'
 import logistics from './images/certification.svg'
 import blocked from './images/brick wall.svg'
+import roundtable from './images/roundtable.svg'
 
 const icons = {
   plan, decision, issue, presenter, previously,
-  discussion, logistics, blocked, unknown,
+  discussion, logistics, blocked, roundtable,
+  unknown,
 }
 
 const DEFAULT_DURATION = Math.pow(60, 2)
@@ -200,7 +203,9 @@ const generate = ({ root, duration, raw }) => {
   return visit({ node: clone(root), method: fix })
 }
 
-const Spans = ({ node, count = 1, hovered, setHovered }) => {
+const Spans = ({
+  node, count = 1, active, hovered, setHovered,
+}) => {
   if (!node) return null
 
   const mouseOver = (node) => {
@@ -228,7 +233,10 @@ const Spans = ({ node, count = 1, hovered, setHovered }) => {
     return (
       children.map((child, idx) => (
         <Spans
-          {...{ duration, hovered, setHovered }}
+          {...{
+            duration, active,
+            hovered, setHovered,
+          }}
           key={idx}
           node={child}
           count={count + idx + 1}
@@ -245,9 +253,13 @@ const Spans = ({ node, count = 1, hovered, setHovered }) => {
   if(hovered.includes(node.id)) {
     className += ' hovered'
   }
+  let name = demark(node.title)
+  if(node.type) {
+    name = `${capitalize(node.type)}: ${name}`
+  }
 
   return (
-    <Tooltip label={demark(node.title)}>
+    <Tooltip label={name}>
       <Flex
         top={`${timePercent}%`}
         height={`${heightPercent}%`}
@@ -264,6 +276,12 @@ const Spans = ({ node, count = 1, hovered, setHovered }) => {
         }}
         onMouseEnter={() => mouseOver(node)}
         onMouseLeave={() => mouseOut(node)}
+        borderX="2px solid"
+        borderColor={active.includes(node.id) ? (
+          '#00FF00'
+        ) : (
+          'transparent'
+        )}
       >
         <Link
           style={{
@@ -280,7 +298,10 @@ const Spans = ({ node, count = 1, hovered, setHovered }) => {
         >
           {node.children.map((child, idx) => (
             <Spans
-              {...{ duration, hovered, setHovered }}
+              {...{
+                duration, active,
+                hovered, setHovered,
+              }}
               key={child.id} node={child}
               count={count + idx + 1}
             />
@@ -303,6 +324,7 @@ const TimeBox = (({ children, ...props }) => (
   <Box
     whiteSpace="pre" textAlign="center"
     lineHeight="1rem" m="0 !important"
+    pointerEvents="none"
     px="0.1rem" {...props}
   >
     {children}
@@ -310,24 +332,37 @@ const TimeBox = (({ children, ...props }) => (
 ))
 
 const Times = ({
-  node, startsAt, duration, time,
-  hovered, setHovered, ...props
+  node, startsAt, duration, time, seekTo,
+  hovered, setHovered, active, ...props
 }) => {
+  const ref = useRef(null)
   const endsAt = useMemo(() => (
     new Date(startsAt.getTime() + duration * 1000)
   ), [startsAt, duration])
+
+  const clicked = (evt) => {
+    const rect = ref.current.getBoundingClientRect()
+    const y = evt.clientY - rect.top
+    const goto = duration * y / ref.current.scrollHeight
+    seekTo(goto)
+  }
 
   if (!(endsAt instanceof Date) || !node) {
     return null
   } else {
     const ends = isoStringFor(
-      endsAt,
-      { date: false, tz: false },
+      endsAt, { date: false, tz: false },
+    )
+    const headPosition = (
+      ref.current?.scrollHeight * time / duration 
     )
 
     return (
-      <Flex {...props}>
-        <Stack key="times">
+      <Flex position="relative" {...props}>
+        <Flex
+          direction="column" key="times"
+          onClick={clicked} {...{ ref }}
+        >
           {
             isoStringFor(startsAt).split('T')
             .map((part, idx) => (
@@ -339,13 +374,20 @@ const Times = ({
               </TimeBox>
             ))
           }
+          <Box
+            position="absolute"
+            height={`${headPosition}px`} w="full"
+            borderBottom="3px dashed #99999977"
+          />
           <Spacer />
           <TimeBox borderBottom="2px dashed">
             {ends}
           </TimeBox>
-        </Stack>
+        </Flex>
         <Flex>
-          <Spans {...{ node, hovered, setHovered }} />
+          <Spans
+            {...{ node, active, hovered, setHovered }}
+          />
         </Flex>
       </Flex>
     )
@@ -681,7 +723,7 @@ const WrapPartition = ({ children, node }) => {
 const Events = ({
   node = {}, insertChild, replaceNode, insertParent,
   duration, count = 1, hovered, setHovered, seekTo,
-  index = 0, ...props
+  index = 0, active, ...props
 }) => {
   const [menuVisible, setMenuVisible] = (
     useState(false)
@@ -769,7 +811,7 @@ const Events = ({
             duration, insertChild,
             insertParent, replaceNode,
             hovered, setHovered,
-            seekTo, index,
+            seekTo, index, active,
           }}
           key={index}
           node={child}
@@ -787,7 +829,10 @@ const Events = ({
     className += ' hovered'
   }
 
-  const prefix = node.title?.replace(/:.*/g, '').toLowerCase()
+  const prefix = (
+    node.type
+    ?? node.title?.replace(/:.*/g, '').toLowerCase()
+  )
   let icon = icons[prefix]
   if(!icon) {
     icon = icons.unknown
@@ -822,18 +867,26 @@ const Events = ({
           evt.stopPropagation()
           seekTo(node.startOffset)
         }}
+        borderX="4px solid"
+        borderColor={active.includes(node.id) ? (
+          '#00FF00'
+        ) : (
+          'transparent'
+        )}
         {...props} {...{ className }}
       >
         {node.title && (
           <Flex>
             {icon && (
-              <Image
-                borderRadius="50%" bg="#FFFFFF55"
-                minW={10} maxW={10} minH={10} maxH={10}
-                p={0.5} mr={1}
-                src={icon} alt={prefix}
-                border="1px solid black"
-              />
+              <Tooltip label={prefix}>
+                <Image
+                  borderRadius="50%" bg="#FFFFFF55"
+                  minW={10} maxW={10} minH={10} maxH={10}
+                  p={0.5} mr={1}
+                  src={icon} alt={prefix}
+                  border="1px solid black"
+                />
+              </Tooltip>
             )}
             <Heading
               fontSize={32} color="white" pt={1.5}
@@ -911,7 +964,7 @@ const Events = ({
                 duration, insertChild,
                 insertParent, replaceNode,
                 hovered, setHovered,
-                seekTo, index,
+                seekTo, index, active,
               }}
               key={index}
               node={child}
@@ -1066,6 +1119,7 @@ export default (config) => {
   const [vidHeight, setVidHeight] = (
     useState(DEFAULT_VID_HEIGHT)
   )
+  const [active, setActive] = useState([])
   const {
     isOpen: open,
     onOpen: openVideoSettings,
@@ -1075,24 +1129,43 @@ export default (config) => {
     const regex = /^ipfs:(\/\/)?(([^/]+)\/?(.*))$/i
     const match = source.match(regex)
     if(match) {
-      if(
-        match[3].startsWith('bafybei')
-        && isSet(port)
-      ) {
+      if(match[3].startsWith('bafybei')) {
         return (
-          `http://${match[3]}.ipfs.localhost:${port}`
-          + `/${match[4]}`
+          `http://${match[3]}.ipfs.dweb.link/${match[4]}`
         )
       }
       return `//ipfs.io/ipfs/${match[2]}`
     }
     return source
-  }, [source, port])
+  }, [source])
 
   useEffect(() => {
     const stops = generate({ root: raw, duration, raw })
     setStops(stops)
   }, [raw, duration])
+
+  useEffect(() => {
+    const findActive = ({ time, node }) => {
+      const sub = node.children.map((child) => (
+        findActive({ time, node: child })
+      ))
+      if(
+        node.startOffset <= time
+        && node.startOffset + node.duration > time
+      ) {
+        return [node.id, sub]
+      }
+      return null
+    }
+    if(stops) {
+      const search = findActive({ time, node: stops })
+      const ids = (
+        search.flat(Number.POSITIVE_INFINITY)
+        .filter((elem) => !!elem)
+      )
+      setActive(ids)
+    }
+    }, [time, stops])
 
   useEffect(() => {
     const togglePause = (evt) => {
@@ -1285,8 +1358,8 @@ export default (config) => {
             <GridItem id="spans" rowSpan={1} colSpan={1}>
               <Times
                 {...{
-                  startsAt, duration, time,
-                  hovered, setHovered,
+                  startsAt, duration, time, active,
+                  seekTo, hovered, setHovered,
                 }}
                 node={stops}
                 h={`calc(100vh - ${vidHeight}px)`}
@@ -1301,7 +1374,7 @@ export default (config) => {
                   insertChild, insertParent,
                   duration, replaceNode,
                   hovered, setHovered,
-                  seekTo,
+                  seekTo, active,
                 }}
                 node={stops}
               />

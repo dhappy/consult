@@ -1,0 +1,422 @@
+{
+  video: {
+    startsAt: '2021-10-06T13:56:54.000Z',
+    source: 'ipfs://bafybeiati3swd76ykpekja2gpnx2cp5imun2bndlwzc7nncj7axn75bruu',
+  },
+  stops: {
+   partition: true,
+    title: 'MetaGame’s Builders’ Align for 1443/2/28‒3/6',
+    type: 'roundtable',
+    roles: {
+      participant: {
+        enter: [
+          '@Michiel',
+          '@dysbulic',
+        ],
+      },
+      'scrum master': {
+        enter: [
+          '@Michiel',
+        ],
+      },
+    },
+    children: [
+      {
+        title: 'ETHOnline Projects',
+        type: 'discussion',
+        body: '@Michiel is working on a system to make DAO-based token-backed fundraising easier, & @dysbulic is working on a program for collecting metadata about recordings.',
+        roles: {
+          speaker: {
+            enter: [
+              '@Michiel',
+              '@dysbulic',
+            ],
+          },
+        },
+      },
+      {
+        title: 'Welcome @!Udit-takkar, @Polimyl, & @vid',
+        type: 'logistics',
+        startOffset: '3:14',
+        roles: {
+          participant: {
+            enter: [
+              '@!Udit-takkar',
+              '@Polimyl',
+              '@vid',
+            ],
+            persist: true,
+          },
+        },
+      },
+      {
+        title: 'Review of @vid’s Pull Request',
+        type: 'logistics',
+        startOffset: '3:31',
+        roles: {
+          speaker: {
+            enter: [
+              '@vid',
+              '@Michiel',
+            ],
+          },
+        },
+      },
+      {
+        title: 'Expectations for @dysbulic’s ETHOnline Submission',
+        type: 'discussion',
+        startOffset: '7:45',
+        roles: {
+          speaker: {
+            enter: [
+              '@dysbulic',
+              '@Michiel',
+            ],
+          },
+        },
+      },
+      {
+        title: 'Start The Call',
+        type: 'logistics',
+        startOffset: '9:40',
+        roles: {
+          participant: {
+            enter: [
+              '@Dave',
+              '@jonathanp',
+              '@LeewardB',
+              '@tenfinney',
+            ],
+            persist: true,
+          },
+        },
+      },
+      {
+        partition: true,
+        title: '@!Udit-takkar',
+        type: 'presenter',
+        startOffset: '9:44',
+        roles: {
+          speaker: {
+            enter: [
+              '@!Udit-takker',
+            ],
+          },
+        },
+        children: [
+          {
+            title: 'Submitted a Pull Request',
+            type: 'previously',
+            startOffset: '9:50',
+          },
+          {
+            title: 'The Top Three Skills Interface from @Dave',
+            type: 'blocked',
+            startOffset: '10:02',
+          },
+          {
+            title: 'Reviewing @!Udit-takkar’s Existing Work',
+            type: 'logistics',
+            startOffset: '10:22',
+            roles: {
+              speaker: {
+                enter: [
+                  '@Michiel',
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: '@Dave',
+        type: 'presenter',
+        startOffset: '13:00',
+        roles: {
+          speaker: {
+            enter: [
+              '@Dave',
+            ],
+          },
+        },
+      },
+      {
+        partition: true,
+        title: '@dysbulic',
+        type: 'presenter',
+        startOffset: '14:00',
+        roles: {
+          speaker: {
+            enter: [
+              '@dysbulic',
+            ],
+          },
+        },
+        children: [
+          {
+            title: 'Ceramic’s IDX Is Being Deprecated',
+            type: 'issue',
+            body: '[Glaze](https://developers.ceramic.network/tools/glaze/overview/) is the now the accepted method for managing user document collections.',
+            startOffset: '14:15',
+          },
+          {
+            title: 'Glaze Requires Webpack 5',
+            type: 'issue',
+            startOffset: '14:43',
+          },
+          {
+            title: "IDX Has Version Conflicts With Ceramic's HTTP Client",
+            type: 'issue',
+            startOffset: '14:54',
+          },
+          {
+            title: 'Refactor IDX Code To Use Glaze',
+            type: 'decision',
+            startOffset: '15:34',
+          },
+          {
+            title: 'Use Glaze To Interface With Ceramic For ETHOnline',
+            type: 'plan',
+            startOffset: '16:00',
+          },
+          {
+            title: 'Upgrade Next.js From v10 to v11',
+            type: 'plan',
+            startOffset: '16:40',
+          },
+          {
+            title: 'Logistics: Next.js Upgrade Ticket Missing From @Michiel’s ZenHub',
+            startOffset: '17:07',
+            roles: {
+              speaker: {
+                enter: [
+                  '@Michiel',
+                ],
+                persist: true,
+              },
+            },
+          },
+          {
+            title: 'Closing And Reopening Timezone Ticket',
+            type: 'logistics',
+            startOffset: '21:06',
+          },
+        ],
+      },
+      {
+        title: '@johnathanp',
+        type: 'presenter',
+        startOffset: '25:28',
+        roles: {
+          speaker: {
+            enter: [
+              '@johnathanp',
+            ],
+          },
+        },
+      },
+      {
+        title: '@LeewardB',
+        type: 'presenter',
+        startOffset: '25:52',
+        roles: {
+          speaker: {
+            enter: [
+              '@johnathanp',
+            ],
+          },
+        },
+        children: [
+          {
+            title: 'Develop Edit Profile Popup',
+            type: 'plan',
+            startOffset: '26:19',
+          },
+        ],
+      },
+      {
+        title: 'How To Create A Profile Setup Tutorial?',
+        type: 'question',
+        startOffset: '28:17',
+        roles: {
+          speaker: {
+            enter: [
+              '@tenfinney',
+              '@dysbulic',
+              '@Michiel',
+            ],
+          },
+        },
+      },
+      {
+        partition: true,
+        title: '@Polimyl',
+        type: 'presenter',
+        startOffset: '33:41',
+        roles: {
+          speaker: {
+            enter: [
+              '@Polimyl',
+            ],
+          },
+        },
+        children: [
+          {
+            title: 'Test Instances On Google Cloud Run [Pull Request](https://github.com/MetaFam/TheGame/pull/841) Submitted',
+            type: 'previously',
+            startOffset: '33:45',
+          },
+          {
+            title: 'Reduce The Size Of The Docker Images',
+            type: 'plan',
+            startOffset: '33:54',
+          },
+          {
+            title: 'Discussion: Advisability Of Using Google For Services',
+            startOffset: '34:08',
+          },
+          {
+            title: 'Test Instances Contain No Data',
+            type: 'issue',
+            startOffset: '36:01',
+            roles: {
+              speaker: {
+                enter: [
+                  '@dysbulic',
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        children: [
+          {
+            title: 'Schedule A Call To Discuss Raid Guild’s “Dungeon Master”',
+            type: 'plan',
+            startOffset: '37:32',
+          },
+        ],
+        title: '@scottrepreneur',
+        type: 'presenter',
+        startOffset: '37:18',
+        roles: {
+          speaker: {
+            enter: [
+              '@scottrepreneur',
+            ],
+          },
+        },
+      },
+      {
+        children: [
+          {
+            title: 'Develop An Interface For Buyer/Seller Agreement',
+            type: 'plan',
+            startOffset: '38:33',
+          },
+        ],
+        title: '@tenfinney',
+        type: 'presenter',
+        startOffset: '38:05',
+        roles: {
+          speaker: {
+            enter: [
+              '@tenfinney',
+            ],
+          },
+        },
+      },
+      {
+        title: '@ApeironCreations',
+        type: 'presenter',
+        startOffset: '39:26',
+        roles: {
+          speaker: {
+            enter: [
+              '@ApeironCreations',
+            ],
+          },
+        },
+      },
+      {
+        children: [
+          {
+            title: 'SourceCred AMA On Friday Community Call @ 5ᴘᴍ ᴜᴛᴄ',
+            type: 'plan',
+            startOffset: '41:35',
+          },
+          {
+            title: 'Diversity In DAOs Opening Friday Community Call @ 4ᴘᴍ ᴜᴛᴄ',
+            type: 'plan',
+            startOffset: '41:48',
+          },
+          {
+            title: 'MyMeta Discussion Call Tuesday @ ?',
+            type: 'plan',
+            startOffset: '42:08',
+          },
+        ],
+        partition: true,
+        title: "@peth don't need your eth",
+        type: 'presenter',
+        startOffset: '41:26',
+        roles: {
+          speaker: {
+            enter: [
+              "@peth don't need your eth",
+            ],
+          },
+        },
+      },
+      {
+        children: [
+          {
+            title: 'Refining Profile Editor & Display Page',
+            type: 'previously',
+            startOffset: '45:36',
+          },
+          {
+            title: 'Submitted [Pull Request](//github.com/MetaFam/TheGame/pull/854) To Remove Unused Files',
+            type: 'previously',
+            startOffset: '46:23',
+          },
+        ],
+        partition: true,
+        title: '@vid',
+        type: 'presenter',
+        startOffset: '45:30',
+        roles: {
+          speaker: {
+            enter: [
+              '@vid',
+            ],
+          },
+        },
+      },
+      {
+        children: [
+          {
+            title: 'Finalizing Profile Page Design',
+            type: 'previously',
+            startOffset: '49:44',
+          },
+          {
+            title: 'Top Three Skills',
+            type: 'plan',
+            startOffset: '51:15',
+          },
+        ],
+        partition: true,
+        title: '@Dave',
+        type: 'presenter',
+        startOffset: '49:13',
+      },
+      {
+        title: '@joseacabreraw',
+        type: 'presenter',
+        startOffset: '55:06',
+      },
+    ],
+  },
+}

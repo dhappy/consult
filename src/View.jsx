@@ -7,6 +7,7 @@ import {
 } from '@chakra-ui/react'
 import { useLocation } from 'react-router'
 import { HashLink as Link } from 'react-router-hash-link'
+import JSON5 from 'json5'
 import MarkedVideo from './MarkedVideo'
 
 export default () => {
@@ -24,9 +25,8 @@ export default () => {
   }
 
   useEffect(() => {
-    console.info({ metadata });
     (async () => {
-      if(metadata.startsWith('ceramic://')) {
+      if(metadata.startsWith('ceramic:')) {
         const CERAMIC_URL = (
           process.env.CERAMIC_URL
           || 'http://localhost:7007'
@@ -38,26 +38,27 @@ export default () => {
         )
         console.info({ metadata, tile: tile.content })
         setInfo(tile.content)
-      } else if(metadata.startsWith('ipfs://')) {
-        if(metadata.endsWith('.mp4')) {
+      } else if(metadata.startsWith('ipfs:')) {
+        if(/\.json5?/i.test(metadata)) {
+          const regex = /^ipfs:(\/\/)?(([^/]+)\/?(.*))$/i
+          const match = metadata.match(regex)
+          let http = `//${match[3]}.ipfs.dweb.link/${match[4]}`
+          if(!match[3].startsWith('bafy')) {
+            http = `//ipfs.io/ipfs/${match[2]}`
+          }
+          const res = await fetch(http)
+          setFromObject(
+            await JSON5.parse(await res.text())
+          )
+        } else {
           setInfo({
             startsAt: new Date(),
-            stops: [{
-              title: 'Title',
-            }],
+            stops: [{ title: 'Title' }],
             source: metadata,
           })
-        } else if(metadata.endsWith('.json')) {
-          const regex = /^ipfs:(\/\/)?(.+)$/i
-          const match = metadata.match(regex)
-          const http = `//ipfs.io/ipfs/${match[2]}`
-          const res = await fetch(http)
-          setFromObject(await res.json())
         }
       } else if(metadata !== '/') {
         setInfo(await import(`./${metadata}/js`))
-      } else {
-        console.warn('No files to load…')
       }
     })()
   }, [metadata])
@@ -79,7 +80,7 @@ export default () => {
             </ListItem>
             <ListItem>
               <Link
-                to="ipfs://QmVpd6JUReFiXhqDZARt51t3pLaD5xkRH94CZKTYrhUWiA/Sample Builders’ Align.json"
+                to="ipfs://QmfKwTB5gsAH8JQBU6ygZCzQJrapy6vb1yrD2QVNy3hYyq/Sample Builders’ Align.json5"
               >Builders’ Align w/ Metadata</Link>
             </ListItem>
           </UnorderedList>
@@ -96,22 +97,22 @@ export default () => {
             evt.preventDefault()
             setFromObject(
               // @ts-ignore
-              JSON.parse(evt.target.json.value)
+              JSON5.parse(evt.target.json.value)
             )
           }}
         >
           <Textarea
-            name="json" placeholder="JSON Events Description"
-            w={600} h={30}
+            name="json" placeholder="JSON5 Events Description"
+            w={600} h={60}
             onKeyPress={(evt) => {
-              console.info({ area: evt })
               if(evt.key === 'Enter' && evt.ctrlKey) {
+                evt.preventDefault()
                 // @ts-ignore
                 evt.target.form.submit()
               }
             }}
           ></Textarea>
-          <Button type="submit">Load JSON</Button>
+          <Button type="submit">Load JSON5</Button>
         </Flex>
       </Stack>
     )
