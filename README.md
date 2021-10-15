@@ -1,13 +1,14 @@
 # Call Meta
 
-The aim of this program is to associate time-sensitive metadata with the playback of recordings of livestreams of pair-programming sessions and virtual meetings.
+The aim of this program is to associate time-sensitive metadata with the playback of recordings of livestreams of pair-programming sessions and virtual meetings with the goal of making it possible to comprehend the proceedings in significantly less time.
 
-The metainformation is stored in IPFS with a reference put in Ceramic and retrievable using an IDX schema.
+## Technology
 
-In order to permit discovery of new video lists, when a user creates a new list an event is generated on the Polygon blockchain.
+The video data and metainformation is stored in [IPFS](//ipfs.io) with a pointer placed in a [Ceramic](//ceramic.network) stream for discovery.
+
+There is a DID NFT controlled document with the listing of available videos. Users can request a token giving them write access.
 
 ## Development
 
-This is a `create-react-app`-based application and all the regular `yarn` commands function.
-
-Additionally, `yarn contract:deploy` will compile and deploy the [CAIP-10](https://github.com/ChainAgnostic/CAIPs/blob/master/CAIPs/caip-10.md#simple-summary) publishing contract to the Polygon Mumbai Test Network, and record the ABI & contract address in the `src/` tree.
+* `yarn && yarn start` to start the development server
+* `yarn deploy` to publish to GitHub pages

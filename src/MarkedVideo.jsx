@@ -204,7 +204,8 @@ const generate = ({ root, duration, raw }) => {
 }
 
 const Spans = ({
-  node, count = 1, active, hovered, setHovered,
+  node, count = 1, active,
+  hovered, setHovered, togglePause,
 }) => {
   if (!node) return null
 
@@ -234,7 +235,7 @@ const Spans = ({
       children.map((child, idx) => (
         <Spans
           {...{
-            duration, active,
+            duration, active, togglePause,
             hovered, setHovered,
           }}
           key={idx}
@@ -282,6 +283,9 @@ const Spans = ({
         ) : (
           'transparent'
         )}
+        onDoubleClick={() => {
+          togglePause()
+        }}
       >
         <Link
           style={{
@@ -299,7 +303,7 @@ const Spans = ({
           {node.children.map((child, idx) => (
             <Spans
               {...{
-                duration, active,
+                duration, active, togglePause,
                 hovered, setHovered,
               }}
               key={child.id} node={child}
@@ -333,7 +337,8 @@ const TimeBox = (({ children, ...props }) => (
 
 const Times = ({
   node, startsAt, duration, time, seekTo,
-  hovered, setHovered, active, ...props
+  hovered, setHovered, active, togglePause,
+  ...props
 }) => {
   const ref = useRef(null)
   const endsAt = useMemo(() => (
@@ -361,7 +366,8 @@ const Times = ({
       <Flex position="relative" {...props}>
         <Flex
           direction="column" key="times"
-          onClick={clicked} {...{ ref }}
+          onClick={clicked} onDoubleClick={togglePause}
+          {...{ ref }}
         >
           {
             isoStringFor(startsAt).split('T')
@@ -386,7 +392,10 @@ const Times = ({
         </Flex>
         <Flex>
           <Spans
-            {...{ node, active, hovered, setHovered }}
+            {...{
+              node, active, togglePause,
+              hovered, setHovered,
+            }}
           />
         </Flex>
       </Flex>
@@ -723,7 +732,7 @@ const WrapPartition = ({ children, node }) => {
 const Events = ({
   node = {}, insertChild, replaceNode, insertParent,
   duration, count = 1, hovered, setHovered, seekTo,
-  index = 0, active, ...props
+  index = 0, active, togglePause, ...props
 }) => {
   const [menuVisible, setMenuVisible] = (
     useState(false)
@@ -863,6 +872,7 @@ const Events = ({
         }}
         onMouseEnter={() => mouseOver(node)}
         onMouseLeave={() => mouseOut(node)}
+        onDoubleClick={togglePause}
         onClick={(evt) => {
           evt.stopPropagation()
           seekTo(node.startOffset)
@@ -1146,14 +1156,14 @@ export default (config) => {
 
   useEffect(() => {
     const findActive = ({ time, node }) => {
-      const sub = node.children.map((child) => (
-        findActive({ time, node: child })
-      ))
       if(
         node.startOffset <= time
         && node.startOffset + node.duration > time
       ) {
-        return [node.id, sub]
+          const sub = node.children.map((child) => (
+            findActive({ time, node: child })
+          ))
+          return [node.id, sub]
       }
       return null
     }
@@ -1165,17 +1175,28 @@ export default (config) => {
       )
       setActive(ids)
     }
-    }, [time, stops])
+  }, [time, stops])
+
+  const togglePause = (pause = null) => {
+    pause = (
+      typeof(pause) !== 'boolean' ? (
+        !vid.current.paused
+      ) : (
+        pause
+      )
+    )
+    if(pause) {
+      vid.current.pause()
+    } else {
+      vid.current.play()
+    }
+  }
 
   useEffect(() => {
-    const togglePause = (evt) => {
+    const keyed = (evt) => {
       switch(evt.key) {
         case 'p': case 'P':
-          if(vid.current.paused) {
-            vid.current.play()
-          } else {
-            vid.current.pause()
-          }
+          togglePause()
         break
         case 'b':
           seekTo(time - 5)
@@ -1193,9 +1214,9 @@ export default (config) => {
         break
       }
     }
-    window.addEventListener('keypress', togglePause)
+    window.addEventListener('keypress', keyed)
     return () => {
-      window.removeEventListener('keypress', togglePause)
+      window.removeEventListener('keypress', keyed)
     }
   })
 
@@ -1360,6 +1381,7 @@ export default (config) => {
                 {...{
                   startsAt, duration, time, active,
                   seekTo, hovered, setHovered,
+                  togglePause,
                 }}
                 node={stops}
                 h={`calc(100vh - ${vidHeight}px)`}
@@ -1374,7 +1396,7 @@ export default (config) => {
                   insertChild, insertParent,
                   duration, replaceNode,
                   hovered, setHovered,
-                  seekTo, active,
+                  seekTo, active, togglePause,
                 }}
                 node={stops}
               />

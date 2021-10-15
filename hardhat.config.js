@@ -5,14 +5,13 @@ require('hardhat-abi-exporter')
 // https://hardhat.org/guides/create-task.html
 task('accounts', 'Prints the list of accounts', async (taskArgs, hre) => {
   const accounts = await hre.ethers.getSigners()
-
-  for (const account of accounts) {
-    console.log(account.address)
+  for(const { address } of accounts) {
+    console.log(address)
   }
 })
 
 const fs = require('fs')
-const privateKey = fs.readFileSync('private.key').toString().trim()
+const mnemonic = fs.readFileSync('private.mnemonic').toString().trim()
 
 // You need to export an object to set up your config
 // Go to https://hardhat.org/config/ to learn more
@@ -27,11 +26,11 @@ module.exports = {
     },
     matic: {
       url: 'https://rpc-mainnet.matic.network',
-      accounts: [privateKey],
+      accounts: { mnemonic },
     },
     'matic-mumbai': {
       url: 'https://rpc-mumbai.maticvigil.com',
-      accounts: [privateKey],
+      accounts: { mnemonic },
     }
   },
   solidity: {
@@ -39,18 +38,18 @@ module.exports = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 200
-      }
-    }
+        runs: 200,
+      },
+    },
   },
   paths: {
     sources: './contracts',
     tests: './test',
     cache: './cache',
-    artifacts: './artifacts'
+    artifacts: './artifacts',
   },
   mocha: {
-    timeout: 20000
+    timeout: 20000,
   },
   abiExporter: {
     path: './src/contract/abi',

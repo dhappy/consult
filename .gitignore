@@ -8,6 +8,7 @@ ipfs/
 cache/
 artifacts/
 private.key
+private.mnemonic
 public/page_meta.png
 
 # Yarn Berry

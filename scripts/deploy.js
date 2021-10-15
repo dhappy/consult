@@ -6,7 +6,7 @@
 // Runtime Environment's members available in the global scope.
 const hre = require('hardhat')
 const fs = require('fs')
-const OUT = 'src/contract/address.json'
+const OUT = 'src/contract/addresses.json'
 
 async function main() {
   // Hardhat always runs the compile task when running scripts with its command
@@ -17,24 +17,28 @@ async function main() {
   // await hre.run('compile');
 
   // We get the contract to deploy
-  const IDXPub = await (
-    hre.ethers.getContractFactory('IDXEndpointPublisher')
-  )
-  const publisher = await IDXPub.deploy()
+  const contracts = ['IDXEndpointPublisher', 'VideosERC1155']
+  const addresses = {}
+  for(const contract of contracts) {
+    const factory = await (
+      hre.ethers.getContractFactory(contract)
+    )
+    const publisher = await factory.deploy()
+    await publisher.deployed()
+    addresses[contract] = publisher.address
+  }
 
-  await publisher.deployed()
+  console.info({ addresses })
 
-  const address = { address: publisher.address }
   try {
-    console.info({address, str: JSON.stringify(address, null, 2)})
     fs.writeFileSync(
       OUT,
-      JSON.stringify(address, null, 2),
+      JSON.stringify(addresses, null, 2),
     )
   } catch(err) {
     console.error(err)
   }
-  console.log(`Saved contract address ${publisher.address} to ${OUT}`)
+  console.log(`Saved contract addresses to ${OUT}`)
 }
 
 // We recommend this pattern to be able to use async/await everywhere
@@ -42,6 +46,6 @@ async function main() {
 main()
 .then(() => process.exit(0))
 .catch((error) => {
-  console.error(error);
-  process.exit(1);
+  console.error(error)
+  process.exit(1)
 })
