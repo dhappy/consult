@@ -14,19 +14,19 @@ contract VideosERC1155 is ERC1155 {
   uint8 constant VIDEO_TOKEN = 2;
 
   uint256 public constant PUBLIC_ACCESS = (
-    ACCESS_TOKEN << 128 + 1
+    ACCESS_TOKEN << 248 + 1
   );
   uint256 public constant CODER_ACCESS = (
-    ACCESS_TOKEN << 128 + 2
+    ACCESS_TOKEN << 248 + 2
   );
   uint256 public constant SCRIBE_ACCESS = (
-    ACCESS_TOKEN << 128 + 3
+    ACCESS_TOKEN << 248 + 3
   );
   uint256 public constant PEER_ACCESS = (
-    ACCESS_TOKEN << 128 + 4
+    ACCESS_TOKEN << 248 + 4
   );
   uint256 public constant APPROVER_ACCESS = (
-    ACCESS_TOKEN << 128 + 5
+    ACCESS_TOKEN << 248 + 5
   );
 
   constructor() ERC1155("Single Metadata URI Is Not Used") {

@@ -4,9 +4,9 @@ import {
   ModalOverlay, ModalContent, ModalHeader, ModalFooter,
   ModalCloseButton, ModalBody, FormControl, FormLabel,
   Modal, Text, Textarea, Divider, Image, Tooltip,
-  Tabs, TabList, TabPanels, Tab, TabPanel,
+  Tabs, TabList, TabPanels, Tab, TabPanel, Checkbox,
 } from '@chakra-ui/react'
-import {
+import React, {
   useEffect, useRef, useState, useMemo,
 } from 'react'
 import Markdown from 'react-markdown'
@@ -106,6 +106,10 @@ const connect = ({ stops }) => {
 }
 
 const clone = (stops) => connect({ stops })
+
+const append = (array, ...entries) => (
+  (array ?? []).concat(entries.flat())
+)
 
 const generate = ({ root, duration, raw }) => {
   const fix = ({
@@ -213,15 +217,25 @@ const generate = ({ root, duration, raw }) => {
       .forEach(([action, users]) => {
         switch(action) {
           case 'enter':
-            roles[role] = (
-              (roles[role] ?? []).concat(users)
-            )
+            roles[role] = append(roles[role], ...users)
             if(exec.persist === true) {
               incomingRoles[role] = (
-                (incomingRoles[role] ?? [])
-                .concat(users)
+                append(incomingRoles[role], ...users)
               )
+            } else {
+              users.forEach((userOrObj) => {
+                if(userOrObj.persist) {
+                  incomingRoles[role] = (
+                    append(incomingRoles[role], userOrObj)
+                  )
+                }
+              })
             }
+            incomingRoles[role] = (
+              (incomingRoles[role] ?? []).filter(
+                (u) => u.persist !== false
+              )
+            )
           break
           case 'exit':
             users.forEach((user) => {
@@ -464,8 +478,225 @@ const onlyTime = ({ setter }) => (
   }
 )
 
+const Roles = ({
+  title, node, event, roles, setRoles, transform,
+}) => {
+  const [create, setCreate] = useState([])
+
+  transform(
+    'roles',
+    (roles) => {
+      create.forEach((n) => {
+        const { name, persist } = n
+        roles[n.role] ??= {}
+        roles[n.role][n.event] ??= []
+        roles[n.role][n.event].push(
+          { name, persist }
+        )
+      })
+      return roles
+    }
+  )
+
+  const changed = ({ persist, targetUser, role }) => {
+    setRoles((roles) => {
+      const entry = roles[role]
+      const processed = (
+        [...(entry[event] ?? [])].map((userOrObj) => {
+          const name = (
+            userOrObj.name ?? userOrObj
+          )
+          if(name === targetUser) {
+            if(persist || entry.persist) {
+              return { name, persist }
+            }
+            return name
+          }
+          if(
+            entry.persist
+            && userOrObj.persist !== false
+          ) {
+            return { name, persist: true }
+          }
+          return userOrObj
+        })
+      )
+      return {
+        ...roles,
+        [role]: {
+          ...entry,
+          [event]: processed,
+        },
+      }
+    })
+  }
+
+  const remove = ({ user, role, event }) => {
+    setRoles((roles) => {
+      const processed = (
+        [...(roles[role][event] ?? [])]
+        .filter((u) => (
+          u.name !== user && u !== user
+        ))
+      )
+      return {
+        ...roles,
+        [role]: {
+          ...roles[role],
+          [event]: processed,
+        },
+      }
+    })
+  }
+
+  const add = ({ event }) => {
+    setCreate((old) => [
+      ...old,
+      {
+        role: '', event: '',
+        user: '', persist: false,
+      }
+    ])
+  }
+
+  return (
+    <>
+      <Flex>
+        <Button
+          h="auto" minW="auto" mr={2}
+          onClick={add}
+        >+</Button>
+        {title && (
+          <Heading
+            fontSize={24}
+            _after={{ content: '":"' }}
+          >{title}</Heading>
+        )}
+      </Flex>
+      <Grid
+        templateColumns="2fr 2fr 1fr 1fr"
+        sx={{ '& > *': {
+          border: '1px solid',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        } }}
+      >
+        <GridItem fontWeight="bold">Role</GridItem>
+        <GridItem fontWeight="bold">User</GridItem>
+        <GridItem
+          fontWeight="bold"
+          title="Role will appear in following siblings as well as, like all nodes, children."
+        >Persist</GridItem>
+        <GridItem fontWeight="bold">Remove</GridItem>
+        {Object.entries(roles).map(([role, exec], idx) => (
+          [0, undefined].includes(exec[event]?.length) ? (
+            <GridItem colSpan={4} key={idx}>
+              <em>No Entries</em>
+            </GridItem>
+          ) : (
+            <React.Fragment key={idx}>
+              <GridItem
+                rowSpan={exec[event].length}
+              >{role}</GridItem>
+              {(exec[event] ?? []).map((userOrObj, iidx) => {
+                const username = userOrObj.name ?? userOrObj
+                return (
+                  <React.Fragment key={iidx}>
+                    <GridItem>{username}</GridItem>
+                    <GridItem>
+                      <Checkbox
+                        w={3} h={3} p={0}
+                        value={username}
+                        isChecked={
+                          userOrObj.persist ?? !!exec.persist
+                        }
+                        onChange={({ target: {
+                          checked: persist, value: targetUser,
+                        } }) => {
+                          changed({
+                            persist, targetUser, role,
+                          })
+                        }}
+                      />
+                    </GridItem>
+                    <GridItem>
+                      <Button
+                        h="auto" value={username}
+                        onClick={({
+                          target: { value: user }
+                        }) => {
+                          remove({ user, role, event })
+                        }}
+                      >−</Button>
+                    </GridItem>
+                  </React.Fragment>
+                )
+              })}
+              {create.map((entry, idx) => (
+                <React.Fragment key={idx}>
+                  <GridItem>
+                    <Input
+                      value={entry.role}
+                      textAlign="center"
+                      onChange={({ target: { value } }) => {
+                        setCreate((old) => [
+                          ...old.slice(0, idx),
+                          { ...entry, role: value },
+                          ...old.slice(idx + 1),
+                        ])
+                      }}
+                    />
+                  </GridItem>
+                  <GridItem>
+                    <Input
+                      value={entry.name}
+                      textAlign="center"
+                      onChange={({ target: { value } }) => {
+                        setCreate((old) => [
+                          ...old.slice(0, idx),
+                          { ...entry, user: value },
+                          ...old.slice(idx + 1),
+                        ])
+                      }}
+                    />
+                  </GridItem>
+                  <GridItem>
+                    <Checkbox
+                      isChecked={entry.persist}
+                      onChange={({ target: { checked } }) => {
+                        setCreate((old) => [
+                          ...old.slice(0, idx),
+                          { ...entry, persist: checked },
+                          ...old.slice(idx + 1),
+                        ])
+                      }}
+                    />
+                  </GridItem>
+                  <GridItem>
+                    <Button
+                      h="auto"
+                      onClick={() => {
+                        setCreate((old) => [
+                          ...old.slice(0, idx),
+                          ...old.slice(idx + 1),
+                        ])
+                      }}
+                    >−</Button>
+                  </GridItem>
+                </React.Fragment>
+              ))}
+            </React.Fragment>
+          )
+        ))}
+      </Grid>
+    </>
+  )
+}
+
 const NodeSettings = ({
-  open, closeNodeSettings, node, replaceNode,
+  open, closeNodeSettings, node,
+  replaceNode, ...props
 }) => {
   const { partition, children, raw } = node
   const initialRef = useRef()
@@ -476,6 +707,12 @@ const NodeSettings = ({
   )
   const [duration, baseDuration] = (
     useState(raw.duration ?? '')
+  )
+  const [roles, setRoles] = (
+    useState(node.raw.roles ?? {})
+  )
+  const [transforms, setTransforms] = (
+    useState({})
   )
   const defaultEnd = (
     timeFor(ifSet(startOffset) ?? node.startOffset)
@@ -540,12 +777,15 @@ const NodeSettings = ({
   const replacement = useMemo(() => {
     const fields = {
       title, body, duration, startOffset,
-      partition, children, id: node.id,
+      partition, children, id: node.id, roles,
     }
     const gen = newNode()
     Object.entries(fields).forEach(
       ([key, value]) => {
         if(isSet(value)) {
+          if(transforms[key]) {
+            value = transforms[key](value)
+          }
           gen[key] = value
         }
       }
@@ -554,18 +794,28 @@ const NodeSettings = ({
   }, [
     body, children, duration,
     partition, startOffset, title,
-    node.id,
+    node.id, roles,
   ])
   const save = (evt) => {
     evt.preventDefault()
     replaceNode({ node, replacement })
     closeNodeSettings()
   }
+  const transform = (variable, method) => {
+    setTransforms((trans) => ({
+      ...trans, [variable]: method,
+    }))
+  }
 
   return (
     <Modal
       size="xl" initialFocusRef={initialRef}
-      {...{ isOpen: open, onClose: closeNodeSettings }}
+      lockFocusAcrossFrames={true}
+      {...{
+        ...props,
+        isOpen: open,
+        onClose: closeNodeSettings,
+      }}
     >
       <ModalOverlay/>
       <ModalContent as="form" onSubmit={save}>
@@ -580,6 +830,7 @@ const NodeSettings = ({
             <TabList mb="1em">
               <Tab>Text</Tab>
               <Tab>Timing</Tab>
+              <Tab>Roles</Tab>
             </TabList>
             <TabPanels>
               <TabPanel>
@@ -721,6 +972,26 @@ const NodeSettings = ({
                     </Flex>
                   </FormControl>
                 </Flex>
+              </TabPanel>
+              <TabPanel>
+                <FormControl mt={4}>
+                  <Roles
+                    title="Entrances"
+                    {...{
+                      node, event: 'enter',
+                      roles, setRoles, transform,
+                    }}
+                  />
+                </FormControl>
+                <FormControl mt={4}>
+                  <Roles
+                    title="Exits"
+                    {...{
+                      node, event: 'exit',
+                      roles, setRoles, transform,
+                    }}
+                  />
+                </FormControl>
               </TabPanel>
             </TabPanels>
           </Tabs>
@@ -904,6 +1175,10 @@ const Events = ({
           closeNodeSettings, open,
           node, replaceNode,
         }}
+        onDoubleClick={(evt) => {
+          console.info('J')
+          evt.stopPropagation()
+        }}
       />
       <Stack
         id={node.id}
@@ -967,9 +1242,9 @@ const Events = ({
             {menuVisible && (
               <ButtonGroup>
                 <Option
-                  title="Edit This Node"
-                  onClick={() => edit(node)}
-                >✏️</Option>
+                  title="Remove Node"
+                  onClick={() => removeNode(node)}
+                >➖</Option>
                 <Option
                   title="Create A Child"
                   onClick={() => addChild(node)}
@@ -983,9 +1258,9 @@ const Events = ({
                   onClick={() => addParallel(node)}
                 >█ → 🮔</Option>
                 <Option
-                  title="Remove Node"
-                  onClick={() => removeNode(node)}
-                >➖</Option>
+                  title="Edit This Node"
+                  onClick={() => edit(node)}
+                >✏️</Option>
               </ButtonGroup>
             )}
             <Button
@@ -1069,12 +1344,7 @@ const VideoSettings = ({
       ...info,
       startsAt: new Date(startsAt),
       source,
-      port,
     }))
-    localStorage.setItem(
-      'consult.localhost.ipfs.gateway.port',
-      port,
-    )
     closeVideoSettings()
   }
 
@@ -1108,15 +1378,6 @@ const VideoSettings = ({
               value={source}
               onChange={({ target: { value }}) => {
                 setSource(value)
-              }}
-            />
-          </FormControl>
-          <FormControl mt={4}>
-            <FormLabel>Local IPFS Port</FormLabel>
-            <Input
-              value={port}
-              onChange={({ target: { value }}) => {
-                setPort(value)
               }}
             />
           </FormControl>
@@ -1168,14 +1429,8 @@ export default (config) => {
   const [info, setInfo] = useState({
     startsAt: config.startsAt,
     source: config.source,
-    port: (
-      localStorage.getItem(
-        'consult.localhost.ipfs.gateway.port'
-      )
-      ?? '8080'
-    ),
   })
-  const { startsAt, source, port } = info
+  const { startsAt, source } = info
   const [vidHeight, setVidHeight] = (
     useState(DEFAULT_VID_HEIGHT)
   )
@@ -1310,6 +1565,7 @@ export default (config) => {
     const pos = (
       anchor ? children.indexOf(anchor) : children.length
     )
+    console.info({ c: self })
     self.children = [
       ...self.children.slice(0, pos + 1),
       insert,
@@ -1347,19 +1603,26 @@ export default (config) => {
       }
 
       const { parent } = rawNode
-      const { children } = parent
-      const index = children.findIndex(
-        (child) => child.id === node.id
+      const { children } = parent ?? {}
+      const index = (
+        children?.findIndex(
+          (child) => child.id === node.id
+        )
       )
-      if(!replacement) {
-        children.splice(index, 1)
+
+      if(!isSet(index)) {
+        console.error('Couldn’t find node.', node)
       } else {
-        replacement.parent = parent
-        parent.children = [
-          ...children.slice(0, index),
-          replacement,
-          ...children.slice(index + 1),
-        ]
+        if(!replacement) {
+          children.splice(index, 1)
+        } else {
+          replacement.parent = parent
+          parent.children = [
+            ...children.slice(0, index),
+            replacement,
+            ...children.slice(index + 1),
+          ]
+        }
       }
       return dup
     })
