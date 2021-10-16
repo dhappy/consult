@@ -37,7 +37,7 @@ contract VideosERC1155 is ERC1155 {
   }
 
   function accessToken(uint8 class) public {
-    uint256 id = ACCESS_TOKEN << 128 + class;
+    uint256 id = ACCESS_TOKEN << 248 + class;
     require(
       balanceOf(msg.sender, id) == 0,
       "User already has the given access token"
@@ -47,6 +47,19 @@ contract VideosERC1155 is ERC1155 {
 
   function publicAccessToken() public {
     accessToken(1);
+  }
+
+  function contractURI()
+  public pure
+  returns (string memory) {
+    return "ipfs://QmXFiKzEnZEZNiJEHwKympHWZ8MJSbegC2Bnvvk2iKPLe5/video%20contract%20metadata.json";
+  }
+
+  function tokenURI(
+    uint256 tokenId
+  ) public view
+  returns (string memory) {
+    return uri(tokenId);
   }
 
   function uri(

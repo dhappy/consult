@@ -248,7 +248,7 @@ const generate = ({ root, duration, raw }) => {
           case 'persist': break
           default:
             console.warn(
-              'Unknown Role Action', action
+              `Unknown Role Action: "${action}"`
             )
           break
         }
@@ -478,26 +478,110 @@ const onlyTime = ({ setter }) => (
   }
 )
 
+const RoleItems = ({
+  exec, event, role, remove, changed,
+}) => (
+  <React.Fragment>
+    <GridItem
+      rowSpan={exec[event].length}
+    >{role}</GridItem>
+    {(exec[event] ?? []).map((userOrObj, iidx) => {
+      const username = userOrObj.name ?? userOrObj
+      return (
+        <React.Fragment key={iidx}>
+          <GridItem>{username}</GridItem>
+          <GridItem>
+            <Checkbox
+              w={3} h={3} p={0}
+              value={username}
+              isChecked={
+                userOrObj.persist ?? !!exec.persist
+              }
+              onChange={({ target: {
+                checked: persist, value: targetUser,
+              } }) => {
+                changed({
+                  persist, targetUser, role,
+                })
+              }}
+            />
+          </GridItem>
+          <GridItem>
+            <Button
+              h="auto" value={username}
+              onClick={({
+                target: { value: user }
+              }) => {
+                remove({ user, role, event })
+              }}
+            >−</Button>
+          </GridItem>
+        </React.Fragment>
+      )
+    })}
+  </React.Fragment>
+)
+
+const RoleInputs = ({
+  entry, idx, create, setCreate,
+}) => (
+  <React.Fragment>
+    <GridItem>
+      <Input
+        value={entry.role}
+        textAlign="center"
+        onChange={({ target: { value } }) => {
+          setCreate((old) => [
+            ...old.slice(0, idx),
+            { ...entry, role: value },
+            ...old.slice(idx + 1),
+          ])
+        }}
+      />
+    </GridItem>
+    <GridItem>
+      <Input
+        value={entry.name}
+        textAlign="center"
+        onChange={({ target: { value } }) => {
+          setCreate((old) => [
+            ...old.slice(0, idx),
+            { ...entry, name: value },
+            ...old.slice(idx + 1),
+          ])
+        }}
+      />
+    </GridItem>
+    <GridItem>
+      <Checkbox
+        isChecked={entry.persist}
+        onChange={({ target: { checked } }) => {
+          setCreate((old) => [
+            ...old.slice(0, idx),
+            { ...entry, persist: checked },
+            ...old.slice(idx + 1),
+          ])
+        }}
+      />
+    </GridItem>
+    <GridItem>
+      <Button
+        h="auto"
+        onClick={() => {
+          setCreate((old) => [
+            ...old.slice(0, idx),
+            ...old.slice(idx + 1),
+          ])
+        }}
+      >−</Button>
+    </GridItem>
+  </React.Fragment>
+)
+
 const Roles = ({
-  title, node, event, roles, setRoles, transform,
+  title, node, event, roles, setRoles,
+  create, setCreate,
 }) => {
-  const [create, setCreate] = useState([])
-
-  transform(
-    'roles',
-    (roles) => {
-      create.forEach((n) => {
-        const { name, persist } = n
-        roles[n.role] ??= {}
-        roles[n.role][n.event] ??= []
-        roles[n.role][n.event].push(
-          { name, persist }
-        )
-      })
-      return roles
-    }
-  )
-
   const changed = ({ persist, targetUser, role }) => {
     setRoles((roles) => {
       const entry = roles[role]
@@ -549,14 +633,18 @@ const Roles = ({
     })
   }
 
-  const add = ({ event }) => {
+  const add = () => {
     setCreate((old) => [
       ...old,
       {
-        role: '', event: '',
-        user: '', persist: false,
+        role: '', event,
+        name: '', persist: false,
       }
     ])
+  }
+
+  if(Object.keys(roles ?? {}).length === 0) {
+    roles = { holder: [] }
   }
 
   return (
@@ -589,106 +677,34 @@ const Roles = ({
           title="Role will appear in following siblings as well as, like all nodes, children."
         >Persist</GridItem>
         <GridItem fontWeight="bold">Remove</GridItem>
-        {Object.entries(roles).map(([role, exec], idx) => (
-          [0, undefined].includes(exec[event]?.length) ? (
-            <GridItem colSpan={4} key={idx}>
-              <em>No Entries</em>
-            </GridItem>
-          ) : (
-            <React.Fragment key={idx}>
-              <GridItem
-                rowSpan={exec[event].length}
-              >{role}</GridItem>
-              {(exec[event] ?? []).map((userOrObj, iidx) => {
-                const username = userOrObj.name ?? userOrObj
-                return (
-                  <React.Fragment key={iidx}>
-                    <GridItem>{username}</GridItem>
-                    <GridItem>
-                      <Checkbox
-                        w={3} h={3} p={0}
-                        value={username}
-                        isChecked={
-                          userOrObj.persist ?? !!exec.persist
-                        }
-                        onChange={({ target: {
-                          checked: persist, value: targetUser,
-                        } }) => {
-                          changed({
-                            persist, targetUser, role,
-                          })
-                        }}
-                      />
-                    </GridItem>
-                    <GridItem>
-                      <Button
-                        h="auto" value={username}
-                        onClick={({
-                          target: { value: user }
-                        }) => {
-                          remove({ user, role, event })
-                        }}
-                      >−</Button>
-                    </GridItem>
-                  </React.Fragment>
-                )
-              })}
-              {create.map((entry, idx) => (
-                <React.Fragment key={idx}>
-                  <GridItem>
-                    <Input
-                      value={entry.role}
-                      textAlign="center"
-                      onChange={({ target: { value } }) => {
-                        setCreate((old) => [
-                          ...old.slice(0, idx),
-                          { ...entry, role: value },
-                          ...old.slice(idx + 1),
-                        ])
-                      }}
-                    />
-                  </GridItem>
-                  <GridItem>
-                    <Input
-                      value={entry.name}
-                      textAlign="center"
-                      onChange={({ target: { value } }) => {
-                        setCreate((old) => [
-                          ...old.slice(0, idx),
-                          { ...entry, user: value },
-                          ...old.slice(idx + 1),
-                        ])
-                      }}
-                    />
-                  </GridItem>
-                  <GridItem>
-                    <Checkbox
-                      isChecked={entry.persist}
-                      onChange={({ target: { checked } }) => {
-                        setCreate((old) => [
-                          ...old.slice(0, idx),
-                          { ...entry, persist: checked },
-                          ...old.slice(idx + 1),
-                        ])
-                      }}
-                    />
-                  </GridItem>
-                  <GridItem>
-                    <Button
-                      h="auto"
-                      onClick={() => {
-                        setCreate((old) => [
-                          ...old.slice(0, idx),
-                          ...old.slice(idx + 1),
-                        ])
-                      }}
-                    >−</Button>
-                  </GridItem>
-                </React.Fragment>
-              ))}
-            </React.Fragment>
+        {Object.entries(roles).map(
+          ([role, exec], idx) => (
+            [0, undefined].includes(exec[event]?.length) ? (
+              create.length === 0 && (
+                <GridItem colSpan={4} key={idx}>
+                  <em>No Entries</em>
+                </GridItem>
+              )
+            ) : (
+              <RoleItems
+                key={idx}
+                {...{
+                  exec, event, role,
+                  remove, changed,
+                }}
+              />
+            )
           )
-        ))}
+        )}
+        {
+          create.filter((c) => c.event === event)
+          .map((entry, idx) => (
+            <RoleInputs
+              key={idx}
+              {...{ entry, idx, create, setCreate }}
+            />
+          ))
+        }
       </Grid>
     </>
   )
@@ -711,9 +727,7 @@ const NodeSettings = ({
   const [roles, setRoles] = (
     useState(node.raw.roles ?? {})
   )
-  const [transforms, setTransforms] = (
-    useState({})
-  )
+  const [create, setCreate] = useState([])
   const defaultEnd = (
     timeFor(ifSet(startOffset) ?? node.startOffset)
     + timeFor(ifSet(duration) ?? node.duration)
@@ -777,15 +791,13 @@ const NodeSettings = ({
   const replacement = useMemo(() => {
     const fields = {
       title, body, duration, startOffset,
-      partition, children, id: node.id, roles,
+      partition, children, id: node.id,
+      roles,
     }
     const gen = newNode()
     Object.entries(fields).forEach(
       ([key, value]) => {
         if(isSet(value)) {
-          if(transforms[key]) {
-            value = transforms[key](value)
-          }
           gen[key] = value
         }
       }
@@ -794,17 +806,39 @@ const NodeSettings = ({
   }, [
     body, children, duration,
     partition, startOffset, title,
-    node.id, roles,
+    node.id, roles, create,
   ])
   const save = (evt) => {
     evt.preventDefault()
+    create.forEach(({ role, event, name, persist }) => {
+      replacement.roles ??= {}
+      replacement.roles[role] ??= {}
+      replacement.roles[role][event] ??= []
+      replacement.roles[role][event].push(
+        persist ? { name, persist } : name
+      )
+    })
+    Object.entries(replacement.roles).forEach(
+      ([role, exec]) => {
+        const numEntries = (
+          Object.entries(exec).map(
+            ([event, users]) => (
+              users?.length ?? 0
+            )
+          )
+          .reduce((acc, l) => acc + l, 0)
+        )
+        if(numEntries === 0) {
+          delete replacement.roles[role]
+        }
+      }
+    )
+    if(Object.keys(replacement.roles ?? {}).length === 0) {
+      delete replacement.roles
+    }
+    setCreate([])
     replaceNode({ node, replacement })
     closeNodeSettings()
-  }
-  const transform = (variable, method) => {
-    setTransforms((trans) => ({
-      ...trans, [variable]: method,
-    }))
   }
 
   return (
@@ -979,7 +1013,8 @@ const NodeSettings = ({
                     title="Entrances"
                     {...{
                       node, event: 'enter',
-                      roles, setRoles, transform,
+                      roles, setRoles,
+                      create, setCreate,
                     }}
                   />
                 </FormControl>
@@ -988,7 +1023,8 @@ const NodeSettings = ({
                     title="Exits"
                     {...{
                       node, event: 'exit',
-                      roles, setRoles, transform,
+                      roles, setRoles,
+                      create, setCreate,
                     }}
                   />
                 </FormControl>
