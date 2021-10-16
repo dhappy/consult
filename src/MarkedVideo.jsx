@@ -65,10 +65,10 @@ const newNode = (obj = {}) => (
   )
 )
 
-const visit = ({ node, method }) => {
+const visit = ({ node, method, extra }) => {
   let children = node?.children ?? []
   children = method.apply(
-    node, [{ children, parent: node, visit }]
+    node, [{ children, parent: node, extra, visit }]
   )
   if(isSet(node.children)) {
     node.children = children
@@ -78,15 +78,21 @@ const visit = ({ node, method }) => {
 
 const siblingsOf = (node) => {
   const {
-    parent: { children: siblings } = { children: null }
+    parent: { children: siblings } = (
+      { children: null }
+    )
   } = node
   return !node.parent ? [node] : siblings
 }
 
 const connect = ({ stops }) => {
-  const parent = ({ children = [], parent: rent, visit }) => {
+  const parent = ({
+    children = [], parent: rent, visit,
+  }) => {
     children = children.map((child) => {
-      child = visit({ node: newNode(child), method: parent })
+      child = visit({
+        node: newNode(child), method: parent
+      })
       child.parent = rent
       return child
     })
@@ -102,7 +108,11 @@ const connect = ({ stops }) => {
 const clone = (stops) => connect({ stops })
 
 const generate = ({ root, duration, raw }) => {
-  const fix = ({ parent, children, visit }) => {
+  const fix = ({
+    parent, children,
+    extra: { roles: incomingRoles = {} } = {},
+    visit,
+  }) => {
     parent.raw = findById(raw, parent.id)
 
     children.forEach((child) => {
@@ -195,8 +205,48 @@ const generate = ({ root, duration, raw }) => {
       console.warn(`No Event Duration`, { parent })
     }
 
+    const roles = { ...incomingRoles }
+
+    Object.entries(parent.roles ?? {})
+    .forEach(([role, exec]) => {
+      Object.entries(exec)
+      .forEach(([action, users]) => {
+        switch(action) {
+          case 'enter':
+            roles[role] = (
+              (roles[role] ?? []).concat(users)
+            )
+            if(exec.persist === true) {
+              incomingRoles[role] = (
+                (incomingRoles[role] ?? [])
+                .concat(users)
+              )
+            }
+          break
+          case 'exit':
+            users.forEach((user) => {
+              incomingRoles[role].splice(
+                incomingRoles[role].indexOf(user),
+                1,
+              )
+            })
+          break
+          case 'persist': break
+          default:
+            console.warn(
+              'Unknown Role Action', action
+            )
+          break
+        }
+      })
+    })
+
+    parent.roles = { ...roles }
+
     return children.map((child) => (
-      visit({ node: child, method: fix })
+      visit({
+        node: child, method: fix, extra: { roles }
+      })
     ))
   }
 
@@ -1141,7 +1191,7 @@ export default (config) => {
     if(match) {
       if(match[3].startsWith('bafybei')) {
         return (
-          `http://${match[3]}.ipfs.dweb.link/${match[4]}`
+          `//${match[3]}.ipfs.dweb.link/${match[4]}`
         )
       }
       return `//ipfs.io/ipfs/${match[2]}`
@@ -1150,7 +1200,9 @@ export default (config) => {
   }, [source])
 
   useEffect(() => {
-    const stops = generate({ root: raw, duration, raw })
+    const stops = generate({
+      root: raw, duration, raw,
+    })
     setStops(stops)
   }, [raw, duration])
 

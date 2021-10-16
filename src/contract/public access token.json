@@ -1,0 +1,6 @@
+{
+  "name": "Call Meta Public Access Token",
+  "decimals": 0,
+  "description": "Allows public-level access to token gated functions of [Call Meta](https://dhappy.github.io/consult/).",
+  "image": "ipfs://QmapTaRuhQwwPaKDU62tXdXER2ygTCtVzA6eeawyTWpgx6/public%20access%20token.svg"
+}

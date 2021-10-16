@@ -28,8 +28,6 @@ async function main() {
     addresses[contract] = publisher.address
   }
 
-  console.info({ addresses })
-
   try {
     fs.writeFileSync(
       OUT,
