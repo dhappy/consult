@@ -1413,7 +1413,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ceramicnetwork/http-client@npm:^1.2.1":
+"@ceramicnetwork/http-client@npm:^1.2.1, @ceramicnetwork/http-client@npm:^1.4.0":
   version: 1.4.0
   resolution: "@ceramicnetwork/http-client@npm:1.4.0"
   dependencies:
@@ -1424,20 +1424,6 @@ __metadata:
     query-string: 7.0.1
     rxjs: ^7.0.0
   checksum: 0da4f256e848a5361b5fdbf229184a091139660f5db6c3a9b397dcbc43e6e1f11b152d6c7587b2c7e4d185274cc360bd36c0762b46ec97fbc9c7987522c68316
-  languageName: node
-  linkType: hard
-
-"@ceramicnetwork/http-client@npm:^1.3.0":
-  version: 1.3.0
-  resolution: "@ceramicnetwork/http-client@npm:1.3.0"
-  dependencies:
-    "@ceramicnetwork/common": ^1.5.0
-    "@ceramicnetwork/stream-caip10-link": ^1.1.5
-    "@ceramicnetwork/stream-tile": ^1.3.1
-    "@ceramicnetwork/streamid": ^1.2.1
-    query-string: 7.0.1
-    rxjs: ^7.0.0
-  checksum: 7fb7103e4f45a61674c8b1d1e8bef8fa665c23ac08887cea863f1173052fad21452897028539a2ba76b46abcd6a6d71626bd3688f6ff272c7d96b8f9c9547777
   languageName: node
   linkType: hard
 
@@ -1487,18 +1473,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ceramicnetwork/stream-caip10-link@npm:^1.1.5":
-  version: 1.1.5
-  resolution: "@ceramicnetwork/stream-caip10-link@npm:1.1.5"
-  dependencies:
-    "@ceramicnetwork/common": ^1.5.0
-    "@ceramicnetwork/streamid": ^1.2.1
-    caip: ~0.9.2
-  checksum: c0d3667fe8ff5ac5603bc662f9b56ad3ca0e8e18e14cc4dd23322e401f893ed452aba403eaa708936be95ce56196d9db71be4908d432ac88931dd69c5ec3eb64
-  languageName: node
-  linkType: hard
-
-"@ceramicnetwork/stream-tile@npm:^1.0.0, @ceramicnetwork/stream-tile@npm:^1.3.2":
+"@ceramicnetwork/stream-tile@npm:^1.0.0, @ceramicnetwork/stream-tile@npm:^1.2.0, @ceramicnetwork/stream-tile@npm:^1.3.0, @ceramicnetwork/stream-tile@npm:^1.3.2":
   version: 1.3.2
   resolution: "@ceramicnetwork/stream-tile@npm:1.3.2"
   dependencies:
@@ -3193,6 +3168,33 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@glazed/constants@npm:^0.1.1":
+  version: 0.1.1
+  resolution: "@glazed/constants@npm:0.1.1"
+  checksum: ad08ea5759397368b2864ad34a85133eb2c866d547cdf1e19ff7e4b15767745b899251af0e3c67b772fd31a83678e52bfaec63862c7d631856d3ebca4d6adf1b
+  languageName: node
+  linkType: hard
+
+"@glazed/datamodel@npm:^0.1.2":
+  version: 0.1.2
+  resolution: "@glazed/datamodel@npm:0.1.2"
+  dependencies:
+    "@ceramicnetwork/stream-tile": ^1.2.0
+  checksum: ca6d909be7fc0478fd3357e656d0b7c6485ab609c1b47d714f8acd5d9a96e56d741cf470f194bf44f54c02782cfc52bca8363830ed60717f2abda0f7902ef005
+  languageName: node
+  linkType: hard
+
+"@glazed/did-datastore@npm:^0.1.4":
+  version: 0.1.4
+  resolution: "@glazed/did-datastore@npm:0.1.4"
+  dependencies:
+    "@ceramicnetwork/stream-tile": ^1.3.0
+    "@glazed/constants": ^0.1.1
+    "@glazed/datamodel": ^0.1.2
+  checksum: 8f7d8c11e0a9012d9d72b3125f5a9d8bbd2f96d3eb005f4249db995b4f36284253e1ca4871cd5a014b2b83d89580dcb6ba13193e7c16cccd16c7c5dcb75dbef9
+  languageName: node
+  linkType: hard
+
 "@multiformats/base-x@npm:^4.0.1":
   version: 4.0.1
   resolution: "@multiformats/base-x@npm:4.0.1"
@@ -3551,7 +3553,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@stablelib/ed25519@npm:^1.0.2":
+"@stablelib/ed25519@npm:^1.0.1, @stablelib/ed25519@npm:^1.0.2":
   version: 1.0.2
   resolution: "@stablelib/ed25519@npm:1.0.2"
   dependencies:
@@ -6027,11 +6029,13 @@ __metadata:
     "@babel/preset-react": 7.14.5
     "@babel/runtime": ^7.15.4
     "@babel/runtime-corejs3": ^7.15.4
-    "@ceramicnetwork/http-client": ^1.3.0
+    "@ceramicnetwork/http-client": ^1.4.0
     "@ceramicnetwork/stream-tile": ^1.3.1
     "@chakra-ui/react": ^1.6.9
     "@emotion/react": ^11
     "@emotion/styled": ^11
+    "@glazed/datamodel": ^0.1.2
+    "@glazed/did-datastore": ^0.1.4
     "@nomiclabs/hardhat-ethers": ^2.0.0
     "@nomiclabs/hardhat-waffle": ^2.0.1
     "@openzeppelin/contracts": ^4.3.2
@@ -6043,6 +6047,7 @@ __metadata:
     buffer: ^6.0.3
     copy-webpack-plugin: ^9.0.1
     core-js: 3
+    dids: ^2.4.0
     dotenv: ^10.0.0
     ethereum-waffle: ^3.2.0
     ethers: ^5.4.7
@@ -6053,6 +6058,8 @@ __metadata:
     html-webpack-plugin: ^5.3.2
     https-browserify: ^1.0.0
     json5: ^2.2.0
+    key-did-provider-ed25519: ^1.1.0
+    key-did-resolver: ^1.4.0
     nft-did-resolver: ^1.0.0
     os-browserify: ^0.3.0
     process: ^0.11.10
@@ -6064,6 +6071,7 @@ __metadata:
     remove-markdown: ^0.3.0
     stream-browserify: ^3.0.0
     stream-http: ^3.2.0
+    uint8arrays: ^3.0.0
     use-ceramic: ^1.0.0
     web3: ^1.6.0
     webpack: 5.51.1
@@ -7180,7 +7188,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"did-jwt@npm:^5.6.1":
+"did-jwt@npm:^5.0.1, did-jwt@npm:^5.6.1":
   version: 5.8.0
   resolution: "did-jwt@npm:5.8.0"
   dependencies:
@@ -8490,7 +8498,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fast-json-stable-stringify@npm:^2.0.0":
+"fast-json-stable-stringify@npm:^2.0.0, fast-json-stable-stringify@npm:^2.1.0":
   version: 2.1.0
   resolution: "fast-json-stable-stringify@npm:2.1.0"
   checksum: b191531e36c607977e5b1c47811158733c34ccb3bfde92c44798929e9b4154884378536d26ad90dfecd32e1ffc09c545d23535ad91b3161a27ddbb8ebe0cbecb
@@ -10912,6 +10920,19 @@ fsevents@~2.3.2:
     node-gyp-build: ^4.2.0
     readable-stream: ^3.6.0
   checksum: 39a7d6128b8ee4cb7dcd186fc7e20c6087cc39f573a0f81b147c323f688f1f7c2b34f62c4ae189fe9b81c6730b2d1228d8a399cdc1f3d8a4c8f030cdc4f20272
+  languageName: node
+  linkType: hard
+
+"key-did-provider-ed25519@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "key-did-provider-ed25519@npm:1.1.0"
+  dependencies:
+    "@stablelib/ed25519": ^1.0.1
+    did-jwt: ^5.0.1
+    fast-json-stable-stringify: ^2.1.0
+    rpc-utils: ^0.3.4
+    uint8arrays: ^2.1.5
+  checksum: 942f8354fb15eeaf21b10e87fd11bf8625727f6509ef84aadefa7773c6ec0e3f11c0bd9425e680ae9feec56f3d380c191ba4369da9b43e718c1165c3da6c4cdb
   languageName: node
   linkType: hard
 
