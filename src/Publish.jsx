@@ -257,12 +257,18 @@ export default () => {
     if(provider) {
       provider.on(
         'network',
-        (net) => {
-          const { chainId: id, name } = net
+        ({ chainId: id, name }) => {
           setChain({ id, name })
         },
       )
-      return () => provider.off('network')
+      provider.on(
+        'accountsChanged',
+        ([addr]) => setAddress(addr),
+      )
+      return () => {
+        provider.off('network')
+        provider.off('accountsChanged')
+      }
     }
   }, [provider])
 
@@ -366,91 +372,118 @@ export default () => {
         }
 
         return (
-          <Flex align="center" alignSelf="stretch">
-            <Link
-              href={info.link} target="_blank"
-              flexGrow={1}
+          <Stack>
+            <Flex
+              direction={['column', 'row']}
+              align="center" alignSelf="stretch"
             >
-              <Image
-                src={info.image} alt={info.name}
-                h="65vmin" maxW="70vmin" m="auto"
-              />
-            </Link>
-            {balance?.isZero() ? (
-              <Stack
-                flexGrow={1} align="center"
-                mt="6vh ! important"
+              <Link
+                href={info.link} target="_blank"
+                flexGrow={1}
               >
-                {token && (
-                  <Link href={token.link} target="_blank">
-                    <Image
-                      src={token.image} alt={token.name}
-                      h="50vmin" maxW="50vmin"
-                    />
-                  </Link>
-                )}
-                <Text
-                  textAlign="center" maxW={30 * 16}
-                >To write your video to the public log, an access token is required.</Text>
-                {minting ? (
-                  <Spinner/>
-                ) : (
-                  <Button onClick={mint}>
-                    Mint One
-                  </Button>
-                )}
-              </Stack>
-            ): (
-              <Box align="center" flexGrow={1}>
-                {saving ? (
-                  <Spinner size="xl"/>
-                ) : (
-                  <Button
-                    onClick={serialize}
-                  >Write Metadata To Ceramic</Button>
-                )}
-              </Box>
-            )}
-          </Flex>
+                <Image
+                  src={info.image} alt={info.name}
+                  h="65vmin" maxW="70vmin" m="auto"
+                />
+              </Link>
+              {balance?.isZero() ? (
+                <Stack
+                  flexGrow={1} align="center"
+                  mt="6vh ! important"
+                >
+                  {token && (
+                    <Link href={token.link} target="_blank">
+                      <Image
+                        src={token.image} alt={token.name}
+                        h="50vmin" maxW="50vmin"
+                      />
+                    </Link>
+                  )}
+                  <Text
+                    textAlign="center" maxW={30 * 16}
+                  >To write your video to the public log, an access token is required.</Text>
+                  {minting ? (
+                    <Spinner/>
+                  ) : (
+                    <Button onClick={mint}>
+                      Mint One
+                    </Button>
+                  )}
+                </Stack>
+              ): (
+                <Box align="center" flexGrow={1}>
+                  {saving ? (
+                    <Spinner size="xl"/>
+                  ) : (
+                    isSet(metadata) ? (
+                      title && startsAt ? (
+                        <Button
+                          onClick={serialize}
+                        >Write Metadata To Ceramic</Button>
+                      ) : (
+                        <Text fontSize="125%" maxW={16 * 16}>
+                          Error: Invalid Metadata:{' '}
+                          Couldn’t find the{' '}
+                          {!title && 'title '}
+                          {!title && !startsAt && 'and '}
+                          {!startsAt && 'start time '}
+                          in the given data.
+                        </Text>
+                      )
+                    ) : (
+                      <Text
+                        fontSize="125%" maxW={16 * 16}
+                      >Please specify a recording metadata file to upload to Ceramic.</Text>
+                    )
+                  )}
+                </Box>
+              )}
+            </Flex>
+            <Box as="form" w="full" mt={3}>
+              <Tooltip hasArrow label="Recording Metadata">
+                <Input
+                  placeholder="Recording Metadata (ipfs://…)"
+                  w="full" textAlign="center"
+                  value={metadata} autoFocus={!metadata}
+                  onChange={({ target: { value } }) => {
+                    setTitle(null)
+                    setStartsAt(null)
+                    setMetadata(value)
+                  }}
+                />
+              </Tooltip>
+              <Flex
+                justify="center" align="center"
+                direction={['column', 'row']} mt={1}
+              >
+                <Tooltip
+                  hasArrow label="Recording Start Time"
+                >
+                  <Text maxW="6em" textAlign="center">
+                    {isoStringFor(
+                      startsAt,
+                      {
+                        default: '',
+                        dateSeparator: '/',
+                        partsSeparator: ' '
+                      }
+                    )}
+                  </Text>
+                </Tooltip>
+                <Tooltip hasArrow label="Recording Title">
+                  <Input
+                    placeholder="Recording Title" mt={3}
+                    value={title ?? ''} textAlign="center"
+                    onChange={({ target: { value } }) => {
+                      setTitle(value)
+                    }}
+                  />
+                </Tooltip>
+              </Flex>
+            </Box>
+          </Stack>
         )
       })()}
-      <Box as="form" w="full" mt={3}>
-        <Tooltip hasArrow label="Recording Metadata">
-          <Input
-            placeholder="Recording Metadata"
-            w="full" textAlign="center"
-            value={metadata}
-            onChange={({ target: { value } }) => {
-              setMetadata(value)
-            }}
-          />
-        </Tooltip>
-        <Flex justify="center" align="center">
-          <Tooltip
-            hasArrow label="Recording Start Time"
-          >
-            <Text maxW="6em" textAlign="center">
-              {isoStringFor(
-                startsAt,
-                {
-                  default: '',
-                  dateSeparator: '/',
-                  partsSeparator: ' '
-                }
-              )}
-            </Text>
-          </Tooltip>
-          <Tooltip hasArrow label="Recording Title">
-            <Input
-              placeholder="Recording Title"
-              value={title ?? ''}
-              onChange={({ target: { value } }) => {
-                setTitle(value)
-              }}
-            />
-          </Tooltip>
-        </Flex>
-      </Box>
     </Flex>
   )
 }
