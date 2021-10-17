@@ -1,0 +1,11 @@
+{
+  "definitions": {
+    "publicVideos": "kjzl6cwe1jw1490y6ci6z9h4nivo8wifq70wa55femakzon0q4vmesvkbb3mqf2"
+  },
+  "schemas": {
+    "VideoList": "ceramic://k3y52l7qbv1frxmz5b0jedmw0hwlvfeddijsa7kwfwcsz5oelnqde6r53u6fz416o"
+  },
+  "tiles": {
+    "buildersAlign": "kjzl6cwe1jw148fcjz0liv10wamzn1hut1jsv6pdwf4b1j9dngvi4826yqueh46"
+  }
+}

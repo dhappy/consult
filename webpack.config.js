@@ -3,10 +3,11 @@ const path = require('path')
 const json5 = require('json5')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const CopyPlugin = require('copy-webpack-plugin')
-const dotenv = require('dotenv').config({ path: __dirname + '/.env' })
+const dotenv = (
+  require('dotenv')
+  .config({ path: `${__dirname}/.env` })
+)
 const dev = process.env.NODE_ENV !== 'production'
-
-console.info({ p: dotenv.parsed })
 
 module.exports = {
   entry: './src/index.jsx',
