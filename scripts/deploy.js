@@ -17,7 +17,12 @@ async function main() {
   // await hre.run('compile');
 
   // We get the contract to deploy
-  const contracts = ['IDXEndpointPublisher', 'VideosERC1155']
+  const contracts = (
+    [
+      //'IDXEndpointPublisher',
+      'VideosERC1155',
+    ]
+  )
   const addresses = {}
   for(const contract of contracts) {
     const factory = await (
@@ -26,6 +31,9 @@ async function main() {
     const publisher = await factory.deploy()
     await publisher.deployed()
     addresses[contract] = publisher.address
+    console.info(
+      `Deployed ${contract}: ${publisher.address}`
+    )
   }
 
   try {
@@ -36,7 +44,7 @@ async function main() {
   } catch(err) {
     console.error(err)
   }
-  console.log(`Saved contract addresses to ${OUT}`)
+  console.info(`Saved contract addresses to ${OUT}`)
 }
 
 // We recommend this pattern to be able to use async/await everywhere

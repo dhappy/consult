@@ -19,9 +19,7 @@ const __dirname = dirname(__filename)
   if(!raw) {
     try {
       const keyFile = `${__dirname}/../private.key`
-      await access(
-        keyFile, constants.R_OK | constants.W_OK
-      )
+      await access(keyFile, constants.R_OK)
       raw = (await readFile(keyFile, 'utf8')).trim()
     } catch {}
   }

@@ -1,20 +1,35 @@
 require('@nomiclabs/hardhat-waffle')
 require('hardhat-abi-exporter')
-
-// This is a sample Hardhat task. To learn how to create your own go to
-// https://hardhat.org/guides/create-task.html
-task('accounts', 'Prints the list of accounts', async (taskArgs, hre) => {
-  const accounts = await hre.ethers.getSigners()
-  for(const { address } of accounts) {
-    console.log(address)
-  }
-})
-
 const fs = require('fs')
-const mnemonic = fs.readFileSync('private.mnemonic').toString().trim()
+require('dotenv').config(
+  { path: `${__dirname}/.env` }
+)
 
-// You need to export an object to set up your config
-// Go to https://hardhat.org/config/ to learn more
+task(
+  'accounts',
+  'Prints the list of accounts',
+  async (_args, hre) => {
+    const accounts = await hre.ethers.getSigners()
+    const { provider } = hre.waffle
+    await Promise.all(
+      accounts.map(async ({ address: addr }) => {
+        const balance = (
+          hre.ethers.utils.formatUnits(
+            await provider.getBalance(addr),
+            "ether",
+          )
+        )
+        console.info(`${addr}: ${balance}`)
+      })
+    )
+  },
+)
+
+const mnemonic = (
+  fs.readFileSync('private.mnemonic')
+  .toString()
+  .trim()
+)
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
@@ -34,7 +49,7 @@ module.exports = {
       accounts: { mnemonic },
     },
     rinkeby: {
-      url: 'https://rinkeby.infura.io/v3/7ba21f9ee8d2422da87d1c35bcead48b',
+      url: process.env.RINKEBY_RPC_URL,
       accounts: { mnemonic },
     },
   },

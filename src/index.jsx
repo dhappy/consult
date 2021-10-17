@@ -5,7 +5,6 @@ import {
   CeramicProvider, Networks,
 } from 'use-ceramic'
 import { EthereumAuthProvider } from '@3id/connect'
-// import { ethers } from 'ethers'
 import Web3 from 'web3'
 import App from './App'
 
@@ -16,11 +15,6 @@ const connect = async () => {
       params: [{}],
     })
   )
-  // const provider = (
-  //   new ethers.providers.Web3Provider(
-  //     window.ethereum
-  //   )
-  // )
   const web3 = new Web3(window.ethereum)
   return new EthereumAuthProvider(
     web3.currentProvider, address
@@ -31,7 +25,8 @@ ReactDOM.render(
   <React.StrictMode>
     <CeramicProvider
       network={Networks.TESTNET_CLAY}
-      endpoint="https://ceramic-clay.3boxlabs.com"
+      // endpoint="https://ceramic-clay.3boxlabs.com"
+      endpoint="http://localhost:7007"
       {...{ connect }}
     >
       <ChakraProvider>

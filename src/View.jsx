@@ -93,7 +93,6 @@ export default () => {
         <Flex
           as="form" direction="column"
           onSubmit={(evt) => {
-            console.info({ form: evt })
             evt.preventDefault()
             setFromObject(
               // @ts-ignore

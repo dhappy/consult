@@ -110,11 +110,13 @@ export const stringFor = (
 )
 
 export const isoStringFor = (date, opts = {}) => {
+  if(!date) return opts.default
+
   const tzo = -date.getTimezoneOffset()
   const dif = tzo >= 0 ? '+' : '-'
-  const pad = (num) => {
+  const pad = (num, length = 2) => {
     const norm = Math.floor(Math.abs(num));
-    return (norm < 10 ? '0' : '') + norm;
+    return norm.toString().padStart(length, '0')
   }
   const { dateSeparator: sep = '-' } = opts
 
@@ -126,7 +128,7 @@ export const isoStringFor = (date, opts = {}) => {
       + sep + pad(date.getDate())
     )
     if(opts.time !== false) {
-      ret += 'T'
+      ret += opts.partsSeparator ?? 'T'
     }
   }
   if(opts.time !== false) {
@@ -138,11 +140,19 @@ export const isoStringFor = (date, opts = {}) => {
       ret += ':' + pad(date.getSeconds())
     }
     if(opts.tz !== false) {
-      ret += `​(ᴜᴛᴄ${dif}${Math.abs(tzo / 60)}`
+      if(!opts.standard) {
+        ret += '​(ᴜᴛᴄ'
+      }
+      ret += dif + pad(
+        Math.abs(tzo / 60),
+        opts.standard ? 2 : 1
+      )
       if((opts.tzMinutes ?? true) || tzo % 60 !== 0) {
         ret += ':' + pad(tzo % 60)
       }
-      ret += ')'
+      if(!opts.standard) {
+        ret += ')'
+      }
     }
   }
   return ret
