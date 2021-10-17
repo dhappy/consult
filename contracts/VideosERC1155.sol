@@ -13,40 +13,49 @@ contract VideosERC1155 is ERC1155 {
   uint8 constant ACCESS_TOKEN = 1;
   uint8 constant VIDEO_TOKEN = 2;
 
+  uint8 public constant PUBLIC_TYPE = 1;
   uint256 public constant PUBLIC_ACCESS = (
-    ACCESS_TOKEN << 248 + 1
+    ACCESS_TOKEN + (PUBLIC_TYPE << 8)
   );
+  uint8 public constant CODER_TYPE = 2;
   uint256 public constant CODER_ACCESS = (
-    ACCESS_TOKEN << 248 + 2
+    ACCESS_TOKEN + (CODER_TYPE << 8)
   );
+  uint8 public constant SCRIBE_TYPE = 3;
   uint256 public constant SCRIBE_ACCESS = (
-    ACCESS_TOKEN << 248 + 3
+    ACCESS_TOKEN + (SCRIBE_TYPE << 8)
   );
+  uint8 public constant PEER_TYPE = 4;
   uint256 public constant PEER_ACCESS = (
-    ACCESS_TOKEN << 248 + 4
+    ACCESS_TOKEN + (PEER_TYPE << 8)
   );
+  uint8 public constant APPROVER_TYPE = 5;
   uint256 public constant APPROVER_ACCESS = (
-    ACCESS_TOKEN << 248 + 5
+    ACCESS_TOKEN + (APPROVER_TYPE << 8)
+  );
+  uint8 public constant TREASURER_TYPE = 6;
+  uint256 public constant TREASURER_ACCESS = (
+    ACCESS_TOKEN + (TREASURER_TYPE << 8)
+  );
+  uint8 public constant ADMIN_TYPE = 7;
+  uint256 public constant ADMIN_ACCESS = (
+    ACCESS_TOKEN + (ADMIN_TYPE << 8)
   );
 
   constructor() ERC1155("Single Metadata URI Is Not Used") {
     setURI(
-      "ipfs://QmPEjozUaEAns9np7KsrV9hXVoBd6mQK3FmyJ2jeK3Y7kc/public%20access%20token.json",
+      "ipfs://QmNTGedv6su4LM8XFqonNCdXQYLL4z7VThha7WczGf7iMf/public%20access%20token.json",
       PUBLIC_ACCESS
     );
   }
 
-  function accessToken(uint8 class) public {
-    uint256 id = ACCESS_TOKEN << 248 + class;
+  function mintAccessToken(uint8 class) public {
+    uint256 id = ACCESS_TOKEN + (class << 8);
     require(
       balanceOf(msg.sender, id) == 0,
       "User already has the given access token"
     );
     _mint(msg.sender, id, 1, "");
-  }
-
-  function publicAccessToken() public {
-    accessToken(1);
   }
 
   function contractURI()

@@ -124,12 +124,51 @@
   },
   {
     "inputs": [],
+    "name": "ADMIN_ACCESS",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "ADMIN_TYPE",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "APPROVER_ACCESS",
     "outputs": [
       {
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "APPROVER_TYPE",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
       }
     ],
     "stateMutability": "view",
@@ -150,12 +189,38 @@
   },
   {
     "inputs": [],
+    "name": "CODER_TYPE",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "PEER_ACCESS",
     "outputs": [
       {
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "PEER_TYPE",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
       }
     ],
     "stateMutability": "view",
@@ -176,6 +241,19 @@
   },
   {
     "inputs": [],
+    "name": "PUBLIC_TYPE",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "SCRIBE_ACCESS",
     "outputs": [
       {
@@ -188,16 +266,42 @@
     "type": "function"
   },
   {
-    "inputs": [
+    "inputs": [],
+    "name": "SCRIBE_TYPE",
+    "outputs": [
       {
         "internalType": "uint8",
-        "name": "class",
+        "name": "",
         "type": "uint8"
       }
     ],
-    "name": "accessToken",
-    "outputs": [],
-    "stateMutability": "nonpayable",
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "TREASURER_ACCESS",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "TREASURER_TYPE",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -286,6 +390,19 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "class",
+        "type": "uint8"
+      }
+    ],
+    "name": "mintAccessToken",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "name",
     "outputs": [
@@ -296,13 +413,6 @@
       }
     ],
     "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "publicAccessToken",
-    "outputs": [],
-    "stateMutability": "nonpayable",
     "type": "function"
   },
   {

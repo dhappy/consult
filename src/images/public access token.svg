@@ -4,7 +4,7 @@
 <svg
    viewBox="0 0 1091.9035 935.27617"
    version="1.1"
-   inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
+   inkscape:version="1.1 (c4e8f9e, 2021-05-24)"
    sodipodi:docname="public access token.svg"
    id="svg30009"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
@@ -13,6 +13,9 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg"
    xmlns:a="http://ns.adobe.com/AdobeSVGViewerExtensions/3.0/">
+  <style type="text/css">
+    @import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&amp;display=swap')
+  </style>
   <sodipodi:namedview
      id="namedview7"
      pagecolor="#ffffff"
@@ -28,8 +31,8 @@
      fit-margin-right="0"
      fit-margin-bottom="0"
      inkscape:zoom="0.54995536"
-     inkscape:cx="541.86216"
-     inkscape:cy="480.94813"
+     inkscape:cx="540.953"
+     inkscape:cy="619.14116"
      inkscape:window-width="1595"
      inkscape:window-height="1103"
      inkscape:window-x="0"
@@ -784,25 +787,25 @@
        transform="matrix(1.9029768,0,0,1.9029768,149.96368,79.518301)" />
     <text
        xml:space="preserve"
-       style="font-style:normal;font-weight:normal;font-size:85.3333px;line-height:0.95;font-family:sans-serif;text-align:center;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:4.7811;stroke-miterlimit:4;stroke-dasharray:none"
-       x="552.51807"
-       y="610.46204"
+       style="font-style:normal;font-weight:normal;font-size:136.063px;line-height:0.65;font-family:sans-serif;text-align:center;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:#ffffff;stroke-width:4.91339;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       x="568.73248"
+       y="553.59064"
        id="text12307"><tspan
          sodipodi:role="line"
          id="tspan12305"
-         x="552.51807"
-         y="610.46204"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:85.3333px;font-family:cmr10;-inkscape-font-specification:'cmr10, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;stroke:#453f2f;stroke-width:4.7811;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1">Call Meta</tspan><tspan
+         x="568.73248"
+         y="553.59064"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:136.063px;font-family:'Permanent Marker';-inkscape-font-specification:'Permanent Marker, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;stroke:#ffffff;stroke-width:4.91339;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1">Call Meta</tspan><tspan
          sodipodi:role="line"
-         x="552.51807"
-         y="692.73035"
+         x="568.73248"
+         y="662.56653"
          id="tspan13585"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:85.3333px;font-family:cmr10;-inkscape-font-specification:'cmr10, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;stroke:#453f2f;stroke-width:4.7811;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1">Public Access</tspan><tspan
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:136.063px;font-family:'Permanent Marker';-inkscape-font-specification:'Permanent Marker, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;stroke:#ffffff;stroke-width:4.91339;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1">Public Access</tspan><tspan
          sodipodi:role="line"
-         x="552.51807"
-         y="774.99866"
+         x="568.73248"
+         y="771.54248"
          id="tspan13587"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:85.3333px;font-family:cmr10;-inkscape-font-specification:'cmr10, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;stroke:#453f2f;stroke-width:4.7811;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1">Token</tspan></text>
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:136.063px;font-family:'Permanent Marker';-inkscape-font-specification:'Permanent Marker, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;stroke:#ffffff;stroke-width:4.91339;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1">Token</tspan></text>
   </g>
   <style
      type="text/css"

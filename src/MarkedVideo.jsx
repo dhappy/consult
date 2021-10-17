@@ -239,7 +239,7 @@ const generate = ({ root, duration, raw }) => {
           break
           case 'exit':
             users.forEach((user) => {
-              incomingRoles[role].splice(
+              incomingRoles[role]?.splice(
                 incomingRoles[role].indexOf(user),
                 1,
               )
@@ -647,6 +647,10 @@ const Roles = ({
     roles = { holder: [] }
   }
 
+  const creates = (
+    create.filter((c) => c.event === event)
+  )
+
   return (
     <>
       <Flex>
@@ -680,7 +684,7 @@ const Roles = ({
         {Object.entries(roles).map(
           ([role, exec], idx) => (
             [0, undefined].includes(exec[event]?.length) ? (
-              create.length === 0 && (
+              creates.length === 0 && (
                 <GridItem colSpan={4} key={idx}>
                   <em>No Entries</em>
                 </GridItem>
@@ -697,8 +701,7 @@ const Roles = ({
           )
         )}
         {
-          create.filter((c) => c.event === event)
-          .map((entry, idx) => (
+          creates.map((entry, idx) => (
             <RoleInputs
               key={idx}
               {...{ entry, idx, create, setCreate }}
