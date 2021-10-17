@@ -132,13 +132,6 @@
         title: '@Dave',
         type: 'presenter',
         startOffset: '13:00',
-        roles: {
-          speaker: {
-            enter: [
-              '@Dave',
-            ],
-          },
-        },
       },
       {
         partition: true,
@@ -272,7 +265,8 @@
             startOffset: '33:54',
           },
           {
-            title: 'Discussion: Advisability Of Using Google For Services',
+            title: 'Advisability Of Using Google For Services',
+            type: 'discussion',
             startOffset: '34:08',
           },
           {
