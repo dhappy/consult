@@ -1,7 +1,12 @@
+const webpack = require('webpack')
 const path = require('path')
 const json5 = require('json5')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const CopyPlugin = require('copy-webpack-plugin')
+const dotenv = require('dotenv').config({ path: __dirname + '/.env' })
+const dev = process.env.NODE_ENV !== 'production'
+
+console.info({ p: dotenv.parsed })
 
 module.exports = {
   entry: './src/index.jsx',
@@ -11,9 +16,6 @@ module.exports = {
     path: path.join(__dirname, 'build'),
     publicPath: 'auto',
     clean: true,
-  },
-  resolve: {
-    extensions: ['.ts', '.js', '.jsx'],
   },
   module: {
     rules: [
@@ -40,10 +42,31 @@ module.exports = {
         { from: 'public', to: '' },
       ],
     }),
+    new webpack.DefinePlugin({
+      'process.env': JSON.stringify(dotenv.parsed),
+      'process.env.NODE_ENV': JSON.stringify(
+        dev ? 'development' : 'production'
+      ),
+    }),
+    new webpack.ProvidePlugin({
+      Buffer: ['buffer', 'Buffer'],
+    }),
   ],
   mode: 'development',
   devServer: {
     port: 3000,
     open: true,
+  },
+  resolve: {
+    extensions: ['.ts', '.js', '.jsx'],
+    fallback: {
+      assert: require.resolve('assert'),
+      buffer: require.resolve('buffer'),
+      crypto: require.resolve('crypto-browserify'),
+      http: require.resolve('stream-http'),
+      https: require.resolve('https-browserify'),
+      os: require.resolve('os-browserify/browser'),
+      stream: require.resolve('stream-browserify'),
+    },
   },
 }

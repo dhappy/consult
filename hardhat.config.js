@@ -20,7 +20,8 @@ const mnemonic = fs.readFileSync('private.mnemonic').toString().trim()
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
-  defaultNetwork: 'matic-mumbai',
+  // defaultNetwork: 'matic-mumbai',
+  defaultNetwork: 'rinkeby',
   networks: {
     hardhat: {
     },
@@ -31,7 +32,11 @@ module.exports = {
     'matic-mumbai': {
       url: 'https://rpc-mumbai.maticvigil.com',
       accounts: { mnemonic },
-    }
+    },
+    rinkeby: {
+      url: 'https://rinkeby.infura.io/v3/7ba21f9ee8d2422da87d1c35bcead48b',
+      accounts: { mnemonic },
+    },
   },
   solidity: {
     version: '0.8.4',

@@ -1,13 +1,43 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
 import { ChakraProvider } from '@chakra-ui/react'
+import {
+  CeramicProvider, Networks,
+} from 'use-ceramic'
+import { EthereumAuthProvider } from '@3id/connect'
+// import { ethers } from 'ethers'
+import Web3 from 'web3'
 import App from './App'
+
+const connect = async () => {
+  const [address] = (
+    await window.ethereum.request({
+      method: 'eth_requestAccounts',
+      params: [{}],
+    })
+  )
+  // const provider = (
+  //   new ethers.providers.Web3Provider(
+  //     window.ethereum
+  //   )
+  // )
+  const web3 = new Web3(window.ethereum)
+  return new EthereumAuthProvider(
+    web3.currentProvider, address
+  )
+}
 
 ReactDOM.render(
   <React.StrictMode>
-    <ChakraProvider>
-      <App />
-    </ChakraProvider>
+    <CeramicProvider
+      network={Networks.TESTNET_CLAY}
+      endpoint="https://ceramic-clay.3boxlabs.com"
+      {...{ connect }}
+    >
+      <ChakraProvider>
+        <App />
+      </ChakraProvider>
+    </CeramicProvider>
   </React.StrictMode>,
   document.getElementById('root'),
 )

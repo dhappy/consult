@@ -19,3 +19,4 @@ public/page_meta.png
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+.env

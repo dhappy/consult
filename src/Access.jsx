@@ -2,26 +2,19 @@ import {
   useEffect, useMemo, useState,
 } from 'react'
 import { ethers } from 'ethers'
-import { BigNumber} from '@ethersproject/bignumber'
+import { createNftDidUrl } from 'nft-did-resolver'
 import {
   Button, Flex, Heading, Image, Link, Spinner,
   Stack, Text,
 } from '@chakra-ui/react'
 import addresses from './contract/addresses.json'
 import ABI from './contract/abi/VideosERC1155.json'
+import { useCeramic } from 'use-ceramic'
 
 const { VideosERC1155 } = addresses
 
-export default () => {
-  const [info, setInfo] = useState(null)
-  const [token, setToken] = useState(null)
-  const [address, setAddress] = useState(null)
-  const [balance, setBalance] = useState(null)
-  const [contract, setContract] = useState(null)
-  const [chain, setChain] = (
-    useState({ name: 'Undefined' })
-  )
-  const desiredChain = useMemo(() => ({
+const chains = {
+  mumbai: {
     id: 80001,
     name: 'Polygon’s Mumbai Testnet',
     rpc: 'https://rpc-mumbai.maticvigil.com',
@@ -31,10 +24,37 @@ export default () => {
       decimals: 18,
     },
     explorer: 'https://mumbai.polygonscan.com',
-  }), [])
+  },
+  rinkeby: {
+    id: 4,
+    name: 'Rinkeby Testnet',
+    rpc: 'https://rinkeby.infura.io/v3/7ba21f9ee8d2422da87d1c35bcead48b',
+    currency: {
+      name: 'ETH',
+      symbol: 'Ξ',
+      decimals: 18,
+    },
+    explorer: 'https://rinkeby.etherscan.io',
+  }
+}
+
+export default () => {
+  const [info, setInfo] = useState(null)
+  const [token, setToken] = useState(null)
+  const [address, setAddress] = useState(null)
+  const [balance, setBalance] = useState(null)
+  const [contract, setContract] = useState(null)
+  const [access, setAccess] = useState({})
+  const [saving, setSaving] = useState(false)
+  const [chain, setChain] = (
+    useState({ name: 'Undefined' })
+  )
+  const desiredChain = chains.rinkeby
   const [provider, setProvider] = (
     useState(null)
   )
+  const [authed, setAuthed] = useState(false)
+  const ceramic = useCeramic()
 
   const network = async () => {
     if(chain.id !== desiredChain.id) {
@@ -103,13 +123,49 @@ export default () => {
     await contract.mintAccessToken(publicType)
   }
 
+  const serialize = async () => {
+    setSaving(true)
+
+    console.info({ VideosERC1155, pub: access.public })
+    const did = createNftDidUrl({
+      chainId: `eip155:${desiredChain.id}`,
+      namespace: 'erc1155',
+      contract: VideosERC1155,
+      tokenId: access.public.toString(),
+    })
+    console.info({ did, ceramic })
+    try {
+      await ceramic.authenticate()
+      console.info({ did: ceramic.did.id })
+      // const tile = await TileDocument.create(
+      //   ceramic, null, { controllers: [did] }
+      // )
+      // setDid(ceramic.did.id);
+    } catch(e) {
+      console.error(e)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  useEffect(() => {
+    const subscription = (
+      ceramic.isAuthenticated$.subscribe(
+        (authed) => {
+          setAuthed(authed)
+        }
+      )
+    )
+    return () => subscription.unsubscribe()
+  })
+
   useEffect(() => {
     const config = async () => {
       const [address] = (
-        (await window.ethereum.send(
-          'eth_requestAccounts'
-        ))
-        .result
+        await window.ethereum.request({
+          method: 'eth_requestAccounts',
+          params: [{}],
+        })
       )
       setAddress(address)
 
@@ -143,9 +199,13 @@ export default () => {
         )
       )
       setContract(contract)
+
       const publicAccess = (
         await contract.PUBLIC_ACCESS()
       )
+      setAccess((old) => ({
+        ...old, public: publicAccess, 
+      }))
       const balance = (
         await contract.balanceOf(
           address, publicAccess
@@ -231,7 +291,13 @@ export default () => {
                 </Button>
               </Stack>
             ): (
-              <Button>Write Metadata To Ceramic</Button>
+              saving ? (
+                <Spinner size="xl"/>
+              ) : (
+                <Button
+                  onClick={serialize}
+                >Write Metadata To Ceramic</Button>
+              )
             )}
           </Stack>
         )
