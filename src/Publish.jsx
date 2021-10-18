@@ -13,53 +13,16 @@ import { DIDDataStore } from '@glazed/did-datastore'
 import { TileDocument } from '@ceramicnetwork/stream-tile'
 import { useLocation, useRouteMatch } from 'react-router'
 import { v4 as uuid } from 'uuid'
-import json5 from 'json5'
-import addresses from './contract/addresses.json'
-import ABI from './contract/abi/VideosERC1155.json'
 import aliases from './ceramicIds.json'
-import { isSet, isoStringFor } from './utils'
+import { isSet, isoStringFor, load, toHTTP } from './utils'
 
-const { VideosERC1155 } = addresses
-
-const chains = {
-  mumbai: {
-    id: 80001,
-    name: 'Polygon’s Mumbai Testnet',
-    rpc: 'https://rpc-mumbai.maticvigil.com',
-    currency: {
-      name: 'Matic',
-      symbol: 'MATIC',
-      decimals: 18,
-    },
-    explorer: 'https://mumbai.polygonscan.com',
-  },
-  rinkeby: {
-    id: 4,
-    name: 'Rinkeby Testnet',
-    rpc: process.env.RINKEBY_RPC_URL,
-    currency: {
-      name: 'ETH',
-      symbol: 'Ξ',
-      decimals: 18,
-    },
-    explorer: 'https://rinkeby.etherscan.io',
-  }
-}
-
-export default () => {
+export default ({
+  desiredChain, nftDID, access, contract,
+  address, chain, setProvider,
+}) => {
   const [info, setInfo] = useState(null)
   const [token, setToken] = useState(null)
-  const [address, setAddress] = useState(null)
   const [balance, setBalance] = useState(null)
-  const [contract, setContract] = useState(null)
-  const [access, setAccess] = useState({})
-  const [chain, setChain] = (
-    useState({ name: 'Undefined' })
-  )
-  const desiredChain = chains.rinkeby
-  const [provider, setProvider] = (
-    useState(null)
-  )
   const [title, setTitle] = useState(null)
   const [startsAt, setStartsAt] = useState(null)
   const [saving, setSaving] = useState(false)
@@ -80,72 +43,6 @@ export default () => {
   )
   const ceramic = useCeramic()
 
-  const network = async () => {
-    if(chain.id !== desiredChain.id) {
-      const chainId = (
-        `0x${desiredChain.id.toString(16)}`
-      )
-
-      try {
-        await window.ethereum.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId }],
-        })
-      } catch(error) {
-        if(error.code === 4902) { // not added
-          try {
-            await ethereum.request({
-              method: 'wallet_addEthereumChain',
-              params: [{
-                chainId,
-                chainName: desiredChain.name,
-                rpcUrls: [desiredChain.rpc],
-                nativeCurrency: (
-                  desiredChain.currency
-                ),
-                blockExplorerUrls: [
-                  desiredChain.explorer
-                ],
-              }],
-            })
-          } catch(addError) {
-            console.error('Add Error', addError)
-          }
-        }
-      }
-    }
-    setProvider(
-      new ethers.providers.Web3Provider(
-        window.ethereum
-      )
-    )
-  }
-
-  const toHTTP = (URI) => {
-    const regex = /^ipfs:(\/\/)?(([^/]+)\/?(.*))$/i
-    const match = URI.match(regex)
-    if(match) {
-      if(match[2].startsWith('bafybe')) {
-        return (
-          `//${match[3]}.ipfs.dweb.link`
-          + `/${match[4]}`
-        )
-      }
-      return `//ipfs.io/ipfs/${match[2]}`
-    }
-    return URI
-  }
-
-  const load = async (URI) => {
-    const response = await fetch(toHTTP(URI))
-    const text = await response.text()
-    return (
-      isSet(text)
-      ? await json5.parse(text)
-      : null
-    )
-  }
-
   const mint = async () => {
     setMinting(true)
 
@@ -160,13 +57,6 @@ export default () => {
   const serialize = async () => {
     setSaving(true)
 
-    const did = createNftDidUrl({
-      chainId: `eip155:${desiredChain.id}`,
-      namespace: 'erc1155',
-      contract: VideosERC1155.toLowerCase(),
-      tokenId: access.public.toString(),
-    })
-
     try {
       await ceramic.authenticate()
 
@@ -174,7 +64,7 @@ export default () => {
         ceramic.client,
         null,
         {
-          controllers: [did],
+          controllers: [nftDID],
           family: 'public video list',
           deterministic: true,
         },
@@ -222,25 +112,6 @@ export default () => {
   })
 
   useEffect(() => {
-    const config = async () => {
-      const [address] = (
-        await window.ethereum.request({
-          method: 'eth_requestAccounts',
-          params: [{}],
-        })
-      )
-      setAddress(address)
-
-      setProvider(
-        new ethers.providers.Web3Provider(
-          window.ethereum
-        )
-      )
-    }
-    config()
-  }, [])
-
-  useEffect(() => {
     const entitle = async () => {
       const info = await load(metadata)
       setTitle(info.stops.title)
@@ -252,45 +123,6 @@ export default () => {
       entitle()
     }
   }, [metadata])
-
-  useEffect(() => {
-    if(provider) {
-      provider.on(
-        'network',
-        ({ chainId: id, name }) => {
-          setChain({ id, name })
-        },
-      )
-      provider.on(
-        'accountsChanged',
-        ([addr]) => setAddress(addr),
-      )
-      return () => {
-        provider.off('network')
-        provider.off('accountsChanged')
-      }
-    }
-  }, [provider])
-
-  useEffect(() => {
-    if(provider) {
-      setContract(
-        new ethers.Contract(
-          VideosERC1155, ABI, provider.getSigner()
-        )
-      )
-    }
-  }, [provider])
-
-  useEffect(() => {
-    const cache = async () => {
-      const id = await contract.PUBLIC_ACCESS()
-      setAccess((old) => ({ ...old, public: id }))
-    }
-    if(contract) {
-      cache()
-    }
-  }, [contract])
 
   useEffect(() => {
     const balance = async () => {
@@ -350,19 +182,6 @@ export default () => {
       align="center" mt={3} mx="auto"
     >
       {(() => {
-        if(chain.id !== desiredChain.id) {
-          return (
-            <Stack>
-              <Heading textAlign="center">
-                On the chain <q>{chain.name}</q> when {desiredChain.name} is desired.
-              </Heading>
-              <Button onClick={network}>
-                Switch
-              </Button>
-            </Stack>
-          )
-        }
-
         if(!info) {
           return (
             <Flex align="center">
@@ -463,7 +282,7 @@ export default () => {
                     {isoStringFor(
                       startsAt,
                       {
-                        default: '',
+                        default: null,
                         dateSeparator: '/',
                         partsSeparator: ' '
                       }

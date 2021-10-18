@@ -8,12 +8,16 @@ import {
 import { useLocation } from 'react-router'
 import { HashLink as Link } from 'react-router-hash-link'
 import JSON5 from 'json5'
+import { useCeramic } from 'use-ceramic'
 import MarkedVideo from './MarkedVideo'
+import { load } from './utils'
 
-export default () => {
+export default ({ nftDID }) => {
   const { pathname: path } = useLocation()
   const metadata = path.replace(/^\/?(.+?)\/?$/, '$1')
   const [info, setInfo] = useState(null)
+  const [videos, setVideos] = useState(null)
+  const ceramic = useCeramic()
 
   const setFromObject = (json) => {
     const { video: { startsAt, source }, stops } = (
@@ -23,6 +27,30 @@ export default () => {
       startsAt: new Date(startsAt), source, stops
     })
   }
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const list = await TileDocument.create(
+          ceramic.client,
+          null,
+          {
+            controllers: [nftDID],
+            family: 'public video list',
+            deterministic: true,
+          },
+          { anchor: false, publish: false },
+        )
+        const { videos } = list.content
+        setVideos(videos)
+      } catch(err) {
+        console.error('Loading', err)
+      }
+    }
+    if(nftDID) {
+      load()
+    }
+  }, [nftDID])
 
   useEffect(() => {
     (async () => {
@@ -40,16 +68,7 @@ export default () => {
         setInfo(tile.content)
       } else if(metadata.startsWith('ipfs:')) {
         if(/\.json5?/i.test(metadata)) {
-          const regex = /^ipfs:(\/\/)?(([^/]+)\/?(.*))$/i
-          const match = metadata.match(regex)
-          let http = `//${match[3]}.ipfs.dweb.link/${match[4]}`
-          if(!match[3].startsWith('bafy')) {
-            http = `//ipfs.io/ipfs/${match[2]}`
-          }
-          const res = await fetch(http)
-          setFromObject(
-            await JSON5.parse(await res.text())
-          )
+          setFromObject(await load(metadata))
         } else {
           setInfo({
             startsAt: new Date(),
@@ -67,23 +86,24 @@ export default () => {
     return (
       <Stack align="center" mt={10}>
         {metadata === '/' ? (
-          <UnorderedList
-            sx={{
-              a: { borderBottom: '2px dashed' },
-              'a:hover': { borderBottom: '2px solid' },
-            }}
-          >
-            <ListItem>
-              <Link
-                to="ipfs://Qmeiz7YmwtVYMRSUG3VdKTxU634JTPaB5j2xLj5RREqAkG/2021⁄10⁄06@09:56:54.MetaGame’s%20Builders’%20Align.x264.mp4"
-              >Builders’ Align Video</Link>
-            </ListItem>
-            <ListItem>
-              <Link
-                to="ipfs://QmfKwTB5gsAH8JQBU6ygZCzQJrapy6vb1yrD2QVNy3hYyq/Sample Builders’ Align.json5"
-              >Builders’ Align w/ Metadata</Link>
-            </ListItem>
-          </UnorderedList>
+          !videos ? (
+            <Spinner/>
+          ) : (
+            <UnorderedList
+              sx={{
+                a: { borderBottom: '2px dashed' },
+                'a:hover': { borderBottom: '2px solid' },
+              }}
+            >
+              {videos.map((vid, idx) => (
+                <ListItem key={vid.id}>
+                  <Link to={vid.metadata}>
+                    {vid.title}
+                  </Link>
+                </ListItem>
+              ))}
+            </UnorderedList>
+          )
         ) : (
           <>
             <Heading size="sm">{metadata}</Heading>

@@ -1,3 +1,5 @@
+import JSON5 from 'json5'
+
 const props = [
   { bg: '#19FF20' },
   { bg: '#FF0000BB' },
@@ -168,5 +170,30 @@ export const capitalize = (str) => {
       sub.substring(1)?.toLowerCase() ?? ''
     }`))
     .join(' ')
+  )
+}
+
+export const toHTTP = (URI) => {
+  const regex = /^ipfs:(\/\/)?(([^/]+)\/?(.*))$/i
+  const match = URI.match(regex)
+  if(match) {
+    if(match[2].startsWith('bafybe')) {
+      return (
+        `//${match[3]}.ipfs.dweb.link`
+        + `/${match[4]}`
+      )
+    }
+    return `//ipfs.io/ipfs/${match[2]}`
+  }
+  return URI
+}
+
+export const load = async (URI) => {
+  const response = await fetch(toHTTP(URI))
+  const text = await response.text()
+  return (
+    isSet(text)
+    ? await JSON5.parse(text)
+    : null
   )
 }

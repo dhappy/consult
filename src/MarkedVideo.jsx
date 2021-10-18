@@ -16,7 +16,7 @@ import { HashLink as Link } from 'react-router-hash-link'
 import JSON5 from 'json5'
 import {
   isoStringFor, stringFor, timeFor,
-  isSet, ifSet, capitalize,
+  isSet, ifSet, capitalize, load, toHTTP,
 } from './utils'
 import CeramicLogo from './images/ceramic.svg'
 import plan from './images/planning.svg'
@@ -1479,19 +1479,9 @@ export default (config) => {
     onOpen: openVideoSettings,
     onClose: closeVideoSettings,
   } = useDisclosure()
-  const src = useMemo(() => {
-    const regex = /^ipfs:(\/\/)?(([^/]+)\/?(.*))$/i
-    const match = source.match(regex)
-    if(match) {
-      if(match[3].startsWith('bafybei')) {
-        return (
-          `//${match[3]}.ipfs.dweb.link/${match[4]}`
-        )
-      }
-      return `//ipfs.io/ipfs/${match[2]}`
-    }
-    return source
-  }, [source])
+  const src = useMemo(
+    () => toHTTP(source), [source]
+  )
 
   useEffect(() => {
     const stops = generate({
