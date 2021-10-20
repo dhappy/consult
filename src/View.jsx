@@ -3,7 +3,7 @@ import Ceramic from '@ceramicnetwork/http-client'
 import { TileDocument } from '@ceramicnetwork/stream-tile'
 import {
   Heading, Spinner, Stack, UnorderedList, ListItem,
-  Flex, Textarea, Button,
+  Flex, Textarea, Button, Link as ChakraLink, Box,
 } from '@chakra-ui/react'
 import { useLocation } from 'react-router'
 import { HashLink as Link } from 'react-router-hash-link'
@@ -110,6 +110,13 @@ export default ({ nftDID }) => {
             <Spinner/>
           </>
         )}
+        <Box
+          borderBottom="2px dashed"
+          _hover={{ borderBottom: '2px solid' }}
+        >
+          <Link
+          to="ipfs://QmbPtAgWbNDo2Zwsv8RR7WNsLySkMb71QyEenuCcGPENaE/MetaGame’s Builders’ Align for 1443⁄2⁄28‒3⁄6.json5">Builders’ Align</Link>
+        </Box>
         <Flex
           as="form" direction="column"
           onSubmit={(evt) => {
