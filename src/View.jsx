@@ -57,8 +57,8 @@ export default ({ nftDID }) => {
       if(metadata.startsWith('ceramic:')) {
         const CERAMIC_URL = (
           process.env.CERAMIC_URL
-          || 'http://localhost:7007'
           || 'https://ceramic-clay.3boxlabs.com'
+          || 'http://localhost:7007'
         )
         const ceramic = new Ceramic(CERAMIC_URL)
         const tile = await (

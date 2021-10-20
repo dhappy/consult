@@ -164,17 +164,10 @@ export default ({
         setToken({ name, image: toHTTP(image), link })
       }
     }
-    if(
-      provider
-      && chain.id === desiredChain.id
-      && access.public
-    ) {
+    if(access.public) {
       info()
     }
-  }, [
-    provider, access.public,
-    chain.id, desiredChain.id,
-  ])
+  }, [access.public])
 
   return (
     <Flex
@@ -185,6 +178,7 @@ export default ({
         if(!info) {
           return (
             <Flex align="center">
+              <Text>Loading Metadata from IPFS…</Text>
               <Spinner size="xl"/>
             </Flex>
           )

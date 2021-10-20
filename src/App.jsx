@@ -1,5 +1,5 @@
 import {
-  Button, Stack, Heading,
+  Button, Stack, Heading, Text,
 } from '@chakra-ui/react'
 import {
   HashRouter as Router, Switch, Route,
@@ -179,6 +179,15 @@ export default () => {
       }))
     }
   }, [access.public])
+
+  if(!provider) {
+    return (
+      <>
+        <Text>Web3 Wallet not connected.</Text>
+        <Text>Should connect automatically.</Text>
+      </>
+    )
+  }
 
   if(chain.id !== desiredChain.id) {
     return (

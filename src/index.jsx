@@ -25,8 +25,8 @@ ReactDOM.render(
   <React.StrictMode>
     <CeramicProvider
       network={Networks.TESTNET_CLAY}
-      // endpoint="https://ceramic-clay.3boxlabs.com"
-      endpoint="http://localhost:7007"
+      endpoint="https://ceramic-clay.3boxlabs.com"
+      // endpoint="http://localhost:7007"
       {...{ connect }}
     >
       <ChakraProvider>
