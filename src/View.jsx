@@ -1,20 +1,22 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Ceramic from '@ceramicnetwork/http-client'
 import { TileDocument } from '@ceramicnetwork/stream-tile'
 import {
   Heading, Spinner, Stack, UnorderedList, ListItem,
-  Flex, Textarea, Button, Link as ChakraLink, Box,
+  Flex, Textarea, Button, Input, Box,
 } from '@chakra-ui/react'
-import { useLocation } from 'react-router'
+import { useLocation, useRouteMatch } from 'react-router'
 import { HashLink as Link } from 'react-router-hash-link'
 import JSON5 from 'json5'
 import { useCeramic } from 'use-ceramic'
 import MarkedVideo from './MarkedVideo'
-import { load } from './utils'
+import { isSet, load } from './utils'
 
 export default ({ nftDID }) => {
   const { pathname: path } = useLocation()
-  const metadata = path.replace(/^\/?(.+?)\/?$/, '$1')
+  const { url } = useRouteMatch()
+  const [metaInput, setMetaInput] = useState('')
+  const [metadata, setMetadata] = useState('')
   const [info, setInfo] = useState(null)
   const [videos, setVideos] = useState(null)
   const ceramic = useCeramic()
@@ -27,6 +29,19 @@ export default ({ nftDID }) => {
       startsAt: new Date(startsAt), source, stops
     })
   }
+
+  useEffect(() => {
+    if(isSet(path) && path !== '/') {
+      if(!path.startsWith(url)) {
+        setMetadata(path)
+      } else {
+        setMetadata(
+          path.substring(url.length)
+          .replace(/^\/*/g, '')
+        )
+      }
+    }
+  }, [url, path])
 
   useEffect(() => {
     const load = async () => {
@@ -76,7 +91,7 @@ export default ({ nftDID }) => {
             source: metadata,
           })
         }
-      } else if(metadata !== '/') {
+      } else if(metadata !== '') {
         setInfo(await import(`./${metadata}/js`))
       }
     })()
@@ -85,9 +100,22 @@ export default ({ nftDID }) => {
   if(!info) {
     return (
       <Stack align="center" mt={10}>
-        {metadata === '/' ? (
+        {metadata === '' ? (
           !videos ? (
-            <Spinner/>
+            <Flex as="form">
+              <Input
+                placeholder="Metadata File (ipfs://)"
+                value={metaInput}
+                onChange={({ target: { value } }) => {
+                  setMetaInput(value)
+                }}
+              />
+              <Button
+                onClick={() => {
+                  setMetadata(metaInput)
+                }}
+              >Load</Button>
+            </Flex>
           ) : (
             <UnorderedList
               sx={{

@@ -5,15 +5,10 @@ import {
   Button, Flex, Heading, Image, Link, Spinner,
   Stack, Text, Input, Box, Tooltip,
 } from '@chakra-ui/react'
-import { ethers } from 'ethers'
-import { createNftDidUrl } from 'nft-did-resolver'
 import { useCeramic } from 'use-ceramic'
-import { DataModel } from '@glazed/datamodel'
-import { DIDDataStore } from '@glazed/did-datastore'
 import { TileDocument } from '@ceramicnetwork/stream-tile'
 import { useLocation, useRouteMatch } from 'react-router'
 import { v4 as uuid } from 'uuid'
-import aliases from './ceramicIds.json'
 import { isSet, isoStringFor, load, toHTTP } from './utils'
 
 export default ({

@@ -28,7 +28,8 @@ export const propsFor = (info) => {
 }
 
 export const isSet = (value) => (
-  Boolean(value) || value === 0
+  ['number', 'boolean'].includes(typeof value)
+  || Boolean(value)
 )
 
 export const ifSet = (value, { default: def } = {}) => (

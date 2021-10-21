@@ -13,7 +13,9 @@ import Markdown from 'react-markdown'
 import demark from 'remove-markdown'
 import { v4 as uuid } from 'uuid'
 import { HashLink as Link } from 'react-router-hash-link'
+import { useHistory } from 'react-router-dom'
 import JSON5 from 'json5'
+import { create as createIPFS } from 'ipfs-http-client'
 import {
   isoStringFor, stringFor, timeFor,
   isSet, ifSet, capitalize, load, toHTTP,
@@ -29,6 +31,9 @@ import discussion from './images/discuss.svg'
 import logistics from './images/certification.svg'
 import blocked from './images/brick wall.svg'
 import roundtable from './images/roundtable.svg'
+import PlayButton from './images/play.svg'
+import PauseButton from './images/pause.svg'
+import { metadata } from 'core-js/library/es6/reflect'
 
 const icons = {
   plan, decision, issue, presenter, previously,
@@ -268,10 +273,13 @@ const generate = ({ root, duration, raw }) => {
 }
 
 const Spans = ({
-  node, count = 1, active,
+  node, count = 1, active, seekTo,
   hovered, setHovered, togglePause,
+  setActiveId,
 }) => {
   if (!node) return null
+
+  const ref = useRef(null)
 
   const mouseOver = (node) => {
     const ids = []
@@ -284,9 +292,33 @@ const Spans = ({
   const mouseOut = (node) => {
     setHovered((ids) => {
       const dup = [...ids]
-      dup.splice(ids.indexOf(node.id), 1)
+      let removed = null
+      do {
+        removed = (
+          dup.splice(ids.indexOf(node.id), 1)
+        )
+      } while(removed.length > 0)
       return dup
     })
+  }
+  const click = ({ node, event }) => {
+    setActiveId(node.id)
+
+    let goto = node.startOffset
+    if(!event.ctrlKey) {
+      const rect = ref.current.getBoundingClientRect()
+      const y = event.clientY - rect.top
+      goto += (
+        node.duration * y / ref.current.scrollHeight
+      )
+    } else {
+      event.preventDefault()
+      event.stopPropagation()
+    }
+    seekTo(goto)
+  }
+  const doubleClick = () => {
+    togglePause()
   }
 
   const {
@@ -294,13 +326,14 @@ const Spans = ({
     duration, partition, raw, ...rest
   } = node
 
-  if (Object.keys(rest).length === 0) {
+  if(Object.keys(rest).length === 0) {
     return (
       children.map((child, idx) => (
         <Spans
           {...{
             duration, active, togglePause,
-            hovered, setHovered,
+            hovered, setHovered, seekTo,
+            setActiveId,
           }}
           key={idx}
           node={child}
@@ -335,21 +368,21 @@ const Spans = ({
           top: 0, left: 0, bottom: 0, right: 0,
           bg: colorFor(node.id),
         }}
-        p={0} w="full" {...{ className }}
+        p={0} w="full" {...{ className, ref }}
         sx={{
           '&.hovered::before': { opacity: 1 }
         }}
         onMouseEnter={() => mouseOver(node)}
         onMouseLeave={() => mouseOut(node)}
-        borderX="2px solid"
+        borderLeft="4px solid"
+        borderRight="2px solid"
         borderColor={active.includes(node.id) ? (
           '#00FF00'
         ) : (
           'transparent'
         )}
-        onDoubleClick={() => {
-          togglePause()
-        }}
+        onClick={(event) => click({ node, event })}
+        onDoubleClick={() => doubleClick(node)}
       >
         <Link
           style={{
@@ -368,7 +401,8 @@ const Spans = ({
             <Spans
               {...{
                 duration, active, togglePause,
-                hovered, setHovered,
+                hovered, setHovered, seekTo,
+                setActiveId,
               }}
               key={child.id} node={child}
               count={count + idx + 1}
@@ -402,7 +436,7 @@ const TimeBox = (({ children, ...props }) => (
 const Times = ({
   node, startsAt, duration, time, seekTo,
   hovered, setHovered, active, togglePause,
-  ...props
+  setActiveId, ...props
 }) => {
   const ref = useRef(null)
   const endsAt = useMemo(() => (
@@ -430,7 +464,8 @@ const Times = ({
       <Flex position="relative" {...props}>
         <Flex
           direction="column" key="times"
-          onClick={clicked} onDoubleClick={togglePause}
+          onClick={clicked}
+          onDoubleClick={togglePause}
           {...{ ref }}
         >
           {
@@ -458,7 +493,8 @@ const Times = ({
           <Spans
             {...{
               node, active, togglePause,
-              hovered, setHovered,
+              hovered, setHovered, seekTo,
+              setActiveId,
             }}
           />
         </Flex>
@@ -1092,7 +1128,8 @@ const WrapPartition = ({ children, node }) => {
 const Events = ({
   node = {}, insertChild, replaceNode, insertParent,
   duration, count = 1, hovered, setHovered, seekTo,
-  index = 0, active, togglePause, ...props
+  index = 0, active, togglePause, time, setActiveId,
+  ...props
 }) => {
   const [menuVisible, setMenuVisible] = (
     useState(false)
@@ -1161,10 +1198,18 @@ const Events = ({
       return dup
     })
   }
+  const doubleClick = ({ node, event }) => {
+    event.stopPropagation()
+    togglePause()
+  }
 
   const edit = (node) => {
     openNodeSettings()
   }
+
+  useEffect(() => {
+
+  }, [time])
 
   const {
     id, children = [], startOffset,
@@ -1180,7 +1225,8 @@ const Events = ({
             duration, insertChild,
             insertParent, replaceNode,
             hovered, setHovered,
-            seekTo, index, active,
+            seekTo, index, active, time,
+            togglePause, setActiveId,
           }}
           key={index}
           node={child}
@@ -1214,10 +1260,6 @@ const Events = ({
           closeNodeSettings, open,
           node, replaceNode,
         }}
-        onDoubleClick={(evt) => {
-          console.info('J')
-          evt.stopPropagation()
-        }}
       />
       <Stack
         id={node.id}
@@ -1236,10 +1278,13 @@ const Events = ({
         }}
         onMouseEnter={() => mouseOver(node)}
         onMouseLeave={() => mouseOut(node)}
-        onDoubleClick={togglePause}
+        onDoubleClick={(event) => {
+          doubleClick({ node, event })
+        }}
         onClick={(evt) => {
           evt.stopPropagation()
           seekTo(node.startOffset)
+          setActiveId(node.id)
         }}
         borderX="4px solid"
         borderColor={active.includes(node.id) ? (
@@ -1338,7 +1383,8 @@ const Events = ({
                 duration, insertChild,
                 insertParent, replaceNode,
                 hovered, setHovered,
-                seekTo, index, active,
+                seekTo, index, active, time,
+                togglePause, setActiveId,
               }}
               key={index}
               node={child}
@@ -1436,11 +1482,20 @@ const VideoSettings = ({
   )
 }
 
-const DateTime = ({ startsAt, time }) => {
+const DateTime = ({
+  startsAt, time, video, togglePause,
+}) => {
   const current = (
     new Date(startsAt.getTime() + time * 1000)
   )
   const opts = { date: false, tz: false }
+  const playing = (
+    isSet(video.current?.paused) ? (
+      !video.current.paused
+    ) : (
+      false
+    )
+  )
   return (
     <Flex
       direction="column" lineHeight={1}
@@ -1450,6 +1505,18 @@ const DateTime = ({ startsAt, time }) => {
       <Box>
         +{stringFor(time, { milliseconds: false })}
       </Box>
+      <Button
+        flexGrow={1}
+        onClick={togglePause}
+        minW={8} h="auto" p={0.5}
+      >
+        <Image
+          p={0}
+          src={
+            playing ? PauseButton : PlayButton
+          }
+        />
+      </Button>
     </Flex>
   )
 }
@@ -1458,13 +1525,14 @@ export default (config) => {
   const [duration, setDuration] = (
     useState(DEFAULT_DURATION)
   )
-  const vid = useRef()
+  const video = useRef()
   const [time, setTime] = useState(0)
   const [raw, setRaw] = useState(
     connect({ stops: config.stops })
   )
   const [stops, setStops] = useState()
   const [hovered, setHovered] = useState([])
+  const [eventsTime, setEventsTime] = useState([])
   const [info, setInfo] = useState({
     startsAt: config.startsAt,
     source: config.source,
@@ -1473,15 +1541,52 @@ export default (config) => {
   const [vidHeight, setVidHeight] = (
     useState(DEFAULT_VID_HEIGHT)
   )
+  const [activeId, setActiveId] = useState(null)
   const [active, setActive] = useState([])
   const {
     isOpen: open,
     onOpen: openVideoSettings,
     onClose: closeVideoSettings,
   } = useDisclosure()
+  const history = useHistory()
+
   const src = useMemo(
     () => toHTTP(source), [source]
   )
+
+  const ipfs = useMemo(() => {
+    const host = (
+      process.env.IPFS_API_HOST ?? 'localhost'
+    )
+    const port = process.env.IPFS_API_PORT ?? 5001
+    const protocol = (
+      process.env.IPFS_API_PROTOCOL ?? 'http'
+    )
+    const config = {
+      host, port, protocol,
+    }
+    if(host.includes('infura')) {
+      const id = process.env.INFURA_IPFS_PROJECT_ID
+      if(!id) {
+        console.warn('Expected $INFURA_IPFS_PROJECT_ID to be set.')
+      }
+      const secret = process.env.INFURA_IPFS_SECRET
+      if(!secret) {
+        console.warn('Expected $INFURA_IPFS_SECRET to be set.')
+      }
+      const auth = (
+        'Basic '
+        + (
+          Buffer.from(id + ':' + secret)
+          .toString('base64')
+        )
+      )
+      config.headers = {
+        authorization: auth,
+      }
+    }
+    return createIPFS(config)
+  }, [])
 
   useEffect(() => {
     const stops = generate({
@@ -1496,35 +1601,51 @@ export default (config) => {
         node.startOffset <= time
         && node.startOffset + node.duration > time
       ) {
-          const sub = node.children.map((child) => (
+        let sub = []
+        if(node.id !== activeId) { // keep descending
+          sub = node.children.map((child) => (
             findActive({ time, node: child })
           ))
-          return [node.id, sub]
+        }
+        return [node.id, sub]
       }
       return null
     }
     if(stops) {
-      const search = findActive({ time, node: stops })
+      let search = []
+
+      if(activeId) {
+        let node = findById(stops, activeId)
+        do {
+          search.push(node.id)
+          node = node.parent
+        } while(node)
+      } else {
+        search = findActive({
+          time, node: stops,
+        })
+      }
+
       const ids = (
         search.flat(Number.POSITIVE_INFINITY)
         .filter((elem) => !!elem)
       )
       setActive(ids)
     }
-  }, [time, stops])
+  }, [time, stops, activeId])
 
   const togglePause = (pause = null) => {
     pause = (
       typeof(pause) !== 'boolean' ? (
-        !vid.current.paused
+        !video.current.paused
       ) : (
         pause
       )
     )
     if(pause) {
-      vid.current.pause()
+      video.current.pause()
     } else {
-      vid.current.play()
+      video.current.play()
     }
   }
 
@@ -1567,22 +1688,22 @@ export default (config) => {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    const video = vid.current
+    const vid = video.current
     const update = ({ target: { currentTime: time }}) => {
       setTime(time)
     }
-    video.addEventListener('timeupdate', update)
+    vid.addEventListener('timeupdate', update)
     return () => {
-      video.removeEventListener('timeupdate', update)
+      vid.removeEventListener('timeupdate', update)
     }
   }, [setTime])
 
   useEffect(() => {
-    const video = vid.current
-    const set = () => setDuration(video.duration)
-    video.addEventListener('loadedmetadata', set)
+    const vid = video.current
+    const set = () => setDuration(vid.duration)
+    vid.addEventListener('loadedmetadata', set)
     return () => {
-      video.removeEventListener('loadedmetadata', set)
+      vid.removeEventListener('loadedmetadata', set)
     }
   }, [])
 
@@ -1594,7 +1715,6 @@ export default (config) => {
     const pos = (
       anchor ? children.indexOf(anchor) : children.length
     )
-    console.info({ c: self })
     self.children = [
       ...self.children.slice(0, pos + 1),
       insert,
@@ -1660,7 +1780,8 @@ export default (config) => {
 
   const seekTo = (time) => {
     console.info('Seeking To', time)
-    vid.current.currentTime = time
+    video.current.currentTime = time
+    setEventsTime(time)
   }
 
   const serialize = () => {
@@ -1689,18 +1810,40 @@ export default (config) => {
       stops: stripped,
     }
     try {
-      const blob = new Blob(
+      return new Blob(
         [JSON5.stringify(metadata, null, 2)],
         { type: "text/json" },
       )
-      const url = window.URL.createObjectURL(blob)
-      window.open(url, '_blank').focus()
     } catch(error) {
       console.error({ error })
     }
   }
 
-  const upload = () => {
+  const display = () => {
+    const json5 = serialize()
+    const url = window.URL.createObjectURL(json5)
+    window.open(url, '_blank').focus()
+  }
+
+  const upload = async () => {
+    const json5 = serialize()
+    const path = 'video metadata.json5'
+    const result = (
+      await ipfs.add(
+        {
+          path,
+          content: json5,
+        },
+        {
+          pin: true,
+          wrapWithDirectory: true,
+          cidVersion: 0,
+        },
+      )
+    )
+    const cid = result.cid.toString()
+    const url = `ipfs://${cid}/${path}`
+    history.push(`/publish/${url}`)
   }
 
   return (
@@ -1725,7 +1868,7 @@ export default (config) => {
                 {...{
                   startsAt, duration, time, active,
                   seekTo, hovered, setHovered,
-                  togglePause,
+                  togglePause, setActiveId,
                 }}
                 node={stops}
                 h={`calc(100vh - ${vidHeight}px)`}
@@ -1741,7 +1884,9 @@ export default (config) => {
                   duration, replaceNode,
                   hovered, setHovered,
                   seekTo, active, togglePause,
+                  setActiveId,
                 }}
+                time={eventsTime}
                 node={stops}
               />
             </GridItem>
@@ -1753,11 +1898,13 @@ export default (config) => {
           maxH={vidHeight} maxW="100vw"
         >
           <Flex maxH="100%" maxW="100vw">
-            <DateTime {...{ startsAt, time }}/>
+            <DateTime {...{
+              startsAt, time, video, togglePause,
+            }}/>
             <Video
               flexGrow={1} controls
               maxH="100%" maxW="calc(100vw - 10em)"
-              ref={vid}
+              ref={video}
             >
               <source {...{ src, type: 'video/mp4' }} />
               {/* {VTT && <track default src={VTT}/>} */}
