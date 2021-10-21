@@ -3,7 +3,7 @@ import {
   Stack, Spacer, Spinner, chakra, useDisclosure, Input,
   ModalOverlay, ModalContent, ModalHeader, ModalFooter,
   ModalCloseButton, ModalBody, FormControl, FormLabel,
-  Modal, Text, Textarea, Divider, Image, Tooltip,
+  Modal, Text, Textarea, Divider, Image, Tooltip, Wrap,
   Tabs, TabList, TabPanels, Tab, TabPanel, Checkbox,
 } from '@chakra-ui/react'
 import React, {
@@ -17,7 +17,7 @@ import { useHistory } from 'react-router-dom'
 import JSON5 from 'json5'
 import { create as createIPFS } from 'ipfs-http-client'
 import {
-  isoStringFor, stringFor, timeFor,
+  isoStringFor, stringFor, timeFor, isEmpty,
   isSet, ifSet, capitalize, load, toHTTP,
 } from './utils'
 import CeramicLogo from './images/ceramic.svg'
@@ -326,7 +326,7 @@ const Spans = ({
     duration, partition, raw, ...rest
   } = node
 
-  if(Object.keys(rest).length === 0) {
+  if(isEmpty(rest)) {
     return (
       children.map((child, idx) => (
         <Spans
@@ -515,33 +515,36 @@ const onlyTime = ({ setter }) => (
 )
 
 const RoleItems = ({
-  exec, event, role, remove, changed,
+  event, role, holders = [], persist = false,
+  remove, changed,
 }) => (
   <React.Fragment>
     <GridItem
-      rowSpan={exec[event].length}
+      rowSpan={holders.length}
     >{role}</GridItem>
-    {(exec[event] ?? []).map((userOrObj, iidx) => {
+    {(holders).map((userOrObj, idx) => {
       const username = userOrObj.name ?? userOrObj
       return (
-        <React.Fragment key={iidx}>
+        <React.Fragment key={idx}>
           <GridItem>{username}</GridItem>
-          <GridItem>
-            <Checkbox
-              w={3} h={3} p={0}
-              value={username}
-              isChecked={
-                userOrObj.persist ?? !!exec.persist
-              }
-              onChange={({ target: {
-                checked: persist, value: targetUser,
-              } }) => {
-                changed({
-                  persist, targetUser, role,
-                })
-              }}
-            />
-          </GridItem>
+          {event !== 'exit' && (
+            <GridItem>
+              <Checkbox
+                w={3} h={3} p={0}
+                value={username}
+                isChecked={
+                  userOrObj.persist ?? persist
+                }
+                onChange={({ target: {
+                  checked: persist, value: targetUser,
+                } }) => {
+                  changed({
+                    persist, targetUser, role,
+                  })
+                }}
+              />
+            </GridItem>
+          )}
           <GridItem>
             <Button
               h="auto" value={username}
@@ -559,12 +562,12 @@ const RoleItems = ({
 )
 
 const RoleInputs = ({
-  entry, idx, create, setCreate,
+  entry, idx, event, setCreate,
 }) => (
   <React.Fragment>
     <GridItem>
       <Input
-        value={entry.role}
+        value={entry.role} autoFocus
         textAlign="center"
         onChange={({ target: { value } }) => {
           setCreate((old) => [
@@ -588,18 +591,20 @@ const RoleInputs = ({
         }}
       />
     </GridItem>
-    <GridItem>
-      <Checkbox
-        isChecked={entry.persist}
-        onChange={({ target: { checked } }) => {
-          setCreate((old) => [
-            ...old.slice(0, idx),
-            { ...entry, persist: checked },
-            ...old.slice(idx + 1),
-          ])
-        }}
-      />
-    </GridItem>
+    {event !== 'exit' && (
+      <GridItem>
+        <Checkbox
+          isChecked={entry.persist}
+          onChange={({ target: { checked } }) => {
+            setCreate((old) => [
+              ...old.slice(0, idx),
+              { ...entry, persist: checked },
+              ...old.slice(idx + 1),
+            ])
+          }}
+        />
+      </GridItem>
+    )}
     <GridItem>
       <Button
         h="auto"
@@ -615,8 +620,8 @@ const RoleInputs = ({
 )
 
 const Roles = ({
-  title, node, event, roles, setRoles,
-  create, setCreate,
+  title, event, editable = true,
+  roles, setRoles, create, setCreate,
 }) => {
   const changed = ({ persist, targetUser, role }) => {
     setRoles((roles) => {
@@ -679,21 +684,44 @@ const Roles = ({
     ])
   }
 
-  if(Object.keys(roles ?? {}).length === 0) {
+  if(isEmpty(roles ?? {})) {
     roles = { holder: [] }
   }
 
-  const creates = (
-    create.filter((c) => c.event === event)
+  const roleList = useMemo(() => {
+    const evented = {}
+    Object.entries(roles).forEach(
+      ([role, events]) => {
+        if(events[event] && !isEmpty(events[event])) {
+          evented[role] = events[event]
+        }
+      }
+    )
+    return evented
+  }, [roles, event])
+
+  const creates = useMemo(() => (
+    create.filter((entry) => (
+      entry.event === event
+    ))
+  ), [create, event])
+  
+  const templateColumns = (
+    !editable ? '1fr 1fr' : (
+      event === 'exit'
+      ? '2fr 1fr 1fr' : '2fr 2fr 1fr 1fr'
+    )
   )
 
   return (
     <>
       <Flex>
-        <Button
-          h="auto" minW="auto" mr={2}
-          onClick={add}
-        >+</Button>
+        {editable && (
+          <Button
+            h="auto" minW="auto" mr={2}
+            onClick={add}
+          >+</Button>
+        )}
         {title && (
           <Heading
             fontSize={24}
@@ -702,7 +730,7 @@ const Roles = ({
         )}
       </Flex>
       <Grid
-        templateColumns="2fr 2fr 1fr 1fr"
+        {...{ templateColumns }}
         sx={{ '& > *': {
           border: '1px solid',
           display: 'flex',
@@ -712,38 +740,48 @@ const Roles = ({
       >
         <GridItem fontWeight="bold">Role</GridItem>
         <GridItem fontWeight="bold">User</GridItem>
-        <GridItem
-          fontWeight="bold"
-          title="Role will appear in following siblings as well as, like all nodes, children."
-        >Persist</GridItem>
-        <GridItem fontWeight="bold">Remove</GridItem>
-        {Object.entries(roles).map(
-          ([role, exec], idx) => (
-            [0, undefined].includes(exec[event]?.length) ? (
-              creates.length === 0 && (
-                <GridItem colSpan={4} key={idx}>
-                  <em>No Entries</em>
-                </GridItem>
-              )
+        {editable && (
+          <>
+            {event !== 'exit' && (
+              <GridItem
+                fontWeight="bold" fontStyle="italic"
+                title="Role will appear in following siblings as well as, like all nodes, children."
+              >Persist</GridItem>
+            )}
+            <GridItem
+              fontWeight="bold" fontStyle="italic"
+            >Remove</GridItem>
+          </>
+        )}
+        {isEmpty(roleList) && isEmpty(creates) ? (
+          <GridItem
+            colSpan={editable ? (
+              event === 'exit' ? 3 : 4
             ) : (
+              2
+            )}
+          >
+            <em>No Entries</em>
+          </GridItem>
+        ) : (
+          Object.entries(roleList).map(
+            ([role, holders], idx) => (
               <RoleItems
                 key={idx}
                 {...{
-                  exec, event, role,
-                  remove, changed,
+                  event, role, holders,
+                  remove, changed, editable,
                 }}
               />
             )
           )
         )}
-        {
-          creates.map((entry, idx) => (
-            <RoleInputs
-              key={idx}
-              {...{ entry, idx, create, setCreate }}
-            />
-          ))
-        }
+        {creates.map((entry, idx) => (
+          <RoleInputs
+            key={idx}
+            {...{ entry, idx, event, setCreate }}
+          />
+        ))}
       </Grid>
     </>
   )
@@ -767,6 +805,9 @@ const NodeSettings = ({
     useState(node.raw.roles ?? {})
   )
   const [create, setCreate] = useState([])
+  const [type, setType] = (
+    useState(node.raw.type ?? '')
+  )
   const defaultEnd = (
     timeFor(ifSet(startOffset) ?? node.startOffset)
     + timeFor(ifSet(duration) ?? node.duration)
@@ -780,6 +821,13 @@ const NodeSettings = ({
       )
     )
   )
+
+  const onClose = () => {
+    delete node.new
+    delete node.raw.new    
+    closeNodeSettings()
+  }
+
   const setStartOffset = (str) => {
     str = onlyTime({ setter: baseStartOffset })(str)
     const start = (
@@ -831,7 +879,7 @@ const NodeSettings = ({
     const fields = {
       title, body, duration, startOffset,
       partition, children, id: node.id,
-      roles,
+      roles, type,
     }
     const gen = newNode()
     Object.entries(fields).forEach(
@@ -845,7 +893,7 @@ const NodeSettings = ({
   }, [
     body, children, duration,
     partition, startOffset, title,
-    node.id, roles, create,
+    node.id, roles, create, type,
   ])
   const save = (evt) => {
     evt.preventDefault()
@@ -877,18 +925,19 @@ const NodeSettings = ({
     }
     setCreate([])
     replaceNode({ node, replacement })
-    closeNodeSettings()
+    onClose()
+  }
+
+  if(node.new) {
+    open = true
   }
 
   return (
     <Modal
       size="xl" initialFocusRef={initialRef}
       lockFocusAcrossFrames={true}
-      {...{
-        ...props,
-        isOpen: open,
-        onClose: closeNodeSettings,
-      }}
+      {...{ ...props, onClose }}
+      isOpen={open}
     >
       <ModalOverlay/>
       <ModalContent as="form" onSubmit={save}>
@@ -907,6 +956,19 @@ const NodeSettings = ({
             </TabList>
             <TabPanels>
               <TabPanel>
+              <FormControl mt={4}>
+                  <FormLabel>Type</FormLabel>
+                  <Flex>
+                    <Input
+                      value={type}
+                      onChange={({ target: { value }}) => {
+                        setType(value)
+                      }}
+                    />
+                    <Button
+                    >▼</Button>
+                  </Flex>
+                </FormControl>
                 <FormControl mt={4}>
                   <FormLabel>Title</FormLabel>
                   <Input
@@ -1067,6 +1129,16 @@ const NodeSettings = ({
                     }}
                   />
                 </FormControl>
+                <FormControl mt={4}>
+                  <Roles
+                    title="Inherited"
+                    editable={false}
+                    {...{
+                      node, roles, setRoles,
+                      create, setCreate,
+                    }}
+                  />
+                </FormControl>
               </TabPanel>
             </TabPanels>
           </Tabs>
@@ -1128,8 +1200,8 @@ const WrapPartition = ({ children, node }) => {
 const Events = ({
   node = {}, insertChild, replaceNode, insertParent,
   duration, count = 1, hovered, setHovered, seekTo,
-  index = 0, active, togglePause, time, setActiveId,
-  ...props
+  index = 0, active, togglePause, time, activeId,
+  setActiveId, ...props
 }) => {
   const [menuVisible, setMenuVisible] = (
     useState(false)
@@ -1207,10 +1279,6 @@ const Events = ({
     openNodeSettings()
   }
 
-  useEffect(() => {
-
-  }, [time])
-
   const {
     id, children = [], startOffset,
     duration: dur, partition, raw, ...rest
@@ -1226,7 +1294,8 @@ const Events = ({
             insertParent, replaceNode,
             hovered, setHovered,
             seekTo, index, active, time,
-            togglePause, setActiveId,
+            togglePause, activeId,
+            setActiveId,
           }}
           key={index}
           node={child}
@@ -1253,6 +1322,15 @@ const Events = ({
     icon = icons.unknown
   }
 
+  const xColor = (
+    active.includes(node.id)
+    ? ('#00FF00') : ('transparent')
+  )
+  const yColor = (
+    activeId === node.id
+    ? ('#FF0000') : ('transparent')
+  )
+
   return (
     <>
       <NodeSettings
@@ -1272,7 +1350,7 @@ const Events = ({
           top: 0, left: 0, bottom: 0, right: 0,
           bg: colorFor(node.id),
         }}
-        mt={index === 0 ? 0 : 1.5} px={3} w="full"
+        mt={index === 0 ? '-4px' : 1.25} px={3} w="full"
         sx={{
           '&.hovered::before': { opacity: 1 }
         }}
@@ -1284,14 +1362,14 @@ const Events = ({
         onClick={(evt) => {
           evt.stopPropagation()
           seekTo(node.startOffset)
-          setActiveId(node.id)
+          if(evt.ctrlKey) {
+            setActiveId(node.id)
+          }
         }}
-        borderX="4px solid"
-        borderColor={active.includes(node.id) ? (
-          '#00FF00'
-        ) : (
-          'transparent'
-        )}
+        borderRight={`2px solid ${xColor}`}
+        borderLeft={`5px solid ${xColor}`}
+        borderTop={`4px dashed ${yColor}`}
+        borderBottom={`4px dashed ${yColor}`}
         {...props} {...{ className }}
       >
         {node.title && (
@@ -1384,7 +1462,8 @@ const Events = ({
                 insertParent, replaceNode,
                 hovered, setHovered,
                 seekTo, index, active, time,
-                togglePause, setActiveId,
+                togglePause, activeId,
+                setActiveId,
               }}
               key={index}
               node={child}
@@ -1500,23 +1579,22 @@ const DateTime = ({
     <Flex
       direction="column" lineHeight={1}
       align="center" justify="center"
+      position="relative"
+      onClick={togglePause}
     >
+      <Image
+        position="absolute"
+        top={0} left={0}
+        w="100%" h="calc(100% - 0.75em)"
+        p={2} zIndex={3} opacity={0.65}
+        src={
+          playing ? PauseButton : PlayButton
+        }
+      />
       <Box>{isoStringFor(current, opts)}</Box>
       <Box>
         +{stringFor(time, { milliseconds: false })}
       </Box>
-      <Button
-        flexGrow={1}
-        onClick={togglePause}
-        minW={8} h="auto" p={0.5}
-      >
-        <Image
-          p={0}
-          src={
-            playing ? PauseButton : PlayButton
-          }
-        />
-      </Button>
     </Flex>
   )
 }
@@ -1601,31 +1679,17 @@ export default (config) => {
         node.startOffset <= time
         && node.startOffset + node.duration > time
       ) {
-        let sub = []
-        if(node.id !== activeId) { // keep descending
-          sub = node.children.map((child) => (
-            findActive({ time, node: child })
-          ))
-        }
+        const sub = node.children.map((child) => (
+          findActive({ time, node: child })
+        ))
         return [node.id, sub]
       }
       return null
     }
     if(stops) {
-      let search = []
-
-      if(activeId) {
-        let node = findById(stops, activeId)
-        do {
-          search.push(node.id)
-          node = node.parent
-        } while(node)
-      } else {
-        search = findActive({
-          time, node: stops,
-        })
-      }
-
+      let search = findActive({
+        time, node: stops,
+      })
       const ids = (
         search.flat(Number.POSITIVE_INFINITY)
         .filter((elem) => !!elem)
@@ -1711,6 +1775,7 @@ export default (config) => {
     const self = { ...findById(raw, parent.id) }
     insert = newNode(insert)
     insert.parent = self
+    insert.new = true
     const { children } = parent
     const pos = (
       anchor ? children.indexOf(anchor) : children.length
@@ -1760,7 +1825,7 @@ export default (config) => {
       )
 
       if(!isSet(index)) {
-        console.error('Couldn’t find node.', node)
+        console.error('Couldn’t find node.', { node })
       } else {
         if(!replacement) {
           children.splice(index, 1)
@@ -1884,7 +1949,7 @@ export default (config) => {
                   duration, replaceNode,
                   hovered, setHovered,
                   seekTo, active, togglePause,
-                  setActiveId,
+                  activeId, setActiveId,
                 }}
                 time={eventsTime}
                 node={stops}
@@ -1897,41 +1962,49 @@ export default (config) => {
           rowSpan={1} colSpan={2}
           maxH={vidHeight} maxW="100vw"
         >
-          <Flex maxH="100%" maxW="100vw">
+          <Flex
+            maxH="100%" maxW="100vw"
+            overflow="hidden"
+          >
             <DateTime {...{
               startsAt, time, video, togglePause,
             }}/>
             <Video
               flexGrow={1} controls
-              maxH="100%" maxW="calc(100vw - 10em)"
+              maxH="100%" maxW="calc(100vw - 9.5em)"
               ref={video}
             >
               <source {...{ src, type: 'video/mp4' }} />
               {/* {VTT && <track default src={VTT}/>} */}
             </Video>
-            <Flex align="center">
-              <Stack>
-                <Button
-                  title="Edit the video information"
-                  onClick={openVideoSettings}
-                  h="auto"
-                >⚙</Button>
-                <Button
-                  title="Download the current configuration"
-                  onClick={serialize}
-                  h="auto"
-                >⭳</Button>
-              </Stack>
+            <Wrap
+              alignSelf="center" justify="center"
+              flexGrow={1} spacing="0.1em"
+            >
               <Button
                 title="Upload to Ceramic"
                 onClick={upload}
+                h="auto" minW={0} padding={1}
+                variant="outline" colorScheme="blue"
               >
                 <Image
-                  minH={25} minW={25}
+                  h={25} w={25}
                   src={CeramicLogo}
                 />
               </Button>
-            </Flex>
+              <Button
+                title="Edit the video information"
+                onClick={openVideoSettings}
+                h="auto" minW={0} padding={1}
+                variant="outline" colorScheme="blue"
+              >⚙</Button>
+              <Button
+                title="Download the current configuration"
+                onClick={display}
+                h="auto" minW={0} padding={1}
+                variant="outline" colorScheme="blue"
+              >⭳</Button>
+            </Wrap>
           </Flex>
         </GridItem>
       </Grid>

@@ -198,3 +198,19 @@ export const load = async (URI) => {
     : null
   )
 }
+
+export const isEmpty = (obj) => {
+  if(obj === '') {
+    return true
+  }
+  if(typeof obj !== 'object') {
+    return false
+  }
+  if(typeof obj.length === 'number') {
+    return obj.length === 0
+  }
+  if(Object.keys(obj).length === 0) {
+    return true
+  }
+  return false
+}
