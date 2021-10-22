@@ -32,7 +32,7 @@ export default ({
       }
       return (
         path.substring(url.length)
-        .replace(/^\/*/g, '')
+        .replace(/^\/+/g, '')
       )
     })
   )
@@ -186,8 +186,7 @@ export default ({
               align="center" alignSelf="stretch"
             >
               <Link
-                href={info.link} target="_blank"
-                flexGrow={1}
+                href={info.link} flexGrow={1}
               >
                 <Image
                   src={info.image} alt={info.name}

@@ -5,6 +5,7 @@ import {
   ModalCloseButton, ModalBody, FormControl, FormLabel,
   Modal, Text, Textarea, Divider, Image, Tooltip, Wrap,
   Tabs, TabList, TabPanels, Tab, TabPanel, Checkbox,
+  Select, useToast,
 } from '@chakra-ui/react'
 import React, {
   useEffect, useRef, useState, useMemo,
@@ -972,7 +973,8 @@ const NodeSettings = ({
                 <FormControl mt={4}>
                   <FormLabel>Title</FormLabel>
                   <Input
-                    ref={initialRef} value={title} autoFocus
+                    autoFocus
+                    ref={initialRef} value={title ?? ''}
                     onChange={({ target: { value }}) => {
                       setTitle(value)
                     }}
@@ -1222,10 +1224,8 @@ const Events = ({
     }
   }
 
-  const addChild = (parent) => {
-    insertChild(
-      { parent, insert: { title: 'new' } }
-    )
+  const addChild = (parentOrId) => {
+    insertChild({ parentOrId })
   }
   const addPartition = (sibling) => {
     const { parent } = sibling
@@ -1248,7 +1248,7 @@ const Events = ({
       parent = parent.parent
     }
     insertChild({
-      parent, insert: { title: 'para' }, anchor: sibling
+      parentOrId, insert: { title: 'para' }, anchor: sibling
     })
   }
   const removeNode = (node) => {
@@ -1350,9 +1350,19 @@ const Events = ({
           top: 0, left: 0, bottom: 0, right: 0,
           bg: colorFor(node.id),
         }}
-        mt={index === 0 ? '-4px' : 1.25} px={3} w="full"
+        px={3} w="full" minH="3em"
+        pt="2px ! important" // eyeballed
         sx={{
-          '&.hovered::before': { opacity: 1 }
+          '& > div > div:first-of-type': {
+            marginTop: '-4px',
+          },
+          '& > div > div:last-of-type': {
+            marginBottom: '-4px',
+          },
+          '& > div > div:first-of-type:last-of-type': {
+            paddingTop: '4px',
+          },
+          '&.hovered::before': { opacity: 1 },
         }}
         onMouseEnter={() => mouseOver(node)}
         onMouseLeave={() => mouseOut(node)}
@@ -1372,75 +1382,73 @@ const Events = ({
         borderBottom={`4px dashed ${yColor}`}
         {...props} {...{ className }}
       >
-        {node.title && (
-          <Flex>
-            {icon && (
-              <Tooltip label={prefix}>
-                <Image
-                  borderRadius="50%" bg="#FFFFFF55"
-                  minW={10} maxW={10} minH={10} maxH={10}
-                  p={0.5} mr={1}
-                  src={icon} alt={prefix}
-                  border="1px solid black"
-                />
-              </Tooltip>
+        <Flex>
+          {icon && (
+            <Tooltip label={prefix}>
+              <Image
+                borderRadius="50%" bg="#FFFFFF55"
+                minW={10} maxW={10} minH={10} maxH={10}
+                p={0.5} mr={1}
+                src={icon} alt={prefix}
+                border="1px solid black"
+              />
+            </Tooltip>
+          )}
+          <Heading
+            fontSize={32} color="white" pt={1.5}
+            textOverflow="ellipsis"
+            overflow="hidden"
+            whiteSpace="nowrap"
+            title={demark(node.title)}
+            sx={{
+              a: { borderBottom: '2px dashed' },
+              'a:hover': { borderBottom: '2px solid' },
+            }}
+          >
+            <Markdown linkTarget="_blank">
+              {node.title}
+            </Markdown>
+          </Heading>
+          <Spacer />
+          {menuVisible && (
+            <ButtonGroup>
+              <Option
+                title="Remove Node"
+                onClick={() => removeNode(node)}
+              >➖</Option>
+              <Option
+                title="Create A Child"
+                onClick={() => addChild(node)}
+              >█ → 🬠</Option>
+              <Option
+                title="Create A Partition Sibling"
+                onClick={() => addPartition(node)}
+              >█ → 🮒</Option>
+              <Option
+                title="Create A Parallel Sibling"
+                onClick={() => addParallel(node)}
+              >█ → 🮔</Option>
+              <Option
+                title="Edit This Node"
+                onClick={() => edit(node)}
+              >✏️</Option>
+            </ButtonGroup>
+          )}
+          <Button
+            ml={3}
+            onClick={(evt) => {
+              evt.stopPropagation()
+              toggleMenu()
+            }}
+            title={menuVisible ? (
+              'Hide Node Options'
+            ) : (
+              'Show Node Options'
             )}
-            <Heading
-              fontSize={32} color="white" pt={1.5}
-              textOverflow="ellipsis"
-              overflow="hidden"
-              whiteSpace="nowrap"
-              title={demark(node.title)}
-              sx={{
-                a: { borderBottom: '2px dashed' },
-                'a:hover': { borderBottom: '2px solid' },
-              }}
-            >
-              <Markdown linkTarget="_blank">
-                {node.title}
-              </Markdown>
-            </Heading>
-            <Spacer />
-            {menuVisible && (
-              <ButtonGroup>
-                <Option
-                  title="Remove Node"
-                  onClick={() => removeNode(node)}
-                >➖</Option>
-                <Option
-                  title="Create A Child"
-                  onClick={() => addChild(node)}
-                >█ → 🬠</Option>
-                <Option
-                  title="Create A Partition Sibling"
-                  onClick={() => addPartition(node)}
-                >█ → 🮒</Option>
-                <Option
-                  title="Create A Parallel Sibling"
-                  onClick={() => addParallel(node)}
-                >█ → 🮔</Option>
-                <Option
-                  title="Edit This Node"
-                  onClick={() => edit(node)}
-                >✏️</Option>
-              </ButtonGroup>
-            )}
-            <Button
-              ml={3}
-              onClick={(evt) => {
-                evt.stopPropagation()
-                toggleMenu()
-              }}
-              title={menuVisible ? (
-                'Hide Node Options'
-              ) : (
-                'Show Node Options'
-              )}
-            >
-              {menuVisible ? <Text fontWeight="bold">┆</Text> : '☰'}
-            </Button>
-          </Flex>
-        )}
+          >
+            {menuVisible ? <Text fontWeight="bold">┆</Text> : '☰'}
+          </Button>
+        </Flex>
         {isSet(node.body) && (
           <Box
             sx={{
@@ -1490,6 +1498,7 @@ const findById = (root, id) => {
 
 const VideoSettings = ({
   open, closeVideoSettings, info, setInfo,
+  ipfsURL, setIPFSURL,
 }) => {
   if(!isSet(info.startsAt)) {
     info.startsAt = new Date()
@@ -1500,7 +1509,9 @@ const VideoSettings = ({
   const [source, setSource] = (
     useState(info.source)
   )
-  const [port, setPort] = useState(info.port)
+  const [url, setURL] = useState(
+    process.env.IPFS_API_URL ?? 'https://ipfs.infura.io:5001'
+  )
 
   const save = (evt) => {
     evt.preventDefault()
@@ -1509,6 +1520,7 @@ const VideoSettings = ({
       startsAt: new Date(startsAt),
       source,
     }))
+    setIPFSURL(url)
     closeVideoSettings()
   }
 
@@ -1526,7 +1538,7 @@ const VideoSettings = ({
         >Video Settings</ModalHeader>
         <ModalCloseButton/>
         <ModalBody pb={6}>
-        <FormControl mt={4}>
+          <FormControl mt={4}>
             <FormLabel>Start Time</FormLabel>
             <Input
               type="datetime-local"
@@ -1544,6 +1556,30 @@ const VideoSettings = ({
                 setSource(value)
               }}
             />
+          </FormControl>
+          <FormControl mt={4}>
+            <FormLabel>
+              <Text
+                as="acronym"
+                title="Interplanetary Filesystem"
+              >
+                IPFS
+              </Text>
+              {' '}API Host
+            </FormLabel>
+            <Select
+              value={url}
+              onChange={({ target: { value } }) => {
+                setURL(value)
+              }}
+            >
+              <option value="http://localhost:5001">
+                http://localhost:5001
+              </option>
+              <option value="https://ipfs.infura.io:5001">
+                https://ipfs.infura.io:5001
+              </option>
+            </Select>
           </FormControl>
         </ModalBody>
         <ModalFooter>
@@ -1585,7 +1621,7 @@ const DateTime = ({
       <Image
         position="absolute"
         top={0} left={0}
-        w="100%" h="calc(100% - 0.75em)"
+        w="100%" h="calc(100%)"
         p={2} zIndex={3} opacity={0.65}
         src={
           playing ? PauseButton : PlayButton
@@ -1615,6 +1651,7 @@ export default (config) => {
     startsAt: config.startsAt,
     source: config.source,
   })
+  const [ipfsURL, setIPFSURL] = useState('')
   const { startsAt, source } = info
   const [vidHeight, setVidHeight] = (
     useState(DEFAULT_VID_HEIGHT)
@@ -1627,43 +1664,66 @@ export default (config) => {
     onClose: closeVideoSettings,
   } = useDisclosure()
   const history = useHistory()
+  const toast = useToast()
 
   const src = useMemo(
     () => toHTTP(source), [source]
   )
 
   const ipfs = useMemo(() => {
-    const host = (
-      process.env.IPFS_API_HOST ?? 'localhost'
+    const regex = (
+      /^((https?):\/\/)?([^:/]+)?(:(\d+))?(.*)$/i
     )
-    const port = process.env.IPFS_API_PORT ?? 5001
-    const protocol = (
-      process.env.IPFS_API_PROTOCOL ?? 'http'
-    )
-    const config = {
-      host, port, protocol,
-    }
-    if(host.includes('infura')) {
-      const id = process.env.INFURA_IPFS_PROJECT_ID
-      if(!id) {
-        console.warn('Expected $INFURA_IPFS_PROJECT_ID to be set.')
-      }
-      const secret = process.env.INFURA_IPFS_SECRET
-      if(!secret) {
-        console.warn('Expected $INFURA_IPFS_SECRET to be set.')
-      }
-      const auth = (
-        'Basic '
-        + (
-          Buffer.from(id + ':' + secret)
-          .toString('base64')
+    const match = ipfsURL.match(regex)
+    if(!match) {
+      toast({
+        title: 'Malformed URL',
+        description: `"${ipfsURL}" did not match expression "${regex.toString()}"`,
+        status: 'error',
+        duration: 12000,
+        isClosable: true,
+      })
+    } else {
+      const protocol = ifSet(match[3]) ?? 'http'
+      const host = ifSet(match[4]) ?? 'localhost'
+      const port = parseInt(ifSet(match[6]) ?? 5001)
+      const config = { host, port, protocol }
+
+      if(host.includes('infura')) {
+        const id = process.env.INFURA_IPFS_PROJECT_ID
+        if(!id) {
+          toast({
+            title: 'Missing Infura Credential',
+            description: 'Expected $INFURA_IPFS_PROJECT_ID to be set.',
+            status: 'error',
+            duration: 10000,
+            isClosable: true,
+          })
+        }
+        const secret = process.env.INFURA_IPFS_SECRET
+        if(!secret) {
+          toast({
+            title: 'Missing Infura Credential',
+            description: 'Expected $INFURA_IPFS_SECRET to be set.',
+            status: 'error',
+            duration: 10000,
+            isClosable: true,
+          })
+        }
+        const auth = (
+          'Basic '
+          + (
+            Buffer.from(id + ':' + secret)
+            .toString('base64')
+          )
         )
-      )
-      config.headers = {
-        authorization: auth,
+        config.headers = {
+          authorization: auth,
+        }
       }
+
+      return createIPFS(config)
     }
-    return createIPFS(config)
   }, [])
 
   useEffect(() => {
@@ -1731,6 +1791,32 @@ export default (config) => {
         case 'F':
           seekTo(time + 20)
         break
+        case 'c':
+          if(isSet(activeId)) {
+            insertChild({ parentOrId: activeId })
+          } else {
+            toast({
+              title: 'No Active Node',
+              description: 'To create a child node, it is necessary to mark the parent active using Control-Left Click.',
+              status: 'error',
+              duration: 15000,
+              isClosable: true,
+            })
+          }
+        break
+        case 't':
+          if(isSet(activeId)) {
+            partition({ preceedingOrId: activeId })
+          } else {
+            toast({
+              title: 'No Active Node',
+              description: 'To create a partition it is necessary to mark the preceeding sibling active using Control-Left Click.',
+              status: 'error',
+              duration: 15000,
+              isClosable: true,
+            })
+          }
+        break
         default:
         break
       }
@@ -1771,30 +1857,43 @@ export default (config) => {
     }
   }, [])
 
-  const insertChild = ({ parent, insert, anchor }) => {
-    const self = { ...findById(raw, parent.id) }
-    insert = newNode(insert)
-    insert.parent = self
-    insert.new = true
-    const { children } = parent
-    const pos = (
-      anchor ? children.indexOf(anchor) : children.length
-    )
-    self.children = [
-      ...self.children.slice(0, pos + 1),
-      insert,
-      ...self.children.slice(pos + 1),
-    ]
-    const insertion = ({ children, visit }) => (
-      children.map((child) => {
-        visit({ node: child, method: insertion })
-        return child.id === self.id ? self : child
+  const insertChild = (
+    ({ parentOrId, insert, anchor }) => {
+      const id = parentOrId?.id ?? parentOrId
+
+      if(!isSet(id)) {
+        console.warn(`insertChild called with ${id} id`)
+        return null
+      }
+
+      const self = { ...findById(raw, id) }
+      insert = newNode(insert)
+      insert.parent = self
+      insert.new = true
+      const { children } = self
+      const pos = (
+        anchor
+        ? children.indexOf(anchor)
+        : children.length
+      )
+      self.children = [
+        ...self.children.slice(0, pos + 1),
+        insert,
+        ...self.children.slice(pos + 1),
+      ]
+      const insertion = ({ children, visit }) => (
+        children.map((child) => {
+          visit({ node: child, method: insertion })
+          return child.id === self.id ? self : child
+        })
+      )
+      setRaw((raw) => {
+        return visit({
+          node: clone(raw), method: insertion
+        })
       })
-    )
-    setRaw((raw) => {
-      return visit({ node: clone(raw), method: insertion })
-    })
-  }
+    }
+  )
 
   const insertParent = ({ child, insert, siblings = [] }) => {
     const rawChild = findById(raw, child.id)
@@ -1841,6 +1940,43 @@ export default (config) => {
       return dup
     })
     return outer
+  }
+
+  const partition = ({ preceedingOrId, insert }) => {
+    const id = preceedingOrId?.id ?? preceedingOrId
+
+    if(!isSet(id)) {
+      console.warn(`partition called with ${id} id`)
+      return null
+    }
+
+    const preceeding = { ...findById(raw, id) }
+    const { parent } = preceeding.parent
+    preceeding.partition = true // this could be problematic
+    insert = newNode(insert)
+    insert.parent = parent
+    insert.new = true
+    console.info({ stops, id, s: findById(stops, id) })
+    const { children } = findById(stops, id)
+    const pos = children.indexOf(preceeding)
+    parent.children = [
+      ...children.slice(0, pos + 1),
+      insert,
+      ...children.slice(pos + 1),
+    ]
+    const insertion = ({ children, visit }) => (
+      children.map((child) => {
+        visit({ node: child, method: insertion })
+        return (
+          child.id === parent.id ? parent : child
+        )
+      })
+    )
+    setRaw((raw) => {
+      return visit({
+        node: clone(raw), method: insertion
+      })
+    })
   }
 
   const seekTo = (time) => {
@@ -1914,7 +2050,9 @@ export default (config) => {
   return (
     <>
       <VideoSettings {...{
-        open, closeVideoSettings, info, setInfo,
+        open, closeVideoSettings,
+        info, setInfo,
+        ipfsURL, setIPFSURL,
       }}/>
       <Grid
         as="form"
