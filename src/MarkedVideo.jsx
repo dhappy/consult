@@ -71,12 +71,9 @@ const newNode = (obj = {}) => (
 )
 
 const visit = ({ node, method, extra }) => {
-  let children = node?.children ?? []
-  children = method.apply(
-    node, [{ children, parent: node, extra, visit }]
+  return method.apply(
+    node, [{ node, extra, visit }]
   )
-  node.children = children
-  return node
 }
 
 const siblingsOf = (node) => {
@@ -90,22 +87,26 @@ const siblingsOf = (node) => {
 
 const connect = ({ stops }) => {
   const parent = ({
-    children = [], parent: rent, visit,
+    node, visit,
   }) => {
-    children = children.map((child) => {
+    const { children = [] } = node
+
+    node.children = children.map((child) => {
       child = visit({
         node: newNode(child), method: parent
       })
-      child.parent = rent
+      child.parent = node
       return child
     })
-    return children
+    return node
   }
-  let root = stops
-  if(Array.isArray(root)) {
-    root = { children: root }
+
+  if(Array.isArray(stops)) {
+    stops = { children: stops }
   }
-  return visit({ node: newNode(root), method: parent })
+  return visit({
+    node: newNode(stops), method: parent,
+  })
 }
 
 const clone = (stops) => connect({ stops })
@@ -114,13 +115,15 @@ const append = (array, ...entries) => (
   (array ?? []).concat(entries.flat())
 )
 
-const generate = ({ root, duration, raw }) => {
+const generate = ({ root, duration, raw, toast }) => {
   const fix = ({
-    parent, children,
+    node,
     extra: { roles: incomingRoles = {} } = {},
     visit,
   }) => {
-    parent.raw = findById(raw, parent.id)
+    node.raw = findById(raw, node.id)
+
+    const { children = [] } = node
 
     children.forEach((child) => {
       ['duration', 'startOffset'].forEach((attr) => {
@@ -130,39 +133,43 @@ const generate = ({ root, duration, raw }) => {
       })
     })
 
-    const siblings = siblingsOf(parent)
-    const index = siblings.indexOf(parent)
-    const gparent = parent.parent
+    const siblings = siblingsOf(node)
+    const index = siblings.indexOf(node)
+    const { parent } = node
+
     if(
-      !isSet(parent.startOffset)
-      || isNaN(parent.startOffset)
+      !isSet(node.startOffset)
+      || isNaN(node.startOffset)
     ) {
-      if(gparent?.partition) {
+      if(parent?.partition) {
         if(index === 0) {
-          parent.startOffset = gparent.startOffset
-        } else if(index <= siblings.length - 1) {
-          parent.startOffset = (
+          node.startOffset = parent.startOffset
+        } else if(
+          index >= 1
+          && index <= siblings.length - 1
+        ) {
+          node.startOffset = (
             siblings[index - 1].startOffset
             + siblings[index - 1].duration
           )
         } else {
           console.warn(
             'Bad Index',
-            { index, parent, siblings },
+            { index, node, siblings },
           )
         }
-      } else if(gparent) {
-        parent.startOffset = gparent.startOffset
+      } else if(parent) {
+        node.startOffset = parent.startOffset
       } else {
-        parent.startOffset = 0
+        node.startOffset = 0
       }
     }
 
     if(
-      !isSet(parent.duration)
-      || isNaN(parent.duration)
+      !isSet(node.duration)
+      || isNaN(node.duration)
     ) {
-      if(gparent?.partition) {
+      if(parent?.partition) {
         if(index >= 0 && index < siblings.length - 1) {
           const start = index
           let end = start + 1
@@ -174,7 +181,7 @@ const generate = ({ root, duration, raw }) => {
           }
           const total = (
             (end === siblings.length ? (
-              gparent.startOffset + gparent.duration
+              parent.startOffset + parent.duration
             ) : (
               siblings[end].startOffset
             ))
@@ -188,39 +195,53 @@ const generate = ({ root, duration, raw }) => {
         } else if(index === siblings.length - 1) {
           const {
             startOffset: pStart, duration: pDur
-          } = gparent
-          parent.duration = (
-            (pStart + pDur) - parent.startOffset
+          } = parent
+          node.duration = (
+            (pStart + pDur) - node.startOffset
           )
         } else {
           console.warn(
             'Bad Index',
-            { index, parent, siblings },
+            { index, node, siblings },
           )
         }
-      } else if(gparent) {
-        parent.duration = gparent.duration
+      } else if(parent) {
+        node.duration = parent.duration
       } else {
-        parent.duration = duration
+        node.duration = duration
       }
     }
   
-    if (!isSet(parent.startOffset)) {
-      console.warn(`No Starting Time`, { parent })
+    if(!isSet(node.startOffset)) {
+      toast({
+        title: 'Incalcuable Interpolation',
+        description: `No Starting Time: ${node.id}`,
+        status: 'error',
+        duration: 12000,
+        isClosable: true,
+      })
     }
-    if (!isSet(parent.duration)) {
-      console.warn(`No Event Duration`, { parent })
+    if(!isSet(node.duration)) {
+      toast({
+        title: 'Incalcuable Interpolation',
+        description: `No Event Duration: ${node.id}`,
+        status: 'error',
+        duration: 12000,
+        isClosable: true,
+      })
     }
 
     const roles = { ...incomingRoles }
 
-    Object.entries(parent.roles ?? {})
+    Object.entries(node.roles ?? {})
     .forEach(([role, exec]) => {
       Object.entries(exec)
       .forEach(([action, users]) => {
         switch(action) {
           case 'enter':
-            roles[role] = append(roles[role], ...users)
+            roles[role] = (
+              append(roles[role], ...users)
+            )
             if(exec.persist === true) {
               incomingRoles[role] = (
                 append(incomingRoles[role], ...users)
@@ -228,8 +249,8 @@ const generate = ({ root, duration, raw }) => {
             } else {
               users.forEach((userOrObj) => {
                 if(userOrObj.persist) {
-                  incomingRoles[role] = (
-                    append(incomingRoles[role], userOrObj)
+                  incomingRoles[role] = append(
+                    incomingRoles[role], userOrObj
                   )
                 }
               })
@@ -250,21 +271,27 @@ const generate = ({ root, duration, raw }) => {
           break
           case 'persist': break
           default:
-            console.warn(
-              `Unknown Role Action: "${action}"`
-            )
+            toast({
+              title: 'Role Actions Error',
+              description: `Unknown Role Action: "${action}"`,
+              status: 'error',
+              duration: 12000,
+              isClosable: true,
+            })
           break
         }
       })
     })
 
-    parent.roles = { ...roles }
+    node.roles = { ...roles }
 
-    return children.map((child) => (
+    node.children = children.map((child) => (
       visit({
         node: child, method: fix, extra: { roles }
       })
     ))
+
+    return node
   }
 
   return visit({ node: clone(root), method: fix })
@@ -1642,7 +1669,7 @@ export default (config) => {
 
   useEffect(() => {
     const stops = generate({
-      root: raw, duration, raw,
+      root: raw, duration, raw, toast,
     })
     setStops(stops)
     if(activeId === null) {
@@ -1799,24 +1826,27 @@ export default (config) => {
         ...children.slice(pos + 1),
       ]
       const insertion = ({
-        parent: rent, children, visit,
-      }) => (
-        children.map((child) => {
-          visit({ node: child, method: insertion })
-          return (
-            child.id === parent.id ? parent : child
-          )
-        })
-      )
-      setRaw((raw) => {
-        return visit({
-          node: clone(raw), method: insertion
-        })
-      })
-      const v = visit({
-        node: clone(raw), method: insertion
-      })
-      console.info({ parent, children, pos, v })
+        node, visit,
+      }) => {
+        if(node.id === parent.id) {
+          return parent
+        }
+        node.children = node.children.map(
+          (child) => {
+            child = visit({
+              node: child, method: insertion,
+            })
+            return (
+              child.id === parent.id
+              ? parent : child
+            )
+          }
+        )
+        return node
+      }
+      setRaw((raw) => visit({
+        node: clone(raw), method: insertion,
+      }))
     }
   )
 
@@ -1849,7 +1879,7 @@ export default (config) => {
       )
 
       if(!isSet(index)) {
-        console.error('Couldn’t find node.', { node })
+        console.error('Couldn’t find node.', { node, index })
       } else {
         if(!replacement) {
           children.splice(index, 1)
@@ -1881,7 +1911,6 @@ export default (config) => {
     insert = newNode(insert)
     insert.parent = parent
     insert.new = true
-    console.info({ stops, id, s: findById(stops, id) })
     const { children } = findById(stops, id)
     const pos = children.indexOf(preceeding)
     parent.children = [
@@ -1912,20 +1941,26 @@ export default (config) => {
 
   const serialize = ({ root }) => {
     const strip = (
-      ({ parent, children, visit }) => {
-        delete parent.id
-        delete parent.parent
-        if(!parent.partition) {
-          delete parent.partition
+      ({ node, visit }) => {
+        const { children } = node
+
+        delete node.id
+        delete node.parent
+        if(!node.partition) {
+          delete node.partition
         }
         if(children.length === 0) {
-          delete parent.children
+          delete node.children
+        } else {
+          node.children = children.map(
+            (child) => (
+              visit({ node: child, method: strip })
+            )
+          )
         }
-        delete parent.raw
+        delete node.raw
 
-        return children.map((child) => (
-          visit({ node: child, method: strip })
-        ))
+        return node
       }
     )
     const stripped = (
@@ -1958,8 +1993,8 @@ export default (config) => {
   }
 
   const upload = async () => {
-    const json5 = serialize()
-    const path = 'video metadata.json5'
+    const json5 = serialize({ root: raw })
+    const path = `${raw.title}.json5`
     const result = (
       await ipfs.add(
         {
