@@ -15,7 +15,7 @@ import { useCeramic } from 'use-ceramic'
 import MarkedVideo from './MarkedVideo'
 import { isSet, load, isoStringFor } from './utils'
 
-export default ({ nftDID, IPFSButton }) => {
+export default ({ nftDID, IPFSButton, ipfs }) => {
   const { pathname: path } = useLocation()
   const { url } = useRouteMatch()
   const [metaInput, setMetaInput] = useState('')
@@ -199,6 +199,6 @@ export default ({ nftDID, IPFSButton }) => {
 
   const { title, stops, source, startsAt } = info
   return <MarkedVideo {...{
-    title, stops, source, startsAt,
+    title, stops, source, startsAt, ipfs, IPFSButton,
   }}/>
 }

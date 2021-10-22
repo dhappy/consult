@@ -339,16 +339,24 @@ export default () => {
     )
   }
 
-  const IPFSButton = ({ ...props }) => (
-    <Tooltip label="Configure IPFS" hasArrow>
-      <IconButton
-        aria-label="Configure IPFS"
-        icon={<Image src={IPFSLogo}/>}
-        onClick={openIPFSSettings}
-        {...props}
-      />
-    </Tooltip>
-  )
+  const IPFSButton = ({ ...props }) => {
+    const { maxW, maxH } = props
+    return (
+      <Tooltip label="Configure IPFS" hasArrow>
+        <IconButton
+          aria-label="Configure IPFS"
+          icon={
+            <Image
+              {...{ maxW, maxH }}
+              src={IPFSLogo}
+            />
+          }
+          onClick={openIPFSSettings}
+          {...props}
+        />
+      </Tooltip>
+    )
+  }
 
   return (
     <Router>
@@ -367,7 +375,7 @@ export default () => {
           }}/>
         </Route>
         <Route path="/">
-          <View {...{ nftDID, IPFSButton }}/>
+          <View {...{ nftDID, IPFSButton, ipfs }}/>
         </Route>
         <Route exact path="/" component={ListAvailable}/>
       </Switch>

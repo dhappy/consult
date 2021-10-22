@@ -75,9 +75,7 @@ const visit = ({ node, method, extra }) => {
   children = method.apply(
     node, [{ children, parent: node, extra, visit }]
   )
-  if(isSet(node.children)) {
-    node.children = children
-  }
+  node.children = children
   return node
 }
 
@@ -1366,7 +1364,10 @@ const Events = ({
           evt.stopPropagation()
           seekTo(node.startOffset)
           if(evt.ctrlKey) {
-            setActiveId(node.id)
+            setActiveId((activeId) => (
+              node.id === activeId
+              ? null : node.id
+            ))
           }
         }}
         borderRight={`2px solid ${xColor}`}
@@ -1633,6 +1634,7 @@ export default (config) => {
   } = useDisclosure()
   const history = useHistory()
   const toast = useToast()
+  const { ipfs, IPFSButton } = config
 
   const src = useMemo(
     () => toHTTP(source), [source]
@@ -1643,6 +1645,9 @@ export default (config) => {
       root: raw, duration, raw,
     })
     setStops(stops)
+    if(activeId === null) {
+      setActiveId(stops.id)
+    }
   }, [raw, duration])
 
   useEffect(() => {
@@ -1778,25 +1783,29 @@ export default (config) => {
         return null
       }
 
-      const self = { ...findById(raw, id) }
+      const parent = { ...findById(raw, id) }
       insert = newNode(insert)
-      insert.parent = self
+      insert.parent = parent
       insert.new = true
-      const { children } = self
+      const { children } = parent
       const pos = (
         anchor
         ? children.indexOf(anchor)
         : children.length
       )
-      self.children = [
-        ...self.children.slice(0, pos + 1),
+      parent.children = [
+        ...children.slice(0, pos + 1),
         insert,
-        ...self.children.slice(pos + 1),
+        ...children.slice(pos + 1),
       ]
-      const insertion = ({ children, visit }) => (
+      const insertion = ({
+        parent: rent, children, visit,
+      }) => (
         children.map((child) => {
           visit({ node: child, method: insertion })
-          return child.id === self.id ? self : child
+          return (
+            child.id === parent.id ? parent : child
+          )
         })
       )
       setRaw((raw) => {
@@ -1804,6 +1813,10 @@ export default (config) => {
           node: clone(raw), method: insertion
         })
       })
+      const v = visit({
+        node: clone(raw), method: insertion
+      })
+      console.info({ parent, children, pos, v })
     }
   )
 
@@ -1897,7 +1910,7 @@ export default (config) => {
     setEventsTime(time)
   }
 
-  const serialize = () => {
+  const serialize = ({ root }) => {
     const strip = (
       ({ parent, children, visit }) => {
         delete parent.id
@@ -1916,7 +1929,7 @@ export default (config) => {
       }
     )
     const stripped = (
-      visit({ node: clone(raw), method: strip })
+      visit({ node: root, method: strip })
     )
     const metadata = {
       video: info,
@@ -1933,7 +1946,13 @@ export default (config) => {
   }
 
   const display = () => {
-    const json5 = serialize()
+    const json5 = serialize({ root: clone(raw) })
+    const url = window.URL.createObjectURL(json5)
+    window.open(url, '_blank').focus()
+  }
+
+  const debug = () => {
+    const json5 = serialize({ root: clone(stops) })
     const url = window.URL.createObjectURL(json5)
     window.open(url, '_blank').focus()
   }
@@ -2053,6 +2072,16 @@ export default (config) => {
                 h="auto" minW={0} padding={1}
                 variant="outline" colorScheme="blue"
               >⭳</Button>
+              <Button
+                title="Download the current interpolated configuration"
+                onClick={debug}
+                h="auto" minW={0} padding={1}
+                variant="outline" colorScheme="red"
+              >⭳</Button>
+              <IPFSButton
+                maxH={25} maxW={25}
+                variant="outline" colorScheme="blue"
+              />
             </Wrap>
           </Flex>
         </GridItem>
