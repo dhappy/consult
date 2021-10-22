@@ -26,7 +26,7 @@ export default ({ nftDID, IPFSButton, ipfs }) => {
   const history = useHistory()
 
   const setFromObject = (json) => {
-    const { video: { startsAt, source }, stops } = (
+    const { video: { startsAt = null, source = null } = {}, stops } = (
       json
     )
     setInfo({
@@ -162,8 +162,8 @@ export default ({ nftDID, IPFSButton, ipfs }) => {
             )}
           </Stack>
         ) : (
-          <Stack>
-            <Heading size="sm">{metadata}</Heading>
+          <Stack align="center">
+            <Heading size="sm">Loading: {metadata}</Heading>
             <Spinner/>
           </Stack>
         )}

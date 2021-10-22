@@ -54,6 +54,7 @@ const IPFSSettings = ({
 }) => {
   const [url, setURL] = useState(
     process.env.IPFS_API_URL
+    ?? ipfsURL
     ?? 'https://ipfs.infura.io:5001'
   )
 
@@ -96,7 +97,9 @@ const IPFSSettings = ({
               <option value="http://localhost:5001">
                 http://localhost:5001 (requires allowing CORS permission)
               </option>
-              <option value="https://ipfs.infura.io:5001">
+              <option
+                value="https://ipfs.infura.io:5001"
+              >
                 https://ipfs.infura.io:5001
               </option>
             </Select>
@@ -188,9 +191,9 @@ export default () => {
         isClosable: true,
       })
     } else {
-      const protocol = ifSet(match[3]) ?? 'http'
-      const host = ifSet(match[4]) ?? 'localhost'
-      const port = parseInt(ifSet(match[6]) ?? 5001)
+      const protocol = ifSet(match[2]) ?? 'http'
+      const host = ifSet(match[3]) ?? 'localhost'
+      const port = parseInt(ifSet(match[5]) ?? 5001)
       const config = { host, port, protocol }
 
       if(host.includes('infura')) {
@@ -319,10 +322,10 @@ export default () => {
 
   if(!provider) {
     return (
-      <>
-        <Text>Web3 Wallet not connected.</Text>
+      <Stack align="center">
+        <Text>Web3 wallet not connected.</Text>
         <Text>Should connect automatically.</Text>
-      </>
+      </Stack>
     )
   }
 

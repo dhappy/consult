@@ -176,7 +176,7 @@ export const capitalize = (str) => {
 
 export const toHTTP = (URI) => {
   const regex = /^ipfs:(\/\/)?(([^/]+)\/?(.*))$/i
-  const match = URI.match(regex)
+  const match = URI?.match(regex)
   if(match) {
     if(match[2].startsWith('bafybe')) {
       return (

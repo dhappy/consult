@@ -15,6 +15,7 @@ import demark from 'remove-markdown'
 import { v4 as uuid } from 'uuid'
 import { HashLink as Link } from 'react-router-hash-link'
 import { useHistory } from 'react-router-dom'
+import { useLocation } from 'react-router'
 import JSON5 from 'json5'
 import {
   isoStringFor, stringFor, timeFor, isEmpty,
@@ -1541,7 +1542,6 @@ const VideoSettings = ({
       startsAt: new Date(startsAt),
       source,
     }))
-    setIPFSURL(url)
     closeVideoSettings()
   }
 
@@ -1572,7 +1572,7 @@ const VideoSettings = ({
           <FormControl mt={4}>
             <FormLabel>Video Source</FormLabel>
             <Input
-              value={source}
+              value={source ?? ''}
               onChange={({ target: { value }}) => {
                 setSource(value)
               }}
@@ -1649,8 +1649,13 @@ export default (config) => {
     source: config.source,
   })
   const { startsAt, source } = info
-  const [vidHeight, setVidHeight] = (
-    useState(DEFAULT_VID_HEIGHT)
+  const { search: queryParams } = (
+    useLocation()
+  )
+  const params = new URLSearchParams(queryParams)
+  const [vidHeight, setVidHeight] = useState(
+    ifSet(params.get('vidHeight'))
+    ?? DEFAULT_VID_HEIGHT
   )
   const [activeId, setActiveId] = useState(null)
   const [active, setActive] = useState([])
