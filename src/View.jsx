@@ -83,7 +83,6 @@ export default ({ nftDID, IPFSButton }) => {
         const tile = await (
           TileDocument.load(ceramic, metadata)
         )
-        console.info({ metadata, tile: tile.content })
         setInfo(tile.content)
       } else if(metadata.startsWith('ipfs:')) {
         if(/\.json5?/i.test(metadata)) {

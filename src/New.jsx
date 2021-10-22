@@ -3,8 +3,10 @@ import {
   FormControl, FormLabel, Button, Input, Stack,
   ButtonGroup, Progress,
 } from '@chakra-ui/react'
-import { isSet, isoStringFor } from './utils'
 import { useHistory } from 'react-router'
+import JSON5 from 'json5'
+import { isSet, isoStringFor } from './utils'
+
 
 export default ({ IPFSButton, ipfs }) => {
   const [title, setTitle] = useState('')
@@ -18,8 +20,8 @@ export default ({ IPFSButton, ipfs }) => {
     const { target: form } = evt
     const [file] = form.video.files
     setTotal(file.size)
-    const path = file.name
-    const result = (
+    let path = file.name
+    let result = (
       await ipfs.add(
         {
           path,
@@ -35,8 +37,41 @@ export default ({ IPFSButton, ipfs }) => {
         },
       )
     )
-    const cid = result.cid.toString()
-    const url = `ipfs://${cid}/${path}`
+    let cid = result.cid.toString()
+    let url = `ipfs://${cid}/${path}`
+
+    const json5 = JSON5.stringify({
+      video: {
+        startsAt: startsAt.toISOString(),
+        source: url,
+      },
+      stops: {
+        title,
+        partition: true,
+      },
+    })
+
+    setTotal(json5.length)
+    path = `${title}.json5`
+    result = (
+      await ipfs.add(
+        {
+          path,
+          content: json5,
+        },
+        {
+          pin: true,
+          wrapWithDirectory: true,
+          cidVersion: 0,
+          progress: (progress) => {
+            setProgress(progress)
+          },
+        },
+      )
+    )
+    cid = result.cid.toString()
+    url = `ipfs://${cid}/${path}`
+
     history.push(`/${url}`)
   }
 
