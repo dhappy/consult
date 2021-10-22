@@ -16,7 +16,6 @@ import { v4 as uuid } from 'uuid'
 import { HashLink as Link } from 'react-router-hash-link'
 import { useHistory } from 'react-router-dom'
 import JSON5 from 'json5'
-import { create as createIPFS } from 'ipfs-http-client'
 import {
   isoStringFor, stringFor, timeFor, isEmpty,
   isSet, ifSet, capitalize, load, toHTTP,
@@ -276,7 +275,6 @@ const generate = ({ root, duration, raw }) => {
 const Spans = ({
   node, count = 1, active, seekTo,
   hovered, setHovered, togglePause,
-  setActiveId,
 }) => {
   if (!node) return null
 
@@ -303,8 +301,6 @@ const Spans = ({
     })
   }
   const click = ({ node, event }) => {
-    setActiveId(node.id)
-
     let goto = node.startOffset
     if(!event.ctrlKey) {
       const rect = ref.current.getBoundingClientRect()
@@ -334,7 +330,6 @@ const Spans = ({
           {...{
             duration, active, togglePause,
             hovered, setHovered, seekTo,
-            setActiveId,
           }}
           key={idx}
           node={child}
@@ -403,7 +398,6 @@ const Spans = ({
               {...{
                 duration, active, togglePause,
                 hovered, setHovered, seekTo,
-                setActiveId,
               }}
               key={child.id} node={child}
               count={count + idx + 1}
@@ -437,7 +431,7 @@ const TimeBox = (({ children, ...props }) => (
 const Times = ({
   node, startsAt, duration, time, seekTo,
   hovered, setHovered, active, togglePause,
-  setActiveId, ...props
+  ...props
 }) => {
   const ref = useRef(null)
   const endsAt = useMemo(() => (
@@ -495,7 +489,6 @@ const Times = ({
             {...{
               node, active, togglePause,
               hovered, setHovered, seekTo,
-              setActiveId,
             }}
           />
         </Flex>
@@ -957,7 +950,7 @@ const NodeSettings = ({
             </TabList>
             <TabPanels>
               <TabPanel>
-              <FormControl mt={4}>
+                <FormControl mt={4}>
                   <FormLabel>Type</FormLabel>
                   <Flex>
                     <Input
@@ -1498,7 +1491,6 @@ const findById = (root, id) => {
 
 const VideoSettings = ({
   open, closeVideoSettings, info, setInfo,
-  ipfsURL, setIPFSURL,
 }) => {
   if(!isSet(info.startsAt)) {
     info.startsAt = new Date()
@@ -1510,7 +1502,8 @@ const VideoSettings = ({
     useState(info.source)
   )
   const [url, setURL] = useState(
-    process.env.IPFS_API_URL ?? 'https://ipfs.infura.io:5001'
+    process.env.IPFS_API_URL
+    ?? 'https://ipfs.infura.io:5001'
   )
 
   const save = (evt) => {
@@ -1556,30 +1549,6 @@ const VideoSettings = ({
                 setSource(value)
               }}
             />
-          </FormControl>
-          <FormControl mt={4}>
-            <FormLabel>
-              <Text
-                as="acronym"
-                title="Interplanetary Filesystem"
-              >
-                IPFS
-              </Text>
-              {' '}API Host
-            </FormLabel>
-            <Select
-              value={url}
-              onChange={({ target: { value } }) => {
-                setURL(value)
-              }}
-            >
-              <option value="http://localhost:5001">
-                http://localhost:5001
-              </option>
-              <option value="https://ipfs.infura.io:5001">
-                https://ipfs.infura.io:5001
-              </option>
-            </Select>
           </FormControl>
         </ModalBody>
         <ModalFooter>
@@ -1651,7 +1620,6 @@ export default (config) => {
     startsAt: config.startsAt,
     source: config.source,
   })
-  const [ipfsURL, setIPFSURL] = useState('')
   const { startsAt, source } = info
   const [vidHeight, setVidHeight] = (
     useState(DEFAULT_VID_HEIGHT)
@@ -1669,62 +1637,6 @@ export default (config) => {
   const src = useMemo(
     () => toHTTP(source), [source]
   )
-
-  const ipfs = useMemo(() => {
-    const regex = (
-      /^((https?):\/\/)?([^:/]+)?(:(\d+))?(.*)$/i
-    )
-    const match = ipfsURL.match(regex)
-    if(!match) {
-      toast({
-        title: 'Malformed URL',
-        description: `"${ipfsURL}" did not match expression "${regex.toString()}"`,
-        status: 'error',
-        duration: 12000,
-        isClosable: true,
-      })
-    } else {
-      const protocol = ifSet(match[3]) ?? 'http'
-      const host = ifSet(match[4]) ?? 'localhost'
-      const port = parseInt(ifSet(match[6]) ?? 5001)
-      const config = { host, port, protocol }
-
-      if(host.includes('infura')) {
-        const id = process.env.INFURA_IPFS_PROJECT_ID
-        if(!id) {
-          toast({
-            title: 'Missing Infura Credential',
-            description: 'Expected $INFURA_IPFS_PROJECT_ID to be set.',
-            status: 'error',
-            duration: 10000,
-            isClosable: true,
-          })
-        }
-        const secret = process.env.INFURA_IPFS_SECRET
-        if(!secret) {
-          toast({
-            title: 'Missing Infura Credential',
-            description: 'Expected $INFURA_IPFS_SECRET to be set.',
-            status: 'error',
-            duration: 10000,
-            isClosable: true,
-          })
-        }
-        const auth = (
-          'Basic '
-          + (
-            Buffer.from(id + ':' + secret)
-            .toString('base64')
-          )
-        )
-        config.headers = {
-          authorization: auth,
-        }
-      }
-
-      return createIPFS(config)
-    }
-  }, [])
 
   useEffect(() => {
     const stops = generate({
@@ -2052,7 +1964,6 @@ export default (config) => {
       <VideoSettings {...{
         open, closeVideoSettings,
         info, setInfo,
-        ipfsURL, setIPFSURL,
       }}/>
       <Grid
         as="form"
@@ -2071,7 +1982,7 @@ export default (config) => {
                 {...{
                   startsAt, duration, time, active,
                   seekTo, hovered, setHovered,
-                  togglePause, setActiveId,
+                  togglePause,
                 }}
                 node={stops}
                 h={`calc(100vh - ${vidHeight}px)`}

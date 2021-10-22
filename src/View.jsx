@@ -3,16 +3,19 @@ import Ceramic from '@ceramicnetwork/http-client'
 import { TileDocument } from '@ceramicnetwork/stream-tile'
 import {
   Heading, Spinner, Stack, UnorderedList, ListItem,
-  Flex, Textarea, Button, Input, Box,
+  Flex, Textarea, Button, Input, Box, Table, Thead,
+  Tbody, Tfoot, Tr, Th, Td, TableCaption,
 } from '@chakra-ui/react'
-import { useLocation, useRouteMatch } from 'react-router'
+import {
+  useLocation, useRouteMatch, useHistory,
+} from 'react-router'
 import { HashLink as Link } from 'react-router-hash-link'
 import JSON5 from 'json5'
 import { useCeramic } from 'use-ceramic'
 import MarkedVideo from './MarkedVideo'
-import { isSet, load } from './utils'
+import { isSet, load, isoStringFor } from './utils'
 
-export default ({ nftDID }) => {
+export default ({ nftDID, IPFSButton }) => {
   const { pathname: path } = useLocation()
   const { url } = useRouteMatch()
   const [metaInput, setMetaInput] = useState('')
@@ -20,6 +23,7 @@ export default ({ nftDID }) => {
   const [info, setInfo] = useState(null)
   const [videos, setVideos] = useState(null)
   const ceramic = useCeramic()
+  const history = useHistory()
 
   const setFromObject = (json) => {
     const { video: { startsAt, source }, stops } = (
@@ -101,7 +105,7 @@ export default ({ nftDID }) => {
     return (
       <Stack align="center" mt={10}>
         {metadata === '' ? (
-          !videos ? (
+          <Stack>
             <Flex as="form">
               <Input
                 placeholder="Metadata File (ipfs://)"
@@ -116,35 +120,57 @@ export default ({ nftDID }) => {
                 }}
               >Load</Button>
             </Flex>
-          ) : (
-            <UnorderedList
-              sx={{
-                a: { borderBottom: '2px dashed' },
-                'a:hover': { borderBottom: '2px solid' },
-              }}
-            >
-              {videos.map((vid, idx) => (
-                <ListItem key={vid.id}>
-                  <Link to={vid.metadata}>
-                    {vid.title}
-                  </Link>
-                </ListItem>
-              ))}
-            </UnorderedList>
-          )
+            {videos && (
+              <Table
+                sx={{
+                  a: { borderBottom: '2px dashed' },
+                  'a:hover': {
+                    borderBottom: '2px solid',
+                  },
+                  th: { textAlign: 'center' },
+                }}
+              >
+                <Thead>
+                  <Tr><Th colSpan={3}>
+                    Videos Published To Ceramic
+                  </Th></Tr>
+                  <Tr>
+                    <Th>Start Time</Th>
+                    <Th>Lister</Th>
+                    <Th>Video</Th>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {videos.map(({
+                    id, lister, startsAt, metadata, title,
+                  }) => (
+                    <Tr key={id}>
+                      <Td>{isoStringFor(
+                        new Date(startsAt)
+                      )}</Td>
+                      <Td title={lister}>
+                        {lister.slice(0, 15)}…{lister.slice(-5)}
+                      </Td>
+                      <Td>
+                        <Link to={metadata}>
+                          {title}
+                        </Link>
+                      </Td>
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+            )}
+          </Stack>
         ) : (
-          <>
+          <Stack>
             <Heading size="sm">{metadata}</Heading>
             <Spinner/>
-          </>
+          </Stack>
         )}
-        <Box
-          borderBottom="2px dashed"
-          _hover={{ borderBottom: '2px solid' }}
-        >
-          <Link
-          to="ipfs://QmbPtAgWbNDo2Zwsv8RR7WNsLySkMb71QyEenuCcGPENaE/MetaGame’s Builders’ Align for 1443⁄2⁄28‒3⁄6.json5">Builders’ Align</Link>
-        </Box>
+        <Button onClick={() => {
+          history.push('/new')
+        }}>Upload a Video</Button>
         <Flex
           as="form" direction="column"
           onSubmit={(evt) => {

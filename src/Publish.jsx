@@ -12,8 +12,7 @@ import { v4 as uuid } from 'uuid'
 import { isSet, isoStringFor, load, toHTTP } from './utils'
 
 export default ({
-  desiredChain, nftDID, access, contract,
-  address, chain, setProvider,
+  nftDID, access, contract, address,
 }) => {
   const [info, setInfo] = useState(null)
   const [token, setToken] = useState(null)
