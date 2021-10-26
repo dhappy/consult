@@ -62,7 +62,7 @@ export default ({
           family: 'public video list',
           deterministic: true,
         },
-        { anchor: false, publish: false },
+        { anchor: true, publish: true },
       )
       const existing = list.content
       const entry = {
@@ -77,7 +77,10 @@ export default ({
       existing.videos ??= []
       existing.videos.push(entry)
 
-      await list.update(existing)
+      await list.update(
+        existing,
+        { anchor: true, publish: true },
+      )
 
       // const model = new DataModel({
       //   ceramic: ceramic.client, model: aliases

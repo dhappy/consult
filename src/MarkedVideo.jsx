@@ -35,6 +35,7 @@ import roundtable from './images/roundtable.svg'
 import PlayButton from './images/play.svg'
 import PauseButton from './images/pause.svg'
 import { metadata } from 'core-js/library/es6/reflect'
+import { replace } from '../node_modules/mnemonist/heap'
 
 const icons = {
   plan, decision, issue, presenter, previously,
@@ -1248,7 +1249,7 @@ const Events = ({
   }
   const addPartition = (sibling) => {
     const { parent } = sibling
-    if(!parent.partition) {
+    if(!parent?.partition) {
       insertParent({
         child: sibling,
         insert: { partition: true },
@@ -1256,7 +1257,9 @@ const Events = ({
       })
     } else {
       insertChild({
-        parent, insert: { title: 'new' }, anchor: sibling
+        parent,
+        insert: { title: 'new' },
+        anchor: sibling,
       })
     }
   }
@@ -1868,37 +1871,48 @@ export default (config) => {
   const replaceNode = ({ node, replacement = null }) => {
     let outer = null
     setRaw((raw) => {
-      const dup = outer = clone(raw)
-      const rawNode = findById(dup, node.id)
+      let newRoot = outer = clone(raw)
+      const rawNode = findById(newRoot, node.id)
 
       if(!rawNode) {
         throw new Error(`Couldn't find node with id: ${node.id}`)
       }
 
       const { parent } = rawNode
-      const { children } = parent ?? {}
-      const index = (
-        children?.findIndex(
-          (child) => child.id === node.id
-        )
-      )
 
-      if(!isSet(index)) {
-        console.error('Couldn’t find node.', { node, index })
-      } else {
+      if(!parent) { // root to be replaced
         if(!replacement) {
-          children.splice(index, 1)
+          newRoot = {}
         } else {
-          replacement.parent = parent
-          parent.children = [
-            ...children.slice(0, index),
-            replacement,
-            ...children.slice(index + 1),
-          ]
+          replacement.children = rawNode.children
+          newRoot = replacement
+        }
+      } else {
+        const { children } = parent
+        const index = (
+          children?.findIndex(
+            (child) => child.id === node.id
+          )
+        )
+
+        if(!isSet(index)) {
+          console.error('Couldn’t find node.', { node, parent, children, index })
+        } else {
+          if(!replacement) {
+            children.splice(index, 1)
+          } else {
+            replacement.parent = parent
+            parent.children = [
+              ...children.slice(0, index),
+              replacement,
+              ...children.slice(index + 1),
+            ]
+          }
         }
       }
-      return dup
+      return newRoot
     })
+    console.info({ outer })
     return outer
   }
 
@@ -1944,7 +1958,7 @@ export default (config) => {
     setEventsTime(time)
   }
 
-  const serialize = ({ root }) => {
+  const serialize = ({ root, simplify = true }) => {
     const strip = (
       ({ node, visit }) => {
         const { children } = node
@@ -1968,12 +1982,14 @@ export default (config) => {
         return node
       }
     )
-    const stripped = (
-      visit({ node: root, method: strip })
-    )
+    if(simplify) {
+      root = (
+        visit({ node: clone(root), method: strip })
+      )
+    }
     const metadata = {
       video: info,
-      stops: stripped,
+      stops: root,
     }
     try {
       return new Blob(
@@ -1986,20 +2002,23 @@ export default (config) => {
   }
 
   const display = () => {
-    const json5 = serialize({ root: clone(raw) })
+    const json5 = serialize({ root: raw })
     const url = window.URL.createObjectURL(json5)
     window.open(url, '_blank').focus()
   }
 
   const debug = () => {
-    const json5 = serialize({ root: clone(stops) })
+    const json5 = serialize({
+      root: stops, simplify: false,
+    })
     const url = window.URL.createObjectURL(json5)
     window.open(url, '_blank').focus()
   }
 
   const upload = async () => {
     const json5 = serialize({ root: raw })
-    const path = `${raw.title}.json5`
+    const name = raw.title.replace(/\//g, '⁄')
+    const path = `${name}.json5`
     const result = (
       await ipfs.add(
         {
@@ -2077,17 +2096,27 @@ export default (config) => {
             <DateTime {...{
               startsAt, time, video, togglePause,
             }}/>
-            <Video
-              flexGrow={1} controls
-              maxH="100%" maxW="calc(100vw - 9.5em)"
-              ref={video}
-            >
-              <source {...{ src, type: 'video/mp4' }} />
-              {/* {VTT && <track default src={VTT}/>} */}
-            </Video>
+            {!src ? (
+              <Flex>
+                <Heading flexGrow={1}>
+                  Recording In Progress
+                </Heading>
+                <Button>Restart</Button>
+              </Flex>
+            ) : (
+              <Video
+                flexGrow={1} controls
+                maxH="100%" maxW="calc(100vw - 9.5em)"
+                ref={video}
+              >
+                <source {...{ src, type: 'video/mp4' }} />
+                {/* {VTT && <track default src={VTT}/>} */}
+              </Video>
+            )}
             <Wrap
               alignSelf="center" justify="center"
-              flexGrow={1} spacing="0.1em"
+              flexGrow={0} spacing="0.1em"
+              shouldWrapChildren={true}
             >
               <Button
                 title="Upload to Ceramic"

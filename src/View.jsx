@@ -4,7 +4,8 @@ import { TileDocument } from '@ceramicnetwork/stream-tile'
 import {
   Heading, Spinner, Stack, UnorderedList, ListItem,
   Flex, Textarea, Button, Input, Box, Table, Thead,
-  Tbody, Tfoot, Tr, Th, Td, TableCaption,
+  Tbody, Tfoot, Tr, Th, Td, TableCaption, Text,
+  Link as ChakraLink,
 } from '@chakra-ui/react'
 import {
   useLocation, useRouteMatch, useHistory,
@@ -13,7 +14,7 @@ import { HashLink as Link } from 'react-router-hash-link'
 import JSON5 from 'json5'
 import { useCeramic } from 'use-ceramic'
 import MarkedVideo from './MarkedVideo'
-import { isSet, load, isoStringFor } from './utils'
+import { ifSet, isSet, load, isoStringFor } from './utils'
 
 export default ({ nftDID, IPFSButton, ipfs }) => {
   const { pathname: path } = useLocation()
@@ -103,70 +104,81 @@ export default ({ nftDID, IPFSButton, ipfs }) => {
   if(!info) {
     return (
       <Stack align="center" mt={10}>
-        {metadata === '' ? (
-          <Stack>
-            <Flex as="form">
-              <Input
-                placeholder="Metadata File (ipfs://)"
-                value={metaInput}
-                onChange={({ target: { value } }) => {
-                  setMetaInput(value)
-                }}
-              />
-              <Button
-                onClick={() => {
-                  setMetadata(metaInput)
-                }}
-              >Load</Button>
-            </Flex>
-            {videos && (
-              <Table
-                sx={{
-                  a: { borderBottom: '2px dashed' },
-                  'a:hover': {
-                    borderBottom: '2px solid',
-                  },
-                  th: { textAlign: 'center' },
-                }}
-              >
-                <Thead>
-                  <Tr><Th colSpan={3}>
-                    Videos Published To Ceramic
-                  </Th></Tr>
-                  <Tr>
-                    <Th>Start Time</Th>
-                    <Th>Lister</Th>
-                    <Th>Video</Th>
+        <Stack>
+          <Flex as="form">
+            <Input
+              placeholder="Metadata File (ipfs://)"
+              value={metaInput}
+              onChange={({ target: { value } }) => {
+                setMetaInput(value)
+              }}
+            />
+            <Button
+              onClick={() => {
+                setMetadata(metaInput)
+              }}
+            >Load</Button>
+          </Flex>
+          {videos && (
+            <Table
+              sx={{
+                a: { borderBottom: '2px dashed' },
+                'a:hover': {
+                  borderBottom: '2px solid',
+                },
+                th: { textAlign: 'center' },
+              }}
+            >
+              <Thead>
+                <Tr><Th colSpan={3}>
+                  Videos Published To Ceramic
+                </Th></Tr>
+                <Tr>
+                  <Th>Start Time</Th>
+                  <Th>Lister</Th>
+                  <Th>Video</Th>
+                </Tr>
+              </Thead>
+              <Tbody>
+                {videos.map(({
+                  id, lister, startsAt, metadata, title,
+                }) => (
+                  <Tr key={id}>
+                    <Td>{isoStringFor(
+                      new Date(startsAt)
+                    )}</Td>
+                    <Td title={lister}>
+                      {lister.slice(0, 15)}…{lister.slice(-5)}
+                    </Td>
+                    <Td>
+                      <Link to={metadata}>
+                        {title}
+                      </Link>
+                    </Td>
                   </Tr>
-                </Thead>
-                <Tbody>
-                  {videos.map(({
-                    id, lister, startsAt, metadata, title,
-                  }) => (
-                    <Tr key={id}>
-                      <Td>{isoStringFor(
-                        new Date(startsAt)
-                      )}</Td>
-                      <Td title={lister}>
-                        {lister.slice(0, 15)}…{lister.slice(-5)}
-                      </Td>
-                      <Td>
-                        <Link to={metadata}>
-                          {title}
-                        </Link>
-                      </Td>
-                    </Tr>
-                  ))}
-                </Tbody>
-              </Table>
-            )}
-          </Stack>
-        ) : (
+                ))}
+              </Tbody>
+            </Table>
+          )}
+        </Stack>
+        {nftDID && !videos && (
+          <Text>
+            Searched{' '}
+            <ChakraLink
+              href={`https://rinkeby.etherscan.io/address/${nftDID.split(/[:_]/)[5]}`}
+              isExternal
+              title={nftDID}
+            >
+              {nftDID.slice(0,30)}…{nftDID.slice(55)}
+            </ChakraLink>
+          </Text> 
+        )}
+        {metadata && !videos && (
           <Stack align="center">
             <Heading size="sm">Loading: {metadata}</Heading>
             <Spinner/>
           </Stack>
-        )}
+        )}    
         <Button onClick={() => {
           history.push('/new')
         }}>Upload a Video</Button>
@@ -176,7 +188,9 @@ export default ({ nftDID, IPFSButton, ipfs }) => {
             evt.preventDefault()
             setFromObject(
               // @ts-ignore
-              JSON5.parse(evt.target.json.value)
+              JSON5.parse(
+                ifSet(evt.target.json.value) ?? '{}'
+              )
             )
           }}
         >
