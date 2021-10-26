@@ -178,10 +178,13 @@ export default ({ nftDID, IPFSButton, ipfs }) => {
             <Heading size="sm">Loading: {metadata}</Heading>
             <Spinner/>
           </Stack>
-        )}    
+        )}
         <Button onClick={() => {
           history.push('/new')
         }}>Upload a Video</Button>
+        <Button onClick={() => {
+          setFromObject({})
+        }}>Track a Recording</Button>
         <Flex
           as="form" direction="column"
           onSubmit={(evt) => {

@@ -1228,6 +1228,9 @@ const Events = ({
   const [menuVisible, setMenuVisible] = (
     useState(false)
   )
+  const [bodyVisible, setBodyVisible] = (
+    useState(false)
+  )
   const {
     isOpen: open,
     onOpen: openNodeSettings,
@@ -1476,15 +1479,41 @@ const Events = ({
         </Flex>
         {isSet(node.body) && (
           <Box
-            sx={{
-               a: { borderBottom: 'dashed' },
-               'a:hover': { borderBottom: 'solid' },
-            }}
+            padding="0.2em"
+            marginTop="-0.2em ! important"
+            marginBottom={`
+              ${bodyVisible ? 0 : 'calc(-0.4em - 12px)'}
+              ! important
+            `}
+            h={bodyVisible ? 'auto' : '12px'}
+            boxSizing="content-box"
+            zIndex={3}
+            title="Further Information" cursor="pointer"
+            onClick={() => setBodyVisible(
+              (visible) => !visible
+            )}
           >
-            <Divider color="white"/>
-            <Markdown linkTarget="_blank">
-              {node.body}
-            </Markdown>
+            <Box
+              sx={{
+                a: { borderBottom: 'dashed' },
+                'a:hover': { borderBottom: 'solid' },
+              }}
+              _hover={{
+                borderStyle: 'solid',
+              }}
+              border={bodyVisible ? 'none' : '6px dotted'}
+              overflow="hidden"
+              height={bodyVisible ? 'auto' : 0}
+              width={bodyVisible ? 'auto' : '50%'}
+              padding="0 ! important"
+              marginTop={`${bodyVisible ? '0.25em' : 0} ! important`}
+              marginBottom={`${bodyVisible ? 0 : '-12px'} ! important`}
+            >
+              <Divider color="white"/>
+              <Markdown linkTarget="_blank">
+                {node.body}
+              </Markdown>
+            </Box>
           </Box>
         )}
         <WrapPartition {...{ node }}>
@@ -1698,10 +1727,24 @@ export default (config) => {
       }
       return null
     }
+    const deepest = (list) => {
+      for(const sub of list) {
+        if(Array.isArray(sub) && sub?.some?.((e) => !!e)) {
+          const value = deepest(sub)
+          if(value) {
+            return value
+          }
+        }
+      }
+      return list.find((e) => Boolean(e))
+    }
     if(stops) {
       let search = findActive({
         time, node: stops,
       })
+      const seekable = deepest(search)
+      const elem = document.getElementById(seekable)
+      elem.scrollIntoView()
       const ids = (
         search.flat(Number.POSITIVE_INFINITY)
         .filter((elem) => !!elem)
@@ -1882,10 +1925,10 @@ export default (config) => {
 
       if(!parent) { // root to be replaced
         if(!replacement) {
-          newRoot = {}
+          newRoot = outer = {}
         } else {
           replacement.children = rawNode.children
-          newRoot = replacement
+          newRoot = outer = replacement
         }
       } else {
         const { children } = parent
@@ -1912,7 +1955,6 @@ export default (config) => {
       }
       return newRoot
     })
-    console.info({ outer })
     return outer
   }
 
@@ -1963,30 +2005,33 @@ export default (config) => {
       ({ node, visit }) => {
         const { children } = node
 
-        delete node.id
-        delete node.parent
-        if(!node.partition) {
-          delete node.partition
+        delete node.parent // circular reference error if not removed
+        delete node.raw.parent
+
+        if(simplify) {
+          delete node.id
+          if(!node.partition) {
+            delete node.partition
+          }
+          if(children.length === 0) {
+            delete node.children
+          }
+          delete node.raw
         }
-        if(children.length === 0) {
-          delete node.children
-        } else {
+        if(children.length > 0) {
           node.children = children.map(
             (child) => (
               visit({ node: child, method: strip })
             )
           )
         }
-        delete node.raw
 
         return node
       }
     )
-    if(simplify) {
-      root = (
-        visit({ node: clone(root), method: strip })
-      )
-    }
+    root = (
+      visit({ node: clone(root), method: strip })
+    )
     const metadata = {
       video: info,
       stops: root,
