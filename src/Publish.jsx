@@ -37,6 +37,8 @@ export default ({
   )
   const ceramic = useCeramic()
 
+  console.info({ l: useLocation(), r: useRouteMatch() })
+
   const mint = async () => {
     setMinting(true)
 

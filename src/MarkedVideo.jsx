@@ -6,7 +6,7 @@ import {
   Modal, Text, Textarea, Divider, Image, Tooltip, Wrap,
   Tabs, TabList, TabPanels, Tab, TabPanel, Checkbox,
   UnorderedList, ListItem, IconButton, useToast,
-  useColorModeValue,
+  useColorMode, useColorModeValue,
 } from '@chakra-ui/react'
 import React, {
   useEffect, useRef, useState, useMemo,
@@ -50,10 +50,11 @@ const DEFAULT_VID_HEIGHT = 100
 const Video = chakra('video')
 
 const colors = [
-  'orange', 'red', 'green', 'purple', 'yellow',
+  'orange', 'red', 'green', 'purple',
   'silver', 'blue', 'cyan', 'brown',
-  'black', 'white', 'coral', 'gray', 'pink',
-  'olive', 'orangered', 'teal', 'gold',
+  'black', '#3B5E13', 'coral', 'gray',
+  'pink',  '#9122FF', 'olive',
+  'orangered', 'teal', 'gold',
 ]
 
 const colorIds = []
@@ -817,7 +818,7 @@ const TypeSelect = ({
     [icons],
   )
   const borderColor = useColorModeValue(
-    'gray.800', 'rgba(255, 255, 255, 0.16)'
+    'gray.200', 'whiteAlpha.300'
   )
   const bgColor = useColorModeValue(
     'white', 'gray.700'
@@ -883,14 +884,14 @@ const TypeSelect = ({
         <Tooltip hasArrow label="Clear the Field">
           <IconButton
             zIndex={6} variant="outline"
-            tabindex={-1}
+            tabIndex={-1}
             icon={<TiBackspace/>}
             onClick={() => setType('')}
           />
         </Tooltip>
         <Tooltip hasArrow label="Type Options">
           <Button
-            zIndex={6} rtabindex={-1}
+            zIndex={6} tabIndex={-1}
             {...getToggleButtonProps()}
           >
             ▼
@@ -903,14 +904,17 @@ const TypeSelect = ({
           {...getMenuProps()}
           position="absolute"
           sx={{
-            //listStyle: 'none',
+            listStyle: 'none',
             '.split': {
-              borderBottom: `5px double ${borderColor}`,
+              borderBottom: '5px double',
+              borderColor,
             },
           }}
           w="full" zIndex={5} m={0}
-          bg={bgColor}
-          border={`1px solid ${borderColor}`}
+          bg={bgColor} border="1px solid"
+          {...{ borderColor }}
+          borderBottomRightRadius="md"
+          borderBottomLeftRadius="md"
         >
           {sorted.map((item, idx) => (
             <ListItem
@@ -1052,6 +1056,7 @@ const NodeSettings = ({
   ])
   const save = (evt) => {
     evt.preventDefault()
+
     create.forEach(({ role, event, name, persist }) => {
       replacement.roles ??= {}
       replacement.roles[role] ??= {}
@@ -1146,6 +1151,12 @@ const NodeSettings = ({
                           placeholder="Markdown"
                           onChange={({ target: { value }}) => {
                             setBody(value)
+                          }}
+                          onKeyPress={(evt) => {
+                            if(evt.key === 'Enter' && evt.ctrlKey) {
+                              save(evt)
+                              onClose()
+                            }
                           }}
                         />
                       </TabPanel>
@@ -1556,6 +1567,7 @@ const Events = ({
               a: { borderBottom: '2px dashed' },
               'a:hover': { borderBottom: '2px solid' },
             }}
+            userSelect="none"
           >
             <Markdown linkTarget="_blank">
               {node.title}
@@ -1563,7 +1575,7 @@ const Events = ({
           </Heading>
           <Spacer />
           {menuVisible && (
-            <ButtonGroup>
+            <ButtonGroup color="white">
               <Option
                 title="Remove Node"
                 onClick={() => removeNode(node)}
@@ -1632,11 +1644,14 @@ const Events = ({
               padding="0 ! important"
               marginTop={`${bodyVisible ? '0.25em' : 0} ! important`}
               marginBottom={`${bodyVisible ? 0 : '-12px'} ! important`}
+              borderColor="white"
             >
               <Divider color="white"/>
-              <Markdown linkTarget="_blank">
-                {node.body}
-              </Markdown>
+              <Box color="white">
+                <Markdown linkTarget="_blank">
+                  {node.body}
+                </Markdown>
+              </Box>
             </Box>
           </Box>
         )}
@@ -1815,6 +1830,7 @@ export default (config) => {
   )
   const [activeId, setActiveId] = useState(null)
   const [active, setActive] = useState([])
+  const { toggleColorMode }= useColorMode()
   const {
     isOpen: open,
     onOpen: openVideoSettings,
@@ -1852,6 +1868,9 @@ export default (config) => {
       return null
     }
     const deepest = (list) => {
+      if(!list || isEmpty(list)) {
+        return null
+      }
       for(const sub of list) {
         if(Array.isArray(sub) && sub?.some?.((e) => !!e)) {
           const value = deepest(sub)
@@ -1868,7 +1887,14 @@ export default (config) => {
       })
       const seekable = deepest(search)
       const elem = document.getElementById(seekable)
-      elem.scrollIntoView()
+      const bbox = elem.getBoundingClientRect()
+      
+      if(
+        bbox.top < 0
+        || bbox.bottom > window.innerHeight
+      ) {
+        elem.scrollIntoView()
+      }
       const ids = (
         search.flat(Number.POSITIVE_INFINITY)
         .filter((elem) => !!elem)
@@ -1893,24 +1919,32 @@ export default (config) => {
   }
 
   useEffect(() => {
-    const keyed = ({ target, key }) => {
+    const keyed = ({ target, key, ctrlKey }) => {
+      console.info({ key })
       if(
         target instanceof HTMLInputElement
         || target instanceof HTMLTextAreaElement
       ) {
         return
       }
+      console.info({ key })
       switch(key) {
         case 'p': case 'P':
           togglePause()
         break
-        case 'b':
+        case 's':
+          seekTo(time - duration * 0.1)
+        break
+        case 'b': case '4':
           seekTo(time - 5)
         break
         case 'B':
           seekTo(time - 20)
         break
-        case 'f':
+        case 'j':
+          seekTo(time + duration * 0.1)
+        break
+        case 'f': case '6':
           seekTo(time + 5)
         break
         case 'F':
@@ -1941,6 +1975,9 @@ export default (config) => {
               isClosable: true,
             })
           }
+        break
+        case 'm':
+          toggleColorMode()
         break
         default:
         break
@@ -2136,7 +2173,9 @@ export default (config) => {
         const { children } = node
 
         delete node.parent // circular reference error if not removed
-        delete node.raw.parent
+        if(node.raw?.parent) {
+          delete node.raw.parent
+        }
 
         if(simplify) {
           delete node.id
