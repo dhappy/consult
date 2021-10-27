@@ -2001,21 +2001,25 @@ export default (config) => {
 
   useEffect(() => {
     const vid = video.current
-    const update = ({ target: { currentTime: time }}) => {
-      setTime(time)
-    }
-    vid.addEventListener('timeupdate', update)
-    return () => {
-      vid.removeEventListener('timeupdate', update)
+    if(vid) {
+      const update = ({ target: { currentTime: time }}) => {
+        setTime(time)
+      }
+      vid.addEventListener('timeupdate', update)
+      return () => {
+        vid.removeEventListener('timeupdate', update)
+      }
     }
   }, [setTime])
 
   useEffect(() => {
     const vid = video.current
-    const set = () => setDuration(vid.duration)
-    vid.addEventListener('loadedmetadata', set)
-    return () => {
-      vid.removeEventListener('loadedmetadata', set)
+    if(vid) {
+      const set = () => setDuration(vid.duration)
+      vid.addEventListener('loadedmetadata', set)
+      return () => {
+        vid.removeEventListener('loadedmetadata', set)
+      }
     }
   }, [])
 
@@ -2311,8 +2315,8 @@ export default (config) => {
               startsAt, time, video, togglePause,
             }}/>
             {!src ? (
-              <Flex>
-                <Heading flexGrow={1}>
+              <Flex flexGrow={1} justify="space-evenly">
+                <Heading>
                   Recording In Progress
                 </Heading>
                 <Button>Restart</Button>

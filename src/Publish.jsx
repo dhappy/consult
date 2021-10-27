@@ -2,14 +2,17 @@ import {
   useEffect, useMemo, useState,
 } from 'react'
 import {
-  Button, Flex, Heading, Image, Link, Spinner,
-  Stack, Text, Input, Box, Tooltip,
+  Button, Flex, Image, Link as ChakraLink,
+  Spinner, Stack, Text, Input, Box, Tooltip, chakra,
 } from '@chakra-ui/react'
 import { useCeramic } from 'use-ceramic'
 import { TileDocument } from '@ceramicnetwork/stream-tile'
 import { useLocation, useRouteMatch } from 'react-router'
 import { v4 as uuid } from 'uuid'
+import { HashLink } from 'react-router-hash-link'
 import { isSet, isoStringFor, load, toHTTP } from './utils'
+
+const Link = chakra(HashLink)
 
 export default ({
   nftDID, access, contract, address,
@@ -189,26 +192,26 @@ export default ({
               direction={['column', 'row']}
               align="center" alignSelf="stretch"
             >
-              <Link
+              <ChakraLink
                 href={info.link} flexGrow={1}
               >
                 <Image
                   src={info.image} alt={info.name}
-                  h="65vmin" maxW="70vmin" m="auto"
+                  h="50vmin" maxW="70vmin" m="auto"
                 />
-              </Link>
+              </ChakraLink>
               {balance?.isZero() ? (
                 <Stack
                   flexGrow={1} align="center"
                   mt="6vh ! important"
                 >
                   {token && (
-                    <Link href={token.link} target="_blank">
+                    <ChakraLink href={token.link} target="_blank">
                       <Image
                         src={token.image} alt={token.name}
                         h="50vmin" maxW="50vmin"
                       />
-                    </Link>
+                    </ChakraLink>
                   )}
                   <Text
                     textAlign="center" maxW={30 * 16}
@@ -249,6 +252,24 @@ export default ({
                   )}
                 </Box>
               )}
+            </Flex>
+            <Flex justify="space-evenly">
+              <Link
+                to={`/${metadata}`}
+                p="0.25em 0.5em" border="2px solid"
+                borderRadius="md"
+                _hover={{ bg: '#00FF0099' }}
+              >
+                Edit Metadata
+              </Link>
+              <Link
+                to="/"
+                p="0.25em 0.5em" border="2px solid"
+                borderRadius="md"
+                _hover={{ bg: '#00FF0099' }}
+              >
+                Home
+              </Link>
             </Flex>
             <Box as="form" w="full" mt={3}>
               <Tooltip hasArrow label="Recording Metadata">
