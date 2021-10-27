@@ -175,7 +175,10 @@ export default ({ nftDID, IPFSButton, ipfs }) => {
         )}
         {metadata && !videos && (
           <Stack align="center">
-            <Heading size="sm">Loading: {metadata}</Heading>
+            <Heading size="sm">
+              Loading:{' '}
+              {metadata.slice(0, 15)}…{metadata.slice(metadata.lastIndexOf('/'))}
+            </Heading>
             <Spinner/>
           </Stack>
         )}

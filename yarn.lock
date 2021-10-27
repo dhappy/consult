@@ -1331,7 +1331,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@babel/runtime@npm:^7.0.0, @babel/runtime@npm:^7.1.2, @babel/runtime@npm:^7.12.1, @babel/runtime@npm:^7.12.13, @babel/runtime@npm:^7.13.10, @babel/runtime@npm:^7.15.3, @babel/runtime@npm:^7.15.4, @babel/runtime@npm:^7.7.2, @babel/runtime@npm:^7.8.4":
+"@babel/runtime@npm:^7.0.0, @babel/runtime@npm:^7.1.2, @babel/runtime@npm:^7.12.1, @babel/runtime@npm:^7.12.13, @babel/runtime@npm:^7.13.10, @babel/runtime@npm:^7.15.3, @babel/runtime@npm:^7.15.4, @babel/runtime@npm:^7.6.2, @babel/runtime@npm:^7.7.2, @babel/runtime@npm:^7.8.4":
   version: 7.15.4
   resolution: "@babel/runtime@npm:7.15.4"
   dependencies:
@@ -7931,6 +7931,7 @@ __metadata:
     stream-http: ^3.2.0
     uint8arrays: ^3.0.0
     use-ceramic: ^1.0.0
+    use-downshift: "https://github.com/dysbulic/use-downshift.git"
     web3: ^1.6.0
     webpack: 5.51.1
     webpack-cli: 4.8.0
@@ -8688,6 +8689,13 @@ __metadata:
   version: 1.0.14
   resolution: "compute-scroll-into-view@npm:1.0.14"
   checksum: 863925bf8dcd82cfbcf5938cde6cb6d58fc07988d29841bb1db6140993dbd95cbc907ff03488fe06014634604a44f5ac0c21da7a3012e0c41fbeea237716dfdb
+  languageName: node
+  linkType: hard
+
+"compute-scroll-into-view@npm:^1.0.11":
+  version: 1.0.17
+  resolution: "compute-scroll-into-view@npm:1.0.17"
+  checksum: b20c05a10c37813c5a6e4bf053c00f65c88d23afed7a6bd7a2a69e05e2ffc2df3483ecfe407d36bf16b8cec8be21ae1966c9c523093a03117e567156cd79a51e
   languageName: node
   linkType: hard
 
@@ -23109,6 +23117,18 @@ resolve@1.17.0:
     rxjs: ^7.3.0
     tslib: ^2.2.0
   checksum: 0ca417cc0423e823d23b52e9e98883be954fcdd6dce9a9d5141cde6074f6a943b90956d78b7d1c2d66a0e7ce8d7f603743ef15291f1e1c5b69d7eb82b681420e
+  languageName: node
+  linkType: hard
+
+"use-downshift@https://github.com/dysbulic/use-downshift.git":
+  version: 0.2.7
+  resolution: "use-downshift@https://github.com/dysbulic/use-downshift.git#commit=92bf795fb69cee9eabcb4ab153c614f1918f87e7"
+  dependencies:
+    "@babel/runtime": ^7.6.2
+    compute-scroll-into-view: ^1.0.11
+  peerDependencies:
+    react: ">=16.8"
+  checksum: 86a619ae1884b3a2bc60767d6a984b52b690d755b895b602832a8e2e52bf35979ceb14a1f2ba13b39497b83a58da5e43bcab8ccac9a7a09a2cf84b9eed34befe
   languageName: node
   linkType: hard
 

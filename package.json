@@ -47,6 +47,7 @@
     "stream-http": "^3.2.0",
     "uint8arrays": "^3.0.0",
     "use-ceramic": "^1.0.0",
+    "use-downshift": "https://github.com/dysbulic/use-downshift.git",
     "web3": "^1.6.0"
   },
   "devDependencies": {

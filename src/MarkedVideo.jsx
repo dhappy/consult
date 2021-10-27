@@ -5,7 +5,7 @@ import {
   ModalCloseButton, ModalBody, FormControl, FormLabel,
   Modal, Text, Textarea, Divider, Image, Tooltip, Wrap,
   Tabs, TabList, TabPanels, Tab, TabPanel, Checkbox,
-  Select, useToast,
+  UnorderedList, ListItem, useToast,
 } from '@chakra-ui/react'
 import React, {
   useEffect, useRef, useState, useMemo,
@@ -17,6 +17,7 @@ import { HashLink as Link } from 'react-router-hash-link'
 import { useHistory } from 'react-router-dom'
 import { useLocation } from 'react-router'
 import JSON5 from 'json5'
+import useDownshift from 'use-downshift'
 import {
   isoStringFor, stringFor, timeFor, isEmpty,
   isSet, ifSet, capitalize, load, toHTTP,
@@ -34,8 +35,6 @@ import blocked from './images/brick wall.svg'
 import roundtable from './images/roundtable.svg'
 import PlayButton from './images/play.svg'
 import PauseButton from './images/pause.svg'
-import { metadata } from 'core-js/library/es6/reflect'
-import { replace } from '../node_modules/mnemonist/heap'
 
 const icons = {
   plan, decision, issue, presenter, previously,
@@ -808,6 +807,158 @@ const Roles = ({
   )
 }
 
+const TypeList = ({
+  list, selectedItem, highlightedIndex,
+  offset = 0, getItemProps,
+}) => (
+  <UnorderedList>
+    {list.map((item, idx) => {
+      // idx += offset
+      return (
+        <ListItem
+          {...getItemProps({
+            key: idx,
+            item,
+            selected: selectedItem === item,
+          })}
+          bg={
+            highlightedIndex === idx
+            ? '#FF55FF66' : 'auto'
+          }
+          pl={3} lineHeight={2}
+          display="flex" justify="center"
+        >
+          <Image
+            src={icons[item]}
+            w={8} h={8} mr={2}
+          />
+          <Text flexGrow={1}>{item}</Text>
+        </ListItem>
+      )
+    })}
+  </UnorderedList>
+)
+
+const TypeSelect = ({
+  type, setType, scrollId,
+}) => {
+  const types = useMemo(
+    () => Object.keys(icons),
+    [icons],
+  )
+  const {
+    inputValue,
+    isOpen,
+    getRootProps,
+    getMenuProps,
+    getInputProps,
+    getItemProps,
+    getToggleButtonProps,
+    highlightedIndex,
+    selectedItem,
+  } = useDownshift({
+    onChange: () => {
+      if(scrollId) {
+        const elem = (
+          document.getElementById(scrollId)
+        )
+        elem?.scrollIntoView()
+      }
+    },
+    onInputValueChange: (input) => {
+      setType(input)
+    },
+    selectedItem: type,
+  })
+
+  const found = []
+  const missed = []
+  types.forEach((item) => {
+    if(
+      !isSet(inputValue)
+      || (
+        item.toLowerCase()
+        .includes(inputValue.toLowerCase())
+      )
+    ) {
+      found.push(item)
+    } else {
+      missed.push(item)
+    }
+  })
+
+  return (
+    <Box
+      w="full"
+      {...getRootProps()}
+    >
+      <Flex>
+        <Box h={8} minW={8} mr={2}>
+          {type && (
+            <Image
+              src={icons[type]}
+              w="full" h="full" mt={1}
+            />
+          )}
+        </Box>
+        <Input {...getInputProps()}/>
+        <Button
+          zIndex={6}
+          {...getToggleButtonProps()}
+        >
+          ▼
+        </Button>
+      </Flex>
+
+      {isOpen && (
+        <UnorderedList
+          {...getMenuProps()}
+          position="absolute"
+          sx={{ listStyle: 'none' }}
+          w="full" zIndex={5} m={0}
+          bg="var(--chakra-colors-gray-700)"
+          border="1px solid var(--chakra-colors-whiteAlpha-400)"
+          borderStyle="none solid solid solid"
+        >
+          {!isEmpty(found) && (
+            <ListItem>
+              <Text
+                fontWeight="bold"
+                px={3} py={1.5}
+              >Matched</Text>
+              <TypeList
+                {...{
+                  selectedItem,
+                  highlightedIndex,
+                  getItemProps,
+                }}
+                list={found}
+              />
+            </ListItem>
+          )}
+          {!isEmpty(missed) && (
+            <ListItem>
+              <Text
+                fontWeight="bold"
+                px={3} py={1.5}
+              >Other</Text>
+              <TypeList
+                {...{
+                  highlightedIndex,
+                  selectedItem,
+                  getItemProps,
+                }}
+                offset={found.length}
+                list={missed}
+              />
+            </ListItem>
+          )}
+        </UnorderedList>
+      )}
+    </Box>
+  )
+}
+
 const NodeSettings = ({
   open, closeNodeSettings, node,
   replaceNode, ...props
@@ -977,30 +1128,26 @@ const NodeSettings = ({
             </TabList>
             <TabPanels>
               <TabPanel>
-                <FormControl mt={4}>
-                  <FormLabel>Type</FormLabel>
-                  <Flex>
-                    <Input
-                      value={type}
-                      onChange={({ target: { value }}) => {
-                        setType(value)
-                      }}
-                    />
-                    <Button
-                    >▼</Button>
-                  </Flex>
-                </FormControl>
-                <FormControl mt={4}>
-                  <FormLabel>Title</FormLabel>
+              <FormControl mt={4}>
+                <FormLabel>Title</FormLabel>
                   <Input
                     autoFocus
                     ref={initialRef} value={title ?? ''}
                     onChange={({ target: { value }}) => {
                       setTitle(value)
                     }}
-                    onKeyPress={(evt) => {
-                      evt.stopPropagation()
-                    }}
+                  />
+                </FormControl>
+                <FormControl
+                  id={`typeselect-${node.id}`}
+                  mt={4}
+                >
+                  <FormLabel>Type</FormLabel>
+                  <TypeSelect
+                    {...{ type, setType }}
+                    scrollId={
+                      `typeselect-${node.id}-label`
+                    }
                   />
                 </FormControl>
                 <FormControl mt={4}>
@@ -1769,8 +1916,14 @@ export default (config) => {
   }
 
   useEffect(() => {
-    const keyed = (evt) => {
-      switch(evt.key) {
+    const keyed = ({ target, key }) => {
+      if(
+        target instanceof HTMLInputElement
+        || target instanceof HTMLTextAreaElement
+      ) {
+        return
+      }
+      switch(key) {
         case 'p': case 'P':
           togglePause()
         break
