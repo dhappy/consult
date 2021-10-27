@@ -1,6 +1,8 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
-import { ChakraProvider } from '@chakra-ui/react'
+import {
+  ChakraProvider, ColorModeScript,
+} from '@chakra-ui/react'
 import {
   CeramicProvider, Networks,
 } from 'use-ceramic'
@@ -23,6 +25,7 @@ const connect = async () => {
 
 ReactDOM.render(
   <React.StrictMode>
+    <ColorModeScript initialColorMode="system"/>
     <CeramicProvider
       network={Networks.TESTNET_CLAY}
       endpoint="https://ceramic-clay.3boxlabs.com"

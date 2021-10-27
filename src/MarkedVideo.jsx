@@ -5,7 +5,8 @@ import {
   ModalCloseButton, ModalBody, FormControl, FormLabel,
   Modal, Text, Textarea, Divider, Image, Tooltip, Wrap,
   Tabs, TabList, TabPanels, Tab, TabPanel, Checkbox,
-  UnorderedList, ListItem, useToast,
+  UnorderedList, ListItem, IconButton, useToast,
+  useColorModeValue,
 } from '@chakra-ui/react'
 import React, {
   useEffect, useRef, useState, useMemo,
@@ -18,6 +19,7 @@ import { useHistory } from 'react-router-dom'
 import { useLocation } from 'react-router'
 import JSON5 from 'json5'
 import useDownshift from 'use-downshift'
+import { TiBackspace } from 'react-icons/ti'
 import {
   isoStringFor, stringFor, timeFor, isEmpty,
   isSet, ifSet, capitalize, load, toHTTP,
@@ -814,6 +816,12 @@ const TypeSelect = ({
     () => Object.keys(icons),
     [icons],
   )
+  const borderColor = useColorModeValue(
+    'gray.800', 'rgba(255, 255, 255, 0.16)'
+  )
+  const bgColor = useColorModeValue(
+    'white', 'gray.700'
+  )
   const {
     inputValue,
     isOpen,
@@ -872,12 +880,22 @@ const TypeSelect = ({
           )}
         </Box>
         <Input {...getInputProps()}/>
-        <Button
-          zIndex={6}
-          {...getToggleButtonProps()}
-        >
-          ▼
-        </Button>
+        <Tooltip hasArrow label="Clear the Field">
+          <IconButton
+            zIndex={6} variant="outline"
+            tabindex={-1}
+            icon={<TiBackspace/>}
+            onClick={() => setType('')}
+          />
+        </Tooltip>
+        <Tooltip hasArrow label="Type Options">
+          <Button
+            zIndex={6} rtabindex={-1}
+            {...getToggleButtonProps()}
+          >
+            ▼
+          </Button>
+        </Tooltip>
       </Flex>
 
       {isOpen && (
@@ -887,12 +905,12 @@ const TypeSelect = ({
           sx={{
             //listStyle: 'none',
             '.split': {
-              borderBottom: '5px double var(--chakra-colors-whiteAlpha-400)',
+              borderBottom: `5px double ${borderColor}`,
             },
           }}
           w="full" zIndex={5} m={0}
-          bg="var(--chakra-colors-gray-700)"
-          border="1px solid var(--chakra-colors-whiteAlpha-400)"
+          bg={bgColor}
+          border={`1px solid ${borderColor}`}
         >
           {sorted.map((item, idx) => (
             <ListItem

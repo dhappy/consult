@@ -7923,6 +7923,7 @@ __metadata:
     process: ^0.11.10
     react: 17.0.2
     react-dom: 17.0.2
+    react-icons: ^4.3.1
     react-markdown: ^7.0.1
     react-router-dom: ^5.3.0
     react-router-hash-link: ^2.4.3
@@ -19770,6 +19771,15 @@ fsevents@~2.3.2:
   peerDependencies:
     react: ^16.8.0 || ^17.0.0
   checksum: 4a86e44cb46dc54caef485f476f4462dedffad7cdb7f80c1ae5e5127311ea3b166366481b664bf732fe893f31c647cb6267ad833bd58f046062235383747ee2b
+  languageName: node
+  linkType: hard
+
+"react-icons@npm:^4.3.1":
+  version: 4.3.1
+  resolution: "react-icons@npm:4.3.1"
+  peerDependencies:
+    react: "*"
+  checksum: 2cc608acdd3e906aa3aaee290b8398220639677c949382d86e554020e5dab6a9f1ed7484418aa5272cb5c5c018e1fc9a323d433d901697a76530029f9ecb1263
   languageName: node
   linkType: hard
 
