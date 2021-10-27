@@ -807,38 +807,6 @@ const Roles = ({
   )
 }
 
-const TypeList = ({
-  list, selectedItem, highlightedIndex,
-  offset = 0, getItemProps,
-}) => (
-  <UnorderedList>
-    {list.map((item, idx) => {
-      // idx += offset
-      return (
-        <ListItem
-          {...getItemProps({
-            key: idx,
-            item,
-            selected: selectedItem === item,
-          })}
-          bg={
-            highlightedIndex === idx
-            ? '#FF55FF66' : 'auto'
-          }
-          pl={3} lineHeight={2}
-          display="flex" justify="center"
-        >
-          <Image
-            src={icons[item]}
-            w={8} h={8} mr={2}
-          />
-          <Text flexGrow={1}>{item}</Text>
-        </ListItem>
-      )
-    })}
-  </UnorderedList>
-)
-
 const TypeSelect = ({
   type, setType, scrollId,
 }) => {
@@ -886,6 +854,8 @@ const TypeSelect = ({
       missed.push(item)
     }
   })
+  const splitIndex = found.length - 1
+  const sorted = found.sort().concat(missed.sort())
 
   return (
     <Box
@@ -894,7 +864,7 @@ const TypeSelect = ({
     >
       <Flex>
         <Box h={8} minW={8} mr={2}>
-          {type && (
+          {icons[type] && (
             <Image
               src={icons[type]}
               w="full" h="full" mt={1}
@@ -914,45 +884,40 @@ const TypeSelect = ({
         <UnorderedList
           {...getMenuProps()}
           position="absolute"
-          sx={{ listStyle: 'none' }}
+          sx={{
+            //listStyle: 'none',
+            '.split': {
+              borderBottom: '5px double var(--chakra-colors-whiteAlpha-400)',
+            },
+          }}
           w="full" zIndex={5} m={0}
           bg="var(--chakra-colors-gray-700)"
           border="1px solid var(--chakra-colors-whiteAlpha-400)"
-          borderStyle="none solid solid solid"
         >
-          {!isEmpty(found) && (
-            <ListItem>
-              <Text
-                fontWeight="bold"
-                px={3} py={1.5}
-              >Matched</Text>
-              <TypeList
-                {...{
-                  selectedItem,
-                  highlightedIndex,
-                  getItemProps,
-                }}
-                list={found}
+          {sorted.map((item, idx) => (
+            <ListItem
+              {...getItemProps({
+                key: idx,
+                item,
+                selected: selectedItem === item,
+              })}
+              bg={
+                highlightedIndex === idx
+                ? '#FF55FF66' : 'auto'
+              }
+              pl={3} lineHeight={2}
+              display="flex" justify="center"
+              className={
+                idx === splitIndex ? 'split' : ''
+              }
+            >
+              <Image
+                src={icons[item]}
+                w={8} h={8} mr={2}
               />
+              <Text flexGrow={1}>{item}</Text>
             </ListItem>
-          )}
-          {!isEmpty(missed) && (
-            <ListItem>
-              <Text
-                fontWeight="bold"
-                px={3} py={1.5}
-              >Other</Text>
-              <TypeList
-                {...{
-                  highlightedIndex,
-                  selectedItem,
-                  getItemProps,
-                }}
-                offset={found.length}
-                list={missed}
-              />
-            </ListItem>
-          )}
+          ))}
         </UnorderedList>
       )}
     </Box>
@@ -1171,12 +1136,6 @@ const NodeSettings = ({
                       </TabPanel>
                     </TabPanels>
                   </Tabs>
-                </FormControl>
-                <FormControl mt={4}>
-                  <FormLabel>ID</FormLabel>
-                  <Input
-                    value={node.id} disabled
-                  />
                 </FormControl>
               </TabPanel>
               <TabPanel>
