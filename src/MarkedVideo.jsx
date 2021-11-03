@@ -37,6 +37,7 @@ import blocked from './images/brick wall.svg'
 import roundtable from './images/roundtable.svg'
 import PlayButton from './images/play.svg'
 import PauseButton from './images/pause.svg'
+import { cons } from '../node_modules/fp-ts/lib/Array'
 
 const icons = {
   plan, decision, issue, presenter, previously,
@@ -86,7 +87,7 @@ const siblingsOf = (node) => {
       { children: null }
     )
   } = node
-  return !node.parent ? [node] : siblings
+  return !node?.parent ? [node] : siblings
 }
 
 const connect = ({ stops }) => {
@@ -341,7 +342,7 @@ const Spans = ({
       event.preventDefault()
       event.stopPropagation()
     }
-    seekTo(goto)
+    seekTo(goto + 0.1)
   }
   const doubleClick = () => {
     togglePause()
@@ -982,8 +983,10 @@ const NodeSettings = ({
   )
 
   const onClose = () => {
+    console.info('CLS')
     delete node.new
-    delete node.raw.new    
+    delete node.raw.new
+    setTitle((t) => `${t}`)
     closeNodeSettings()
   }
 
@@ -1054,6 +1057,7 @@ const NodeSettings = ({
     partition, startOffset, title,
     node.id, roles, create, type,
   ])
+
   const save = (evt) => {
     evt.preventDefault()
 
@@ -1068,19 +1072,17 @@ const NodeSettings = ({
     Object.entries(replacement.roles).forEach(
       ([role, exec]) => {
         const numEntries = (
-          Object.entries(exec).map(
-            ([event, users]) => (
-              users?.length ?? 0
-            )
+          Object.values(exec).map(
+            ([users]) => users?.length
           )
-          .reduce((acc, l) => acc + l, 0)
+          .reduce((acc, l) => acc + (l ?? 0), 0)
         )
         if(numEntries === 0) {
           delete replacement.roles[role]
         }
       }
     )
-    if(Object.keys(replacement.roles ?? {}).length === 0) {
+    if(isEmpty(replacement.roles)) {
       delete replacement.roles
     }
     setCreate([])
@@ -1432,6 +1434,7 @@ const Events = ({
   }
   const doubleClick = ({ node, event }) => {
     event.stopPropagation()
+    setActiveId(node.id)
     togglePause()
   }
 
@@ -1678,10 +1681,10 @@ const Events = ({
 }
 
 const findById = (root, id) => {
-  if(root.id === id) {
+  if(root?.id === id) {
     return root
   }
-  for(const child of root.children) {
+  for(const child of (root?.children ?? [])) {
     const result = findById(child, id)
     if(result) {
       return result
@@ -1852,7 +1855,7 @@ export default (config) => {
     if(activeId === null) {
       setActiveId(stops.id)
     }
-  }, [raw, duration])
+  }, [raw, duration, startsAt])
 
   useEffect(() => {
     const findActive = ({ time, node }) => {
@@ -1865,7 +1868,7 @@ export default (config) => {
         ))
         return [node.id, sub]
       }
-      return null
+      return []
     }
     const deepest = (list) => {
       if(!list || isEmpty(list)) {
@@ -1885,42 +1888,45 @@ export default (config) => {
       let search = findActive({
         time, node: stops,
       })
-      const seekable = deepest(search)
-      const elem = document.getElementById(seekable)
-      const bbox = elem.getBoundingClientRect()
-      
-      if(
-        bbox.top < 0
-        || bbox.bottom > window.innerHeight
-      ) {
-        elem.scrollIntoView()
+      if(search) {
+        const seekable = deepest(search)
+        const elem = document.getElementById(seekable)
+        const bbox = elem.getBoundingClientRect()
+        
+        if(
+          bbox.top < 0
+          || bbox.bottom > window.innerHeight
+        ) {
+          elem.scrollIntoView()
+        }
+        const ids = (
+          search.flat(Number.POSITIVE_INFINITY)
+          .filter((elem) => !!elem)
+        )
+        setActive(ids)
       }
-      const ids = (
-        search.flat(Number.POSITIVE_INFINITY)
-        .filter((elem) => !!elem)
-      )
-      setActive(ids)
     }
   }, [time, stops, activeId])
 
   const togglePause = (pause = null) => {
     pause = (
       typeof(pause) !== 'boolean' ? (
-        !video.current.paused
+        !video.current?.paused
       ) : (
         pause
       )
     )
     if(pause) {
-      video.current.pause()
+      video.current?.pause()
     } else {
-      video.current.play()
+      video.current?.play()
     }
   }
 
   useEffect(() => {
-    const keyed = ({ target, key, ctrlKey }) => {
-      console.info({ key })
+    const keyed = (event) => {
+      const { target, key, ctrlKey } = event
+
       if(
         target instanceof HTMLInputElement
         || target instanceof HTMLTextAreaElement
@@ -1979,6 +1985,21 @@ export default (config) => {
         case 'm':
           toggleColorMode()
         break
+        case '2':
+          console.info({ activeId })
+          activate({ preceedingOrParent: activeId })
+        break
+        case '8':
+          activate({ postceedingOrParent: activeId })
+        break
+        case 'e':
+          event.preventDefault()
+          setStops((stops) => {
+            const active = findById(stops, activeId)
+            active.new = true
+            return { ...stops }
+          })
+        break
         default:
         break
       }
@@ -2009,8 +2030,19 @@ export default (config) => {
       return () => {
         vid.removeEventListener('timeupdate', update)
       }
+    } else if(!isSet(raw.duration)) {
+      const intervalId = window.setInterval(
+        () => {
+          const duration = (
+            (Date.now() - startsAt.getTime()) / 1000
+          )
+          setDuration(duration)
+        },
+        1000,
+      )
+      return () => window.clearInterval(intervalId)
     }
-  }, [setTime])
+  }, [setTime, startsAt])
 
   useEffect(() => {
     const vid = video.current
@@ -2069,6 +2101,7 @@ export default (config) => {
       setRaw((raw) => visit({
         node: clone(raw), method: insertion,
       }))
+      return insert
     }
   )
 
@@ -2129,6 +2162,50 @@ export default (config) => {
     return outer
   }
 
+  const indexInParent = (nodeOrID) => {
+    const node = (
+      typeof(nodeOrID) === 'object'
+      ? nodeOrID : findById(stops, nodeOrID)
+    )
+    return siblingsOf(node)?.indexOf(node)
+  }
+  
+  const activate = ({
+    preceedingOrParent: preceeded,
+    postceedingOrParent: postceeded,
+  }) => {
+    if(preceeded) {
+      let node = findById(stops, preceeded)
+      if(!isEmpty(node?.children, { undefIs: true })) {
+        setActiveId(node.children[0].id)
+      } else {
+        const index = indexInParent(node)
+        const max = node?.parent?.children?.length - 1
+        if(node.parent) {
+          if(index === max) {
+            activate({
+              preceedingOrParent: node.parent
+            })
+          } else if(index < max) {
+            setActiveId(node.parent.children[index + 1].id)
+          }
+        }
+      }
+    }
+
+    if(postceeded) {
+      let node = findById(stops, postceeded)
+      const index = indexInParent(node)
+      if(index === 0 && node.parent) {
+        setActiveId(node.parent.id)
+      } else if(index > 0) {
+        setActiveId(
+          node.parent.children[index - 1].id
+        )
+      }
+    }
+  }
+
   const partition = ({ preceedingOrId, insert }) => {
     const id = preceedingOrId?.id ?? preceedingOrId
 
@@ -2137,27 +2214,59 @@ export default (config) => {
       return null
     }
 
-    const preceeding = { ...findById(raw, id) }
-    const { parent } = preceeding.parent
+    let preceeding = { ...findById(raw, id) }
+    let { parent, children, partition } = preceeding
+    if(!parent) {
+      if(!partition && children.length > 0) {
+        toast({
+          title: 'Indivisible Root',
+          description: 'Root must be a single node. Partitioning first child…',
+          status: 'warning',
+          duration: 12000,
+          isClosable: true,
+        })
+        if(isEmpty(children, { undefIs: true })) {
+          preceeding = insertChild({
+            parentOrId: preceeding,
+            insert: newNode({
+              partition: true,
+            }),
+          })
+        } else {
+          preceeding = children[0]
+        }
+        console.info({ pre: clone(preceeding) })
+        ({ parent, children } = preceeding)
+      }
+    }
+
     preceeding.partition = true // this could be problematic
     insert = newNode(insert)
     insert.parent = parent
     insert.new = true
-    const { children } = findById(stops, id)
-    const pos = children.indexOf(preceeding)
-    parent.children = [
-      ...children.slice(0, pos + 1),
+    let siblings = parent?.children
+    siblings ??= children
+    const pos = siblings.indexOf(preceeding)
+    console.info({ pos })
+    const inserted = [
+      ...siblings.slice(0, pos),
       insert,
-      ...children.slice(pos + 1),
+      ...siblings.slice(pos),
     ]
-    const insertion = ({ children, visit }) => (
-      children.map((child) => {
-        visit({ node: child, method: insertion })
-        return (
-          child.id === parent.id ? parent : child
-        )
-      })
-    )
+    const insLoc = ifSet(parent) ?? preceeding
+    insLoc.children = inserted
+    const insertion = ({ node, visit }) => {
+      console.info({ cs: node.children })
+      if(node.id === insLoc.id) {
+        return insLoc
+      }
+      node.children = (
+        node.children.map((child) => (
+          visit({ node: child, method: insertion })
+        ))
+      )
+      return node
+    }
     setRaw((raw) => {
       return visit({
         node: clone(raw), method: insertion
@@ -2167,7 +2276,9 @@ export default (config) => {
 
   const seekTo = (time) => {
     console.info('Seeking To', time)
-    video.current.currentTime = time
+    if(video.current) {
+      video.current.currentTime = time
+    }
     setEventsTime(time)
   }
 
@@ -2209,6 +2320,8 @@ export default (config) => {
       video: info,
       stops: root,
     }
+
+    console.info({ metadata })
     try {
       return new Blob(
         [JSON5.stringify(metadata, null, 2)],
@@ -2229,6 +2342,7 @@ export default (config) => {
     const json5 = serialize({
       root: stops, simplify: false,
     })
+    console.info({ json5 })
     const url = window.URL.createObjectURL(json5)
     window.open(url, '_blank').focus()
   }

@@ -16,7 +16,10 @@ import { useCeramic } from 'use-ceramic'
 import MarkedVideo from './MarkedVideo'
 import { ifSet, isSet, load, isoStringFor } from './utils'
 
-export default ({ nftDID, IPFSButton, ipfs }) => {
+export default ({
+  nftDID, IPFSButton, ipfs, ConnectButton,
+  desiredChain,
+}) => {
   const { pathname: path } = useLocation()
   const { url } = useRouteMatch()
   const [metaInput, setMetaInput] = useState('')
@@ -104,6 +107,22 @@ export default ({ nftDID, IPFSButton, ipfs }) => {
   if(!info) {
     return (
       <Stack align="center" mt={10}>
+        <ConnectButton/>
+        {!nftDID && (
+          <Text>To browse videos published to the Ceramic Network, connect your wallet.</Text>
+        )}
+        {nftDID && !videos && (
+          <Text>
+            Searched{' '}
+            <ChakraLink
+              href={`${desiredChain.explorer}/address/${nftDID.split(/[:_]/)[5]}`}
+              isExternal
+              title={nftDID}
+            >
+              {nftDID.slice(0,30)}…{nftDID.slice(-10)}
+            </ChakraLink>
+          </Text> 
+        )}
         <Stack>
           <Flex as="form">
             <Input
@@ -161,18 +180,6 @@ export default ({ nftDID, IPFSButton, ipfs }) => {
             </Table>
           )}
         </Stack>
-        {nftDID && !videos && (
-          <Text>
-            Searched{' '}
-            <ChakraLink
-              href={`https://rinkeby.etherscan.io/address/${nftDID.split(/[:_]/)[5]}`}
-              isExternal
-              title={nftDID}
-            >
-              {nftDID.slice(0,30)}…{nftDID.slice(55)}
-            </ChakraLink>
-          </Text> 
-        )}
         {metadata && !videos && (
           <Stack align="center">
             <Heading size="sm">
@@ -186,7 +193,9 @@ export default ({ nftDID, IPFSButton, ipfs }) => {
           history.push('/new')
         }}>Upload a Video</Button>
         <Button onClick={() => {
-          setFromObject({})
+          setFromObject({ video: { startsAt:
+            isoStringFor(new Date(), { standard: true })
+          }})
         }}>Track a Recording</Button>
         <Flex
           as="form" direction="column"
@@ -217,7 +226,10 @@ export default ({ nftDID, IPFSButton, ipfs }) => {
     )
   }
 
-  const { title, stops, source, startsAt } = info
+  const {
+    title, stops, source, startsAt = new Date(),
+  } = info
+  console.info({ startsAt })
   return <MarkedVideo {...{
     title, stops, source, startsAt, ipfs, IPFSButton,
   }}/>

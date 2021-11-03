@@ -1,0 +1,59 @@
+{
+  video: {
+    startsAt: '2021-10-22T06:46:56',
+    source: 'ipfs://QmQAwVU5GQEYoMLMBp4MCZqA4PUEazDBkBVNGfL6SgU2rz',
+  },
+  stops: {
+    title: 'Ceramic Call Demo Walkthrough',
+    partition: true,
+    duration: '2:51',
+    children: [
+      {
+        title: 'Connect web3 Wallet',
+      },
+      {
+        title: 'Landing Page',
+        startOffset: '0:11',
+      },
+      {
+        title: 'Upload A Video',
+        startOffset: '0:16',
+      },
+      {
+        title: 'Create Events',
+        startOffset: '0:36',
+      },
+      {
+        title: 'Timewise & Flat Events Views',
+        startOffset: '0:53',
+      },
+      {
+        title: 'Edit Metadata',
+        startOffset: '1:03',
+      },
+      { 
+        title: 'Publish A Video',
+        startOffset: '1:32',
+        partition: true,
+        children: [
+          {
+            title: 'Mint Access Token',
+            startOffset: '1:36',
+          },
+          {
+            title: 'Write To Ceramic',
+            startOffset: '2:07',
+          },
+          {
+            title: 'Authenticate To The Ceramic Network',
+            startOffset: '2:15',
+          },
+          {
+            title: 'Verification Of Publishing',
+            startOffset: '2:47',
+          },
+        ],
+      },
+    ],
+  }
+}

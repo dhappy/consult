@@ -199,12 +199,12 @@ export const load = async (URI) => {
   )
 }
 
-export const isEmpty = (obj) => {
+export const isEmpty = (obj, { undefIs = false } = {}) => {
   if(obj === '') {
     return true
   }
   if(typeof obj !== 'object') {
-    return false
+    return undefIs
   }
   if(typeof obj.length === 'number') {
     return obj.length === 0

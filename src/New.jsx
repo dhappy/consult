@@ -8,7 +8,9 @@ import JSON5 from 'json5'
 import { isSet, isoStringFor } from './utils'
 
 
-export default ({ IPFSButton, ipfs }) => {
+export default ({
+  IPFSButton, ipfs, ConnectButton,
+}) => {
   const [title, setTitle] = useState('')
   const [startsAt, setStartsAt] = useState(null)
   const [total, setTotal] = useState(null)
@@ -40,16 +42,20 @@ export default ({ IPFSButton, ipfs }) => {
     let cid = result.cid.toString()
     let url = `ipfs://${cid}/${path}`
 
-    const json5 = JSON5.stringify({
-      video: {
-        startsAt: startsAt.toISOString(),
-        source: url,
+    const json5 = JSON5.stringify(
+      {
+        video: {
+          startsAt: startsAt.toISOString(),
+          source: url,
+        },
+        stops: {
+          title,
+          partition: true,
+        },
       },
-      stops: {
-        title,
-        partition: true,
-      },
-    })
+      null,
+      2,
+    )
 
     setTotal(json5.length)
     path = `${title}.json5`
@@ -103,6 +109,7 @@ export default ({ IPFSButton, ipfs }) => {
       onSubmit={submit}
       sx={{ 'label:after': { content: '":"' } }}
     >
+      <ConnectButton/>
       <FormControl mt={4}>
         <FormLabel>Video</FormLabel>
         <Input
@@ -137,7 +144,14 @@ export default ({ IPFSButton, ipfs }) => {
       </FormControl>
       <FormControl mt={1}>
         <ButtonGroup w="full">
-          <Button type="submit" flexGrow={1}>
+          <Button
+            type="submit" flexGrow={1}
+            disabled={
+              !isSet(title)
+              || !isSet(startsAt)
+              || !isSet(video)
+            }
+          >
             Upload
           </Button>
           <IPFSButton ml={4}/>

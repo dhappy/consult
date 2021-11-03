@@ -15,11 +15,12 @@ import { create as createIPFS } from 'ipfs-http-client'
 import Publish from './Publish'
 import New from './New'
 import View from './View'
-import ListAvailable from './ListAvailable'
 import addresses from './contract/addresses.json'
 import ABI from './contract/abi/VideosERC1155.json'
 import { ifSet } from './utils'
 import IPFSLogo from './images/IPFS.svg'
+import Metamask from './images/metamask.svg'
+import Connected from './images/connected.svg'
 
 const { VideosERC1155 } = addresses
 
@@ -233,24 +234,26 @@ export default () => {
     }
   }, [ipfsURL])
 
-  useEffect(() => {
-    const config = async () => {
-      const [address] = (
-        await window.ethereum.request({
-          method: 'eth_requestAccounts',
-          params: [{}],
-        })
-      )
-      setAddress(address)
+  const connect = async () => {
+    const [address] = (
+      await window.ethereum.request({
+        method: 'eth_requestAccounts',
+        params: [{}],
+      })
+    )
+    setAddress(address)
 
-      setProvider(
-        new ethers.providers.Web3Provider(
-          window.ethereum
-        )
+    setProvider(
+      new ethers.providers.Web3Provider(
+        window.ethereum
       )
-    }
-    config()
-  }, [])
+    )
+  }
+
+  const disconnect = () => {
+    setAddress(null)
+    setProvider(null)
+  }
 
   useEffect(() => {
     const listen = async () => {
@@ -320,16 +323,43 @@ export default () => {
     }
   }, [access.public])
 
-  if(!provider) {
+  const ConnectButton = () => {
+    let bg = 'darkorange'
+    let label = 'Disconnect'
+    let src = Connected
+    let colorScheme = 'orange'
+    let onClick = disconnect
+
+    if(!provider) {
+      bg = 'darkgreen'
+      label = 'Connect Your Wallet'
+      src = Metamask
+      colorScheme = 'green'
+      onClick = connect
+    }
+    
     return (
-      <Stack align="center">
-        <Text>Web3 wallet not connected.</Text>
-        <Text>Should connect automatically.</Text>
-      </Stack>
+      <Tooltip
+        hasArrow placement="left"
+        {...{ bg, label }}
+      >
+        <Button
+          {...{ colorScheme, onClick }}
+          opacity={0.5} p="0.25em 0.5em"
+          position="fixed" right="0.5em" top="0.5em"
+          _hover={{
+            opacity: 1, borderRadius: 'lg',
+          }}
+        >
+          <Image
+            h={50} w={50} {...{ src }}
+          />
+        </Button>
+      </Tooltip>
     )
   }
 
-  if(chain.id !== desiredChain.id) {
+  if(provider && chain.id !== desiredChain.id) {
     return (
       <Stack maxW={30 * 16} m="auto" mt={10}>
         <Heading textAlign="center">
@@ -369,18 +399,20 @@ export default () => {
 
       <Switch>
         <Route exact path="/new">
-          <New {...{ IPFSButton, ipfs }}/>
+          <New {...{ IPFSButton, ipfs, ConnectButton }}/>
         </Route>
         <Route path="/publish">
           <Publish {...{
             nftDID, access, contract, address,
-            IPFSButton,
+            IPFSButton, ConnectButton,
           }}/>
         </Route>
         <Route path="/">
-          <View {...{ nftDID, IPFSButton, ipfs }}/>
+          <View {...{
+            nftDID, IPFSButton, ipfs, ConnectButton,
+            desiredChain,
+          }}/>
         </Route>
-        <Route exact path="/" component={ListAvailable}/>
       </Switch>
     </Router>
   )
