@@ -76,6 +76,7 @@
     "hardhat": "^2.6.6",
     "hardhat-abi-exporter": "^2.3.0",
     "html-webpack-plugin": "^5.3.2",
+    "path-browserify": "^1.0.1",
     "webpack": "5.51.1",
     "webpack-cli": "4.8.0",
     "webpack-dev-server": "4.0.0"
