@@ -256,6 +256,12 @@ export default () => {
   }
 
   useEffect(() => {
+    if(window.ethereum.isConnected()) {
+      connect()
+    }
+  }, [])
+
+  useEffect(() => {
     const listen = async () => {
       provider.on(
         'network',
@@ -403,7 +409,7 @@ export default () => {
         </Route>
         <Route path="/publish">
           <Publish {...{
-            nftDID, access, contract, address,
+            nftDID, access, contract, address, provider,
             IPFSButton, ConnectButton,
           }}/>
         </Route>

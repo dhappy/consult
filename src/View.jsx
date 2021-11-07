@@ -30,11 +30,14 @@ export default ({
   const history = useHistory()
 
   const setFromObject = (json) => {
-    const { video: { startsAt = null, source = null } = {}, stops } = (
+    const {
+      video: { startsAt = null, source = null } = {},
+      isNew, stops,
+    } = (
       json
     )
     setInfo({
-      startsAt: new Date(startsAt), source, stops
+      startsAt: new Date(startsAt), source, stops, isNew,
     })
   }
 
@@ -193,9 +196,12 @@ export default ({
           history.push('/new')
         }}>Upload a Video</Button>
         <Button onClick={() => {
-          setFromObject({ video: { startsAt:
-            isoStringFor(new Date(), { standard: true })
-          }})
+          setFromObject({
+            video: { startsAt:
+              isoStringFor(new Date(), { standard: true })
+            },
+            isNew: true,
+          })
         }}>Track a Recording</Button>
         <Flex
           as="form" direction="column"
@@ -227,10 +233,9 @@ export default ({
   }
 
   const {
-    title, stops, source, startsAt = new Date(),
+    title, stops, source, startsAt = new Date(), isNew = false
   } = info
-  console.info({ startsAt })
   return <MarkedVideo {...{
-    title, stops, source, startsAt, ipfs, IPFSButton,
+    title, stops, source, startsAt, isNew, ipfs, IPFSButton,
   }}/>
 }

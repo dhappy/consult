@@ -7,7 +7,9 @@ import {
 } from '@chakra-ui/react'
 import { useCeramic } from 'use-ceramic'
 import { TileDocument } from '@ceramicnetwork/stream-tile'
-import { useLocation, useRouteMatch } from 'react-router'
+import {
+  useLocation, useRouteMatch, useHistory
+} from 'react-router'
 import { v4 as uuid } from 'uuid'
 import { HashLink } from 'react-router-hash-link'
 import { isSet, isoStringFor, load, toHTTP } from './utils'
@@ -15,7 +17,8 @@ import { isSet, isoStringFor, load, toHTTP } from './utils'
 const Link = chakra(HashLink)
 
 export default ({
-  nftDID, access, contract, address,
+  nftDID, access, contract, address, provider,
+  ConnectButton,
 }) => {
   const [info, setInfo] = useState(null)
   const [token, setToken] = useState(null)
@@ -27,6 +30,7 @@ export default ({
   const [authed, setAuthed] = useState(false)
   const { pathname: path } = useLocation()
   const { url } = useRouteMatch()
+  const history = useHistory()
   const [metadata, setMetadata] = (
     useState(() => {
       if(!path.startsWith(url)) {
@@ -39,8 +43,6 @@ export default ({
     })
   )
   const ceramic = useCeramic()
-
-  console.info({ l: useLocation(), r: useRouteMatch() })
 
   const mint = async () => {
     setMinting(true)
@@ -86,6 +88,8 @@ export default ({
         existing,
         { anchor: true, publish: true },
       )
+
+      history.push('/')
 
       // const model = new DataModel({
       //   ceramic: ceramic.client, model: aliases
@@ -176,13 +180,22 @@ export default ({
       direction="column" maxW={50 * 16}
       align="center" mt={3} mx="auto"
     >
+      <ConnectButton/>
       {(() => {
+        if(!provider) {
+          return (
+            <Stack align="center" mt={30}>
+              <Text>To publish to Ceramic, please connect your wallet.</Text>
+            </Stack>
+          )
+        }
+
         if(!info) {
           return (
-            <Flex align="center">
+            <Stack align="center" mt={30}>
               <Text>Loading Metadata from IPFS…</Text>
               <Spinner size="xl"/>
-            </Flex>
+            </Stack>
           )
         }
 

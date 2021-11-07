@@ -14,7 +14,7 @@ import React, {
 import Markdown from 'react-markdown'
 import demark from 'remove-markdown'
 import { v4 as uuid } from 'uuid'
-import { HashLink as Link } from 'react-router-hash-link'
+import { HashLink } from 'react-router-hash-link'
 import { useHistory } from 'react-router-dom'
 import { useLocation } from 'react-router'
 import JSON5 from 'json5'
@@ -49,6 +49,7 @@ const DEFAULT_DURATION = Math.pow(60, 2)
 const DEFAULT_VID_HEIGHT = 100
 
 const Video = chakra('video')
+const Link = chakra(HashLink)
 
 const colors = [
   'orange', 'red', 'green', 'purple',
@@ -411,11 +412,7 @@ const Spans = ({
         onDoubleClick={() => doubleClick(node)}
       >
         <Link
-          style={{
-            display: 'block',
-            flexGrow: 2,
-            minWidth: "0.75em",
-          }}
+          display="block" flexGrow={2} minW="0.75em"
           to={`#${node.id}`}
         />
         <Flex
@@ -435,11 +432,7 @@ const Spans = ({
           ))}
         </Flex>
         <Link
-          style={{
-            display: 'block',
-            flexGrow: 1,
-            minWidth: "0.25em",
-          }}
+          display="block" flexGrow={1} minW="0.25em"
           to={`#${node.id}`}
         />
       </Flex>
@@ -983,7 +976,6 @@ const NodeSettings = ({
   )
 
   const onClose = () => {
-    console.info('CLS')
     delete node.new
     delete node.raw.new
     setTitle((t) => `${t}`)
@@ -1073,7 +1065,9 @@ const NodeSettings = ({
       ([role, exec]) => {
         const numEntries = (
           Object.values(exec).map(
-            ([users]) => users?.length
+            (users) => (
+              Array.isArray(users) ? users.length : 0
+            )
           )
           .reduce((acc, l) => acc + (l ?? 0), 0)
         )
@@ -1460,7 +1454,7 @@ const Events = ({
             togglePause, activeId,
             setActiveId,
           }}
-          key={index}
+          key={child.id}
           node={child}
           count={count + index}
         />
@@ -1669,7 +1663,7 @@ const Events = ({
                 togglePause, activeId,
                 setActiveId,
               }}
-              key={index}
+              key={child.id}
               node={child}
               count={count + index + 1}
             />
@@ -1813,7 +1807,10 @@ export default (config) => {
   const video = useRef()
   const [time, setTime] = useState(0)
   const [raw, setRaw] = useState(
-    connect({ stops: config.stops })
+    connect({ stops: (
+      config.isNew && isEmpty(config.stops, { undefIs: true })
+      ? { new: true } : config.stops
+    ) })
   )
   const [stops, setStops] = useState()
   const [hovered, setHovered] = useState([])
@@ -1875,7 +1872,10 @@ export default (config) => {
         return null
       }
       for(const sub of list) {
-        if(Array.isArray(sub) && sub?.some?.((e) => !!e)) {
+        if(
+          Array.isArray(sub)
+          && sub?.some?.((e) => !!e && !isEmpty(e))
+        ) {
           const value = deepest(sub)
           if(value) {
             return value
@@ -1982,11 +1982,23 @@ export default (config) => {
             })
           }
         break
+        case 'T':
+          if(isSet(activeId)) {
+            partition({ parentOrId: activeId })
+          } else {
+            toast({
+              title: 'No Active Node',
+              description: 'To create a partition it is necessary to mark the preceeding sibling active using Control-Left Click.',
+              status: 'error',
+              duration: 15000,
+              isClosable: true,
+            })
+          }
+        break
         case 'm':
           toggleColorMode()
         break
         case '2':
-          console.info({ activeId })
           activate({ preceedingOrParent: activeId })
         break
         case '8':
@@ -2162,6 +2174,69 @@ export default (config) => {
     return outer
   }
 
+  const partition = ({ preceedingOrId, parentOrId, insert }) => {
+    let preceeding, parent
+
+    if(isSet(preceedingOrId)) {
+      const id = preceedingOrId?.id ?? preceedingOrId
+      preceeding = { ...findById(raw, id) }
+      ;({ parent } = preceeding)
+
+      if(!parent) {
+        toast({
+          title: 'Indivisible Root',
+          description: 'Root must be a single node. Children will be a partition…',
+          status: 'warning',
+          duration: 12000,
+          isClosable: true,
+        })
+        return partition({ parentOrId: preceedingOrId })
+      }
+    } else if(isSet(parentOrId)) {
+      const id = parentOrId?.id ?? parentOrId
+      parent = { ...findById(raw, id) }
+    } else {
+      console.warn(`partition called with no id (preceedingOrId or parentOrId)`)
+      return null
+    }
+
+    const { children: siblings } = parent
+    parent.partition = true // this could be problematic
+
+    insert = newNode({
+      ...insert,
+      parent,
+      new: true,
+    })
+
+    let pos = siblings.findIndex((child) => child.id === preceeding?.id)
+    pos = pos >= 0 ? pos : siblings.length
+    const inserted = {
+      ...parent,
+      children: [
+        ...siblings.slice(0, pos + 1),
+        insert,
+        ...siblings.slice(pos + 1),
+      ]
+    }
+    const insertion = ({ node, visit }) => {
+      if(node.id === inserted.id) {
+        return inserted
+      }
+      node.children = (
+        node.children.map((child) => (
+          visit({ node: child, method: insertion })
+        ))
+      )
+      return node
+    }
+    setRaw((raw) => {
+      return visit({
+        node: clone(raw), method: insertion
+      })
+    })
+  }
+
   const indexInParent = (nodeOrID) => {
     const node = (
       typeof(nodeOrID) === 'object'
@@ -2204,74 +2279,6 @@ export default (config) => {
         )
       }
     }
-  }
-
-  const partition = ({ preceedingOrId, insert }) => {
-    const id = preceedingOrId?.id ?? preceedingOrId
-
-    if(!isSet(id)) {
-      console.warn(`partition called with ${id} id`)
-      return null
-    }
-
-    let preceeding = { ...findById(raw, id) }
-    let { parent, children, partition } = preceeding
-    if(!parent) {
-      if(!partition && children.length > 0) {
-        toast({
-          title: 'Indivisible Root',
-          description: 'Root must be a single node. Partitioning first child…',
-          status: 'warning',
-          duration: 12000,
-          isClosable: true,
-        })
-        if(isEmpty(children, { undefIs: true })) {
-          preceeding = insertChild({
-            parentOrId: preceeding,
-            insert: newNode({
-              partition: true,
-            }),
-          })
-        } else {
-          preceeding = children[0]
-        }
-        console.info({ pre: clone(preceeding) })
-        ({ parent, children } = preceeding)
-      }
-    }
-
-    preceeding.partition = true // this could be problematic
-    insert = newNode(insert)
-    insert.parent = parent
-    insert.new = true
-    let siblings = parent?.children
-    siblings ??= children
-    const pos = siblings.indexOf(preceeding)
-    console.info({ pos })
-    const inserted = [
-      ...siblings.slice(0, pos),
-      insert,
-      ...siblings.slice(pos),
-    ]
-    const insLoc = ifSet(parent) ?? preceeding
-    insLoc.children = inserted
-    const insertion = ({ node, visit }) => {
-      console.info({ cs: node.children })
-      if(node.id === insLoc.id) {
-        return insLoc
-      }
-      node.children = (
-        node.children.map((child) => (
-          visit({ node: child, method: insertion })
-        ))
-      )
-      return node
-    }
-    setRaw((raw) => {
-      return visit({
-        node: clone(raw), method: insertion
-      })
-    })
   }
 
   const seekTo = (time) => {
@@ -2321,7 +2328,6 @@ export default (config) => {
       stops: root,
     }
 
-    console.info({ metadata })
     try {
       return new Blob(
         [JSON5.stringify(metadata, null, 2)],
@@ -2342,7 +2348,6 @@ export default (config) => {
     const json5 = serialize({
       root: stops, simplify: false,
     })
-    console.info({ json5 })
     const url = window.URL.createObjectURL(json5)
     window.open(url, '_blank').focus()
   }
@@ -2463,9 +2468,9 @@ export default (config) => {
               </Button>
               <Button
                 title="Edit the video information"
-                onClick={openVideoSettings}
-                h="auto" minW={0} padding={1}
-                variant="outline" colorScheme="blue"
+                onClick={openVideoSettings} fontSize={28}
+                h="auto" minW={0} padding="0.25em 0.2em 0.1em 0.2em"
+                lineHeight={1} variant="outline" colorScheme="blue"
               >⚙</Button>
               <Button
                 title="Download the current configuration"
@@ -2480,9 +2485,20 @@ export default (config) => {
                 variant="outline" colorScheme="red"
               >⭳</Button>
               <IPFSButton
-                maxH={25} maxW={25}
+                h={6} minW={6} p={1}
                 variant="outline" colorScheme="blue"
               />
+              <Link
+                title="Homepage"
+                to="/" p={0.5}
+                border="1px solid" fontSize={18} borderRadius={8}
+              >🏠</Link>
+              <Button
+                title="View keyboard shortcuts"
+                onClick={() => openKeyboardSettings()}
+                h="auto" minW={0} padding={1} fontSize={18}
+                variant="outline" colorScheme="blue"
+              >⌨</Button>
             </Wrap>
           </Flex>
         </GridItem>
