@@ -1,0 +1,8 @@
+{
+  "name": "Call Meta Access & Hours Tokens",
+  "description": "Tokens used to gate access to Ceramic streams, and represent time spent in recordings of pair programming and community calls.",
+  "image": "ipfs://QmRA4RtipjzFYr62zTYJ7kbkJrDdUqb7exG1UkQrUYokWx/splash.svg",
+  "external_link": "https://dhappy.github.io/consult/",
+  "seller_fee_basis_points": 50,
+  "fee_recipient": "0x0049F34D6C3Ba2922fdEc380B03F73e3198f219F"
+}
