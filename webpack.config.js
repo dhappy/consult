@@ -3,11 +3,13 @@ const path = require('path')
 const json5 = require('json5')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const CopyPlugin = require('copy-webpack-plugin')
+const TSPathsPlugin = require('tsconfig-paths-webpack-plugin')
 const dotenv = (
   require('dotenv')
   .config({ path: `${__dirname}/.env` })
 )
 const dev = process.env.NODE_ENV !== 'production'
+const mode = dev ? 'development' : 'production'
 
 module.exports = {
   entry: './src/index.jsx',
@@ -34,6 +36,10 @@ module.exports = {
         test: /\.json5$/i,
         parser: { parse: json5.parse },
       },
+      {
+        loader: 'ts-loader',
+        test: /\.tsx?$/,
+      }
     ],
   },
   plugins: [
@@ -43,17 +49,16 @@ module.exports = {
         { from: 'public', to: '' },
       ],
     }),
+    new TSPathsPlugin({ extensions: ['.js', '.jsx', '.svg']}),
     new webpack.DefinePlugin({
       'process.env': JSON.stringify(dotenv.parsed),
-      'process.env.NODE_ENV': JSON.stringify(
-        dev ? 'development' : 'production'
-      ),
+      'process.env.NODE_ENV': JSON.stringify(mode),
     }),
     new webpack.ProvidePlugin({
       Buffer: ['buffer', 'Buffer'],
     }),
   ],
-  mode: 'development',
+  mode,
   devServer: {
     port: 3000,
     open: true,

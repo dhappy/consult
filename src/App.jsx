@@ -17,7 +17,7 @@ import New from './New'
 import View from './View'
 import addresses from './contract/addresses.json'
 import ABI from './contract/abi/VideosERC1155.json'
-import { ifSet } from './utils'
+import { ifSet } from './lib/utils'
 import IPFSLogo from './images/IPFS.svg'
 import Metamask from './images/metamask.svg'
 import Connected from './images/connected.svg'
@@ -256,9 +256,14 @@ export default () => {
   }
 
   useEffect(() => {
-    if(window.ethereum.isConnected()) {
-      connect()
-    }
+    console.log('LIS')
+    window.ethereum.on(
+      'connect',
+      (arg) => {
+        console.info('CONN!', arg)
+        connect()
+      }
+    )
   }, [])
 
   useEffect(() => {
@@ -283,14 +288,19 @@ export default () => {
           setChain({ id, name })
         },
       )
-      provider.on(
+      window.ethereum.on(
         'accountsChanged',
         ([addr]) => setAddress(addr),
       )
+      window.ethereum.on(
+        'disconnect',
+        () => setProvider(null),
+      )
       return () => {
         provider.off('network')
-        provider.off('accountsChanged')
-        window.ethereum.off('chainChanged')
+        window.ethereum.removeListener('accountsChanged')
+        window.ethereum.removeListener('chainChanged')
+        window.ethereum.removeListener('disconnected')
       }
     }
     if(provider) {
@@ -329,7 +339,7 @@ export default () => {
     }
   }, [access.public])
 
-  const ConnectButton = () => {
+  const ConnectButton = ({ ...props }) => {
     let bg = 'darkorange'
     let label = 'Disconnect'
     let src = Connected
@@ -350,7 +360,7 @@ export default () => {
         {...{ bg, label }}
       >
         <Button
-          {...{ colorScheme, onClick }}
+          {...{ colorScheme, onClick, ...props }}
           opacity={0.5} p="0.25em 0.5em"
           position="fixed" right="0.5em" top="0.5em"
           _hover={{

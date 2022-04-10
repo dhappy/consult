@@ -32,7 +32,7 @@ export const isSet = (value) => (
   || Boolean(value)
 )
 
-export const ifSet = (value, { default: def } = {}) => (
+export const ifSet = (value, { default: def = null } = {}) => (
   isSet(value) ? value : def
 )
 
@@ -40,14 +40,14 @@ export const durationFor = (str) => {
   if(typeof str !== 'string') {
     throw new Error(`Bad Argument: expected string, got ${typeof str}`)
   }
-  const [from, to = from] = str.split('‒').map(timeFor)
+  const [from, to = from] = str.split('‒').map((t) => timeFor(t))
   return {
     startsOffset: from,
     duration: to - from,
   }
 }
 
-export const timeFor = (str, { default: def } = {}) => (
+export const timeFor = (str, { default: def = null } = {}) => (
   !isSet(str) ? def : (
     (() => {
       str = str.toString()
@@ -69,7 +69,7 @@ export const timeFor = (str, { default: def } = {}) => (
 )
 
 export const stringFor = (
-  (time, { default: def, milliseconds = true } = {}) => {
+  (time, { default: def = null, milliseconds = true } = {}) => {
     if(!isSet(time)) return def
 
     const sign = time < 0 ? '−' : ''
@@ -213,4 +213,22 @@ export const isEmpty = (obj, { undefIs = false } = {}) => {
     return true
   }
   return false
+}
+
+const colors = [
+  'orange', 'red', 'green', 'purple',
+  'silver', 'blue', 'cyan', 'brown',
+  'black', '#3B5E13', 'coral', 'gray',
+  'pink',  '#9122FF', 'olive',
+  'orangered', 'teal', 'gold',
+]
+
+const colorIds = []
+export const colorFor = (id) => {
+  let index = colorIds.indexOf(id)
+  if(index < 0) {
+    colorIds.push(id)
+    index = colorIds.length - 1
+  }
+  return colors[index % colors.length]
 }

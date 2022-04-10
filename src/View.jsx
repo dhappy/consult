@@ -14,7 +14,7 @@ import { HashLink as Link } from 'react-router-hash-link'
 import JSON5 from 'json5'
 import { useCeramic } from 'use-ceramic'
 import MarkedVideo from './MarkedVideo'
-import { ifSet, isSet, load, isoStringFor } from './utils'
+import { ifSet, isSet, load, isoStringFor } from './lib/utils'
 
 export default ({
   nftDID, IPFSButton, ipfs, ConnectButton,

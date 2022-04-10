@@ -12,7 +12,7 @@ import {
 } from 'react-router'
 import { v4 as uuid } from 'uuid'
 import { HashLink } from 'react-router-hash-link'
-import { isSet, isoStringFor, load, toHTTP } from './utils'
+import { isSet, isoStringFor, load, toHTTP } from './lib/utils'
 
 const Link = chakra(HashLink)
 

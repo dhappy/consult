@@ -5,7 +5,7 @@ import {
 } from '@chakra-ui/react'
 import { useHistory } from 'react-router'
 import JSON5 from 'json5'
-import { isSet, isoStringFor } from './utils'
+import { isSet, isoStringFor } from './lib/utils'
 
 
 export default ({
