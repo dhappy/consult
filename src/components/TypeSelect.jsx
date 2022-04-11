@@ -5,23 +5,24 @@ import { useMemo } from 'react'
 import { TiBackspace } from 'react-icons/ti'
 import useDownshift from 'use-downshift'
 import { isSet } from '../lib/utils'
-import plan from '../images/planning.svg'
-import decision from '../images/gavel.svg'
-import issue from '../images/ticket.svg'
-import presenter from '../images/speaker.svg'
-import unknown from '../images/question mark.svg'
-import previously from '../images/left arrow.svg'
-import discussion from '../images/discuss.svg'
-import logistics from '../images/certification.svg'
-import blocked from '../images/brick wall.svg'
-import roundtable from '../images/roundtable.svg'
+import Plan from '../images/planning.svg'
+import Decision from '../images/gavel.svg'
+import Issue from '../images/ticket.svg'
+import Presenter from '../images/speaker.svg'
+import Unknown from '../images/question mark.svg'
+import Previously from '../images/left arrow.svg'
+import Discussion from '../images/discuss.svg'
+import Logistics from '../images/certification.svg'
+import Blocked from '../images/brick wall.svg'
+import Roundtable from '../images/roundtable.svg'
+import Pairing from '../images/pear.svg'
 
 export const icons = {
-  plan, decision, issue, presenter, previously,
-  discussion, logistics, blocked, roundtable,
-  unknown,
+  Roundtable, Pairing,
+  Plan, Decision, Issue, Presenter, Previously,
+  Discussion, Logistics, Blocked, 
+  Unknown,
 }
-
 
 export const TypeSelect = ({
   type, setType, scrollId,
@@ -77,7 +78,7 @@ export const TypeSelect = ({
     }
   })
   const splitIndex = found.length - 1
-  const sorted = found.sort().concat(missed.sort())
+  const sorted = found.concat(missed)
 
   return (
     <Box
@@ -149,7 +150,8 @@ export const TypeSelect = ({
             >
               <Image
                 src={icons[item]}
-                w={8} h={8} mr={2}
+                w={8} maxH={8} py={0.5} mr={2}
+                bg={idx > splitIndex ? 'white' : 'yellow'}
               />
               <Text flexGrow={1}>{item}</Text>
             </ListItem>

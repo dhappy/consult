@@ -1,6 +1,6 @@
 // @ts-check
 
-import { useDisclosure, Stack, Flex, Tooltip, Heading, Spacer, ButtonGroup, Button, Box, Divider, Image } from '@chakra-ui/react'
+import { useDisclosure, Stack, Text, Flex, Tooltip, Heading, Spacer, ButtonGroup, Button, Box, Divider, Image } from '@chakra-ui/react'
 import { useState } from 'react'
 import demark from 'remove-markdown'
 import Markdown from 'react-markdown'
@@ -8,6 +8,7 @@ import { newNode } from '../lib/stops'
 import { colorFor, isSet } from '../lib/utils'
 import NodeSettings from './NodeSettings'
 import { icons } from './TypeSelect'
+import Option from './Option'
 
 export const WrapPartition = ({ children, node }) => {
   if(node.partition) {

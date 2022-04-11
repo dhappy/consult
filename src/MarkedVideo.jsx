@@ -28,21 +28,6 @@ const DEFAULT_VID_HEIGHT = 100
 const Video = chakra('video')
 const Link = chakra(HashLink)
 
-const Option = ({ children, onClick, ...props }) => {
-  const clicked = (evt) => {
-    evt.stopPropagation()
-    onClick(evt)
-  }
-  return (
-    <Button
-      {...props}
-      fontWeight="normal" variant="outline" mt={1.25}
-      fontSize={15} p={1} _hover={{ bg: '#00000077' }}
-      onClick={onClick ? clicked : null}
-    >{children}</Button>
-  )
-}
-
 export const MarkedVideo = (config) => {
   const [duration, setDuration] = (
     useState(DEFAULT_DURATION)
@@ -183,30 +168,36 @@ export const MarkedVideo = (config) => {
       ) {
         return
       }
-      console.info({ key })
       switch(key) {
-        case 'p': case 'P':
+        case 'p': case 'P': {
           togglePause()
-        break
-        case 's':
+          break
+        }
+        case 's': {
           seekTo(time - duration * 0.1)
-        break
-        case 'b': case '4':
+          break
+        }
+        case 'b': case '4': {
           seekTo(time - 5)
-        break
-        case 'B':
+          break
+        }
+        case 'B': {
           seekTo(time - 20)
-        break
-        case 'j':
+          break
+        }
+        case 'j': {
           seekTo(time + duration * 0.1)
-        break
-        case 'f': case '6':
+          break
+        }
+        case 'f': case '6': {
           seekTo(time + 5)
-        break
-        case 'F':
+          break
+        }
+        case 'F': {
           seekTo(time + 20)
-        break
-        case 'c':
+          break
+        }
+        case 'c': {
           if(isSet(activeId)) {
             insertChild({ parentOrId: activeId })
           } else {
@@ -218,11 +209,12 @@ export const MarkedVideo = (config) => {
               isClosable: true,
             })
           }
-        break
-        case 't':
+          break
+        }
+        case 't': {
           if(isSet(activeId)) {
             partition({
-              preceedingOrId: activeId,
+              precedingOrId: activeId,
               insert: { defaultStartsOffset: (
                 isSet(raw.duration) ? time : duration
               ) },
@@ -230,43 +222,53 @@ export const MarkedVideo = (config) => {
           } else {
             toast({
               title: 'No Active Node',
-              description: 'To create a partition it is necessary to mark the preceeding sibling active using Control-Left Click.',
+              description: 'To create a partition it is necessary to mark the preceding sibling active using Control-Left Click.',
               status: 'error',
               duration: 15000,
               isClosable: true,
             })
           }
-        break
-        case 'T':
+          break
+        }
+        case 'T': {
           if(isSet(activeId)) {
             partition({ parentOrId: activeId })
           } else {
             toast({
               title: 'No Active Node',
-              description: 'To create a partition it is necessary to mark the preceeding sibling active using Control-Left Click.',
+              description: 'To create a partition it is necessary to mark the preceding sibling active using Control-Left Click.',
               status: 'error',
               duration: 15000,
               isClosable: true,
             })
           }
-        break
-        case 'm':
+          break
+        }
+        case 'm': {
           toggleColorMode()
-        break
-        case '2':
-          activate({ preceedingOrParent: activeId })
-        break
-        case '8':
-          activate({ postceedingOrParent: activeId })
-        break
-        case 'e':
+          break
+        }
+        case '2': {
+          activate({ precedingOrParent: activeId })
+          break
+        }
+        case '8': {
+          activate({ postcedingOrParent: activeId })
+          break
+        }
+        case 'e': {
           event.preventDefault()
           setStops((stops) => {
             const active = findById(stops, activeId)
             active.new = true
             return { ...stops }
           })
-        break
+          break
+        }
+        case 'k': {
+          openShortcuts()
+          break
+        }
         default:
         break
       }
@@ -429,13 +431,13 @@ export const MarkedVideo = (config) => {
     return outer
   }
 
-  const partition = ({ preceedingOrId, parentOrId, insert }) => {
-    let preceeding, parent
+  const partition = ({ precedingOrId, parentOrId, insert }) => {
+    let preceding, parent
 
-    if(isSet(preceedingOrId)) {
-      const id = preceedingOrId?.id ?? preceedingOrId
-      preceeding = { ...findById(raw, id) }
-      ;({ parent } = preceeding)
+    if(isSet(precedingOrId)) {
+      const id = precedingOrId?.id ?? precedingOrId
+      preceding = { ...findById(raw, id) }
+      ;({ parent } = preceding)
 
       if(!parent) {
         toast({
@@ -445,13 +447,13 @@ export const MarkedVideo = (config) => {
           duration: 12000,
           isClosable: true,
         })
-        return partition({ parentOrId: preceedingOrId, insert })
+        return partition({ parentOrId: precedingOrId, insert })
       }
     } else if(isSet(parentOrId)) {
       const id = parentOrId?.id ?? parentOrId
       parent = { ...findById(raw, id) }
     } else {
-      console.warn(`partition called with no id (preceedingOrId or parentOrId)`)
+      console.warn(`partition called with no id (precedingOrId or parentOrId)`)
       return null
     }
 
@@ -466,7 +468,7 @@ export const MarkedVideo = (config) => {
 
     console.info({ insert })
 
-    let pos = siblings.findIndex((child) => child.id === preceeding?.id)
+    let pos = siblings.findIndex((child) => child.id === preceding?.id)
     pos = pos >= 0 ? pos : siblings.length
     const inserted = {
       ...parent,
@@ -503,11 +505,11 @@ export const MarkedVideo = (config) => {
   }
   
   const activate = ({
-    preceedingOrParent: preceeded,
-    postceedingOrParent: postceeded,
+    precedingOrParent: preceded,
+    postcedingOrParent: postceded,
   }) => {
-    if(preceeded) {
-      let node = findById(stops, preceeded)
+    if(preceded) {
+      let node = findById(stops, preceded)
       if(!isEmpty(node?.children, { undefIs: true })) {
         setActiveId(node.children[0].id)
       } else {
@@ -516,7 +518,7 @@ export const MarkedVideo = (config) => {
         if(node.parent) {
           if(index === max) {
             activate({
-              preceedingOrParent: node.parent
+              precedingOrParent: node.parent
             })
           } else if(index < max) {
             setActiveId(node.parent.children[index + 1].id)
@@ -615,7 +617,7 @@ export const MarkedVideo = (config) => {
     const path = `${name}.json5`
     const result = (
       await ipfs.add(
-        {
+        { 
           path,
           content: json5,
         },
@@ -654,7 +656,7 @@ export const MarkedVideo = (config) => {
           </GridItem>
         ) : (
           <>
-            <GridItem id="spans" rowSpan={1} colSpan={1}>
+            <GridItem id="spans">
               <Times
                 {...{
                   startsAt, duration, time, active,
@@ -665,10 +667,7 @@ export const MarkedVideo = (config) => {
                 h={`calc(100vh - ${vidHeight}px)`}
               />
             </GridItem>
-            <GridItem
-              id="events" rowSpan={1} colSpan={1}
-              overflowY="scroll"
-            >
+            <GridItem id="events" overflowY="scroll">
               <Events
                 {...{
                   insertChild, insertParent,
