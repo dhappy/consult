@@ -282,6 +282,7 @@ export default () => {
               window.ethereum
             )
           )
+          console.debug({ m: 'chainChanged', eth: window.ethereum })
           const { chainId: id, name } = (
             await provider.getNetwork()
           )

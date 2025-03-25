@@ -84,14 +84,16 @@ export default ({
   const fileChange = ({ target: { files } }) => {
     if(files.length > 0) {
       const [file] = files
-      const regex = /^([\d⁄:@]+)\.(.+)\.mp4$/i
+      const regex = /^([\d⁄:@]+(?:ᴇᴛ)?)\.([^\.]+)(?:\.x264)?\.mp4$/i
       const match = file.name.match(regex)
       if(!match) {
         console.warn(`"${file.name}" didn't match "${regex.toString()}"`)
       } else {
         let time = (
-          match[1].replace(/⁄/g, '-')
+          match[1]
+          .replace(/⁄/g, '-')
           .replace(/@/g, 'T')
+          .replace(/ᴇᴛ/, '-0400')
         )
         if(!isSet(startsAt)) {
           setStartsAt(new Date(time))

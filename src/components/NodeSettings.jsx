@@ -1,10 +1,17 @@
 // @ts-check
 
-import { Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody, Tabs, TabList, Tab, TabPanels, TabPanel, Text, FormControl, FormLabel, Input, Textarea, Flex, Button, ModalFooter } from '@chakra-ui/react'
+import {
+  Modal, ModalOverlay, ModalContent, ModalHeader,
+  ModalCloseButton, ModalBody, Tabs, TabList, Tab,
+  TabPanels, TabPanel, Text, FormControl, FormLabel,
+  Input, Textarea, Flex, Button, ModalFooter,
+} from '@chakra-ui/react'
 import { useRef, useState, useMemo } from 'react'
 import Markdown from 'react-markdown'
 import { newNode } from '../lib/stops'
-import { timeFor, ifSet, isSet, stringFor, isEmpty } from '../lib/utils'
+import {
+  timeFor, ifSet, isSet, stringFor, isEmpty,
+} from '../lib/utils'
 import Roles from './Roles'
 import TypeSelect from './TypeSelect'
 
